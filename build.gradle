@@ -10,16 +10,16 @@ allprojects {
     mavenCentral()
   }
 }
-//
-// subprojects {
-//   apply plugin: 'java'
-//
-//   java {
-//     toolchain {
-//       languageVersion = JavaLanguageVersion.of(21)
-//     }
-//   }
-// }
+
+subprojects {
+  apply plugin: 'java'
+
+  java {
+    toolchain {
+      languageVersion = JavaLanguageVersion.of(21)
+    }
+  }
+}
 
 sonar {
   properties {

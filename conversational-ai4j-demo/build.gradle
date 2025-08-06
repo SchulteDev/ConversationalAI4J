@@ -2,12 +2,6 @@ plugins {
   id 'application'
 }
 
-java {
-  toolchain {
-    languageVersion = JavaLanguageVersion.of(21)
-  }
-}
-
 application {
   mainClass = 'schultedev.conversationalai4j.demo.DemoApplication'
 }
