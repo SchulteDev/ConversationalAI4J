@@ -1,4 +1,4 @@
 rootProject.name = 'conversational-ai4j'
 
-include 'conversational-ai4j-core'
+include 'conversational-ai4j-library'
 include 'conversational-ai4j-demo'
