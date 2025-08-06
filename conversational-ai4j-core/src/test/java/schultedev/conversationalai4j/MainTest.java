@@ -1,4 +1,4 @@
-package schultedev.conversationalAi4j;
+package schultedev.conversationalai4j;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 

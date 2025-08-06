@@ -1,21 +1,25 @@
 plugins {
-  id 'java'
-  id 'jacoco'
   id 'org.sonarqube' version '6.2.0.5505'
 }
 
 group = 'schultedev'
 version = '1.0-SNAPSHOT'
 
-repositories {
-  mavenCentral()
-}
-
-java {
-  toolchain {
-    languageVersion = JavaLanguageVersion.of(21)
+allprojects {
+  repositories {
+    mavenCentral()
   }
 }
+//
+// subprojects {
+//   apply plugin: 'java'
+//
+//   java {
+//     toolchain {
+//       languageVersion = JavaLanguageVersion.of(21)
+//     }
+//   }
+// }
 
 sonar {
   properties {
@@ -24,40 +28,3 @@ sonar {
     property "sonar.host.url", "https://sonarcloud.io"
   }
 }
-
-configurations {
-  mockitoAgent
-}
-
-def libs = [mockito: 'org.mockito:mockito-core:5.18.0']
-
-dependencies {
-  implementation 'org.slf4j:slf4j-api:2.0.17'
-  runtimeOnly 'org.slf4j:slf4j-simple:2.0.17'
-  implementation 'org.jboss.weld.se:weld-se-core:6.0.3.Final'
-  implementation 'io.smallrye:jandex:3.4.0'
-  implementation 'org.eclipse.microprofile.config:microprofile-config-api:3.1'
-  runtimeOnly 'io.smallrye.config:smallrye-config:3.13.4'
-  testImplementation 'io.smallrye.config:smallrye-config:3.13.4'
-  testImplementation 'org.jboss.weld:weld-junit5:5.0.1.Final'
-  testImplementation 'org.junit.jupiter:junit-jupiter-api:5.13.4'
-  testImplementation libs.mockito
-  testImplementation 'org.mockito:mockito-junit-jupiter:5.18.0'
-  mockitoAgent(libs.mockito) { transitive = false }
-  testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.13.4'
-  testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.13.4'
-}
-
-test {
-  useJUnitPlatform()
-  // See https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
-  jvmArgs += "-javaagent:${configurations.mockitoAgent.asPath}"
-}
-
-jacocoTestReport {
-  dependsOn test
-  reports {
-    xml.required = true
-  }
-}
-

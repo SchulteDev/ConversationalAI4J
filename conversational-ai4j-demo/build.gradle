@@ -1,0 +1,51 @@
+plugins {
+  id 'application'
+}
+
+java {
+  toolchain {
+    languageVersion = JavaLanguageVersion.of(21)
+  }
+}
+
+application {
+  mainClass = 'schultedev.conversationalai4j.demo.DemoApplication'
+}
+
+configurations {
+  mockitoAgent
+}
+
+def libs = [mockito: 'org.mockito:mockito-core:5.18.0']
+
+dependencies {
+  implementation project(':conversational-ai4j-core')
+
+  // CDI/Weld
+  implementation 'org.jboss.weld.se:weld-se-core:6.0.3.Final'
+
+  // CLI handling
+  implementation 'info.picocli:picocli:4.7.6'
+
+  // Microprofile Config
+  implementation 'org.eclipse.microprofile.config:microprofile-config-api:3.1'
+  runtimeOnly 'io.smallrye.config:smallrye-config:3.13.4'
+
+  // Logging
+  implementation 'org.slf4j:slf4j-api:2.0.17'
+  runtimeOnly 'org.slf4j:slf4j-simple:2.0.17'
+
+  // Test dependencies
+  testImplementation 'io.smallrye.config:smallrye-config:3.13.4'
+  testImplementation 'org.jboss.weld:weld-junit5:5.0.1.Final'
+  testImplementation 'org.junit.jupiter:junit-jupiter-api:5.13.4'
+  testImplementation libs.mockito
+  testImplementation 'org.mockito:mockito-junit-jupiter:5.18.0'
+  mockitoAgent(libs.mockito) { transitive = false }
+  testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.13.4'
+  testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.13.4'
+}
+
+test {
+  useJUnitPlatform()
+}
