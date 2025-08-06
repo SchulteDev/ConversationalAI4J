@@ -19,7 +19,7 @@ java {
 
 sonar {
   properties {
-    property "sonar.projectKey", "SchulteDev_conversational-ai4j"
+    property "sonar.projectKey", "SchulteDev_ConversationalAI4J"
     property "sonar.organization", "schultedev"
     property "sonar.host.url", "https://sonarcloud.io"
   }
