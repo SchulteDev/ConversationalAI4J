@@ -3,8 +3,8 @@
 [![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.java.net/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.0-brightgreen.svg)](https://spring.io/projects/spring-boot)
 [![Gradle](https://img.shields.io/badge/Gradle-9.0-blue.svg)](https://gradle.org/)
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
-[![Tests](https://img.shields.io/badge/tests-9%2F9%20passing-brightgreen.svg)]()
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=SchulteDev_ConversationalAI4J&metric=alert_status&token=d82a94ffeaa4b434396b27080eab2189e4b032e8)](https://sonarcloud.io/summary/new_code?id=SchulteDev_ConversationalAI4J)
+[![Test](https://github.com/SchulteDev/ConversationalAI4J/actions/workflows/test.yml/badge.svg)](https://github.com/SchulteDev/ConversationalAI4J/actions/workflows/test.yml)
 
 A Java library for conversational AI applications with complete speech-to-text, AI processing, and text-to-speech capabilities.
 
