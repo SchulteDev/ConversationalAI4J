@@ -10,5 +10,5 @@ dependencies {
   implementation project(':conversational-ai4j-library')
 
   // CLI handling
-  implementation 'info.picocli:picocli:4.7.6'
+  implementation 'info.picocli:picocli:4.7.7'
 }

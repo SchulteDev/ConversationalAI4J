@@ -13,8 +13,8 @@ dependencies {
   // implementation 'com.k2fsa:sherpa-onnx:+'
 
   // LangChain4j with Ollama
-  implementation 'dev.langchain4j:langchain4j:0.35.0'
-  implementation 'dev.langchain4j:langchain4j-ollama:0.35.0'
+  implementation 'dev.langchain4j:langchain4j:0.36.2'
+  implementation 'dev.langchain4j:langchain4j-ollama:0.36.2'
 }
 
 
