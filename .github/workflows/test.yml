@@ -24,10 +24,10 @@ jobs:
         with:
           java-version: '21'
           distribution: 'microsoft'
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          cache-read-only: ${{ github.event_name == 'pull_request' }}
+          cache: 'gradle'
+          cache-dependency-path: | # optional
+            conversational-ai4j-*/*.gradle*
+            conversational-ai4j-*/**/gradle-wrapper.properties
       - name: Cache Sonar packages
         uses: actions/cache@v4
         with:
