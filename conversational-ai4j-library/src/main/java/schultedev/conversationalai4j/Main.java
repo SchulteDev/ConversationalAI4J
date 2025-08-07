@@ -1,23 +1,32 @@
 package schultedev.conversationalai4j;
 
-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
+import schultedev.conversationalai4j.examples.ConversationalAIExamples;
+
+/**
+ * Main class for running ConversationalAI4J examples.
+ * This demonstrates the basic usage of the library.
+ */
 public class Main {
 
-  public static void main(String[] args) {
-    new Main().sayHelloAndCount();
-  }
-
-  boolean sayHelloAndCount() {
-    //TIP Press <shortcut actionId="ShowIntentionActions"/> with your caret at the highlighted text
-    // to see how IntelliJ IDEA suggests fixing it.
-    System.out.print("Hello and welcome!");
-    for (var i = 1; i <= 5; i++) {
-      //TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-      // for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
-      System.out.println("i = " + i);
+    public static void main(String[] args) {
+        System.out.println("ConversationalAI4J Library Examples");
+        System.out.println("===================================");
+        
+        ConversationalAIExamples examples = new ConversationalAIExamples();
+        
+        try {
+            System.out.println("\n1. Basic Usage Example:");
+            examples.basicUsage();
+            
+            System.out.println("\n2. Error Handling Example:");
+            examples.errorHandlingExample();
+            
+            System.out.println("\nFor more examples, see ConversationalAIExamples class");
+            
+        } catch (Exception e) {
+            System.err.println("Note: Examples require Ollama to be running with llama2 model");
+            System.err.println("Install Ollama and run: ollama pull llama2");
+            System.err.println("Error: " + e.getMessage());
+        }
     }
-
-    return true;
-  }
 }

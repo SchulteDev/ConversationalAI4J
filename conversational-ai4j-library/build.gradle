@@ -15,20 +15,13 @@ configurations {
 ext.libs = [mockito: 'org.mockito:mockito-core:5.18.0']
 
 dependencies {
-  // CDI/Weld
-  implementation 'org.jboss.weld.se:weld-se-core:6.0.3.Final'
-
-  // Microprofile Config
-  implementation 'org.eclipse.microprofile.config:microprofile-config-api:3.1'
-  runtimeOnly 'io.smallrye.config:smallrye-config:3.13.4'
-
+  // LangChain4j with Ollama - Updated versions for compatibility
+  implementation 'dev.langchain4j:langchain4j:0.36.2'
+  implementation 'dev.langchain4j:langchain4j-ollama:0.36.2'
+  
   // Logging
   implementation 'org.slf4j:slf4j-api:2.0.17'
   runtimeOnly 'org.slf4j:slf4j-simple:2.0.17'
-
-  // LangChain4j with Ollama
-  implementation 'dev.langchain4j:langchain4j:1.3.0'
-  implementation 'dev.langchain4j:langchain4j-ollama:0.36.2'
   
   // sherpa-onnx JNI bindings (placeholder - actual dependency TBD)
   // implementation 'com.k2fsa:sherpa-onnx:+'
@@ -40,8 +33,6 @@ dependencies {
   mockitoAgent(libs.mockito) { transitive = false }
   testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.13.4'
   testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.13.4'
-  testImplementation 'org.jboss.weld:weld-junit5:5.0.1.Final'
-  testImplementation 'io.smallrye.config:smallrye-config:3.13.4'
 }
 
 test {
