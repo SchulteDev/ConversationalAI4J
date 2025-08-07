@@ -25,7 +25,7 @@ jobs:
           java-version: '21'
           distribution: 'microsoft'
           cache: 'gradle'
-          cache-dependency-path: | # optional
+          cache-dependency-path: |
             conversational-ai4j-*/*.gradle*
             conversational-ai4j-*/**/gradle-wrapper.properties
       - name: Cache Sonar packages
