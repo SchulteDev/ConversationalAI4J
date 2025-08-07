@@ -1,8 +1,6 @@
 plugins {
   id 'java-library'
   id 'maven-publish'
-  id 'jacoco'
-  id 'org.sonarqube' version '6.2.0.5505'
 }
 
 java {
@@ -10,54 +8,28 @@ java {
   withJavadocJar()
 }
 
-configurations {
-  mockitoAgent
-}
-
-def libs = [mockito: 'org.mockito:mockito-core:5.18.0']
-
 dependencies {
   // sherpa-onnx JNI bindings (placeholder - actual dependency TBD)
   // implementation 'com.k2fsa:sherpa-onnx:+'
 
   // LangChain4j with Ollama
-  implementation 'dev.langchain4j:langchain4j:0.35.0'
-  implementation 'dev.langchain4j:langchain4j-ollama:0.35.0'
+  implementation "dev.langchain4j:langchain4j:${versions.langchain4j}"
+  implementation "dev.langchain4j:langchain4j-ollama:${versions.langchain4j}"
 
   // CDI/Weld
-  implementation 'org.jboss.weld.se:weld-se-core:6.0.3.Final'
+  implementation "org.jboss.weld.se:weld-se-core:${versions.weld}"
 
   // Microprofile Config
-  implementation 'org.eclipse.microprofile.config:microprofile-config-api:3.1'
-  runtimeOnly 'io.smallrye.config:smallrye-config:3.13.4'
+  implementation "org.eclipse.microprofile.config:microprofile-config-api:${versions.microprofileConfig}"
+  runtimeOnly "io.smallrye.config:smallrye-config:${versions.smallryeConfig}"
 
   // Logging
-  implementation 'org.slf4j:slf4j-api:2.0.17'
-  runtimeOnly 'org.slf4j:slf4j-simple:2.0.17'
+  implementation "org.slf4j:slf4j-api:${versions.slf4j}"
+  runtimeOnly "org.slf4j:slf4j-simple:${versions.slf4j}"
 
-  // Test dependencies
-  testImplementation 'io.smallrye.config:smallrye-config:3.13.4'
+  // Test dependencies (specific to this module)
+  testImplementation "io.smallrye.config:smallrye-config:${versions.smallryeConfig}"
   testImplementation 'org.jboss.weld:weld-junit5:5.0.1.Final'
-  testImplementation 'org.junit.jupiter:junit-jupiter-api:5.13.4'
-  testImplementation libs.mockito
-  testImplementation 'org.mockito:mockito-junit-jupiter:5.18.0'
-  mockitoAgent(libs.mockito) { transitive = false }
-  testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.13.4'
-  testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.13.4'
-
-}
-
-test {
-  useJUnitPlatform()
-  // See https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
-  // jvmArgs += "-javaagent:${configurations.mockitoAgent.asPath}"
-}
-
-jacocoTestReport {
-  dependsOn test
-  reports {
-    xml.required = true
-  }
 }
 
 

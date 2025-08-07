@@ -1,5 +1,6 @@
 plugins {
   id 'org.sonarqube' version '6.2.0.5505'
+  id 'jacoco'
 }
 
 group = 'schultedev'
@@ -11,20 +12,60 @@ allprojects {
   }
 }
 
+// Common configurations for all subprojects
 subprojects {
   apply plugin: 'java'
+  apply plugin: 'jacoco'
 
   java {
     toolchain {
       languageVersion = JavaLanguageVersion.of(21)
     }
   }
+
+  // Common Mockito configuration
+  configurations {
+    mockitoAgent
+  }
+
+  ext.libs = [mockito: 'org.mockito:mockito-core:5.18.0']
+
+  // Common test dependencies
+  dependencies {
+    // Test dependencies
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.13.4'
+    testImplementation libs.mockito
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.18.0'
+    mockitoAgent(libs.mockito) { transitive = false }
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.13.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.13.4'
+  }
+
+  // Common test configuration
+  test {
+    useJUnitPlatform()
+    // Mockito agent configuration
+    jvmArgs += "-javaagent:${configurations.mockitoAgent.asPath}"
+  }
+
+  // Common JaCoCo configuration
+  jacocoTestReport {
+    dependsOn test
+    reports {
+      xml.required = true
+    }
+  }
 }
 
+// SonarCloud multi-module configuration
 sonar {
   properties {
     property "sonar.projectKey", "SchulteDev_ConversationalAI4J"
     property "sonar.organization", "schultedev"
     property "sonar.host.url", "https://sonarcloud.io"
+
+    // Multi-module configuration - SonarCloud will aggregate the reports
+    property "sonar.coverage.jacoco.xmlReportPaths", "**/build/reports/jacoco/test/jacocoTestReport.xml"
+    property "sonar.junit.reportPaths", "**/build/test-results/test"
   }
 }
