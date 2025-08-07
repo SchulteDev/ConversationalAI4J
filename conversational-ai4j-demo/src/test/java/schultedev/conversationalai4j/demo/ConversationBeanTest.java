@@ -5,21 +5,20 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
 /**
- * Unit tests for the ConversationBean JSF backing bean.
+ * Unit tests for the ConversationBean CDI component.
+ * These tests do not require server startup and can run independently.
  */
 class ConversationBeanTest {
 
     @Test
-    void testWelcomeText() {
-        ConversationBean bean = new ConversationBean();
-        assertEquals("ConversationalAI4J Demo", bean.getWelcomeText());
-    }
-
-    @Test
-    void testMessageProcessing() {
+    void testConversationBeanUnit() {
+        // Unit test for the CDI bean
         ConversationBean bean = new ConversationBean();
         
-        // Test valid message
+        // Test welcome text
+        assertEquals("ConversationalAI4J Demo", bean.getWelcomeText());
+        
+        // Test message processing
         bean.setMessage("Hello");
         bean.sendMessage();
         assertEquals("Echo: Hello", bean.getResponse());
@@ -28,21 +27,25 @@ class ConversationBeanTest {
         bean.setMessage("");
         bean.sendMessage();
         assertEquals("Please enter a message", bean.getResponse());
+    }
+
+    @Test
+    void testConversationBeanNullMessage() {
+        ConversationBean bean = new ConversationBean();
         
-        // Test null message
+        // Test null message handling
         bean.setMessage(null);
         bean.sendMessage();
         assertEquals("Please enter a message", bean.getResponse());
     }
 
     @Test
-    void testGettersAndSetters() {
+    void testConversationBeanInitialState() {
         ConversationBean bean = new ConversationBean();
         
-        bean.setMessage("test message");
-        assertEquals("test message", bean.getMessage());
-        
-        // Response is initially empty
+        // Test initial state - fields are initialized to empty strings
+        assertEquals("", bean.getMessage());
         assertEquals("", bean.getResponse());
+        assertEquals("ConversationalAI4J Demo", bean.getWelcomeText());
     }
 }

@@ -3,7 +3,8 @@ package schultedev.conversationalai4j.demo;
 import java.io.Serializable;
 
 /**
- * Simple JSF backing bean for the conversation demo page.
+ * JSF backing bean for the conversation demo page.
+ * Configured via faces-config.xml
  * Handles user input and responses for conversational AI.
  */
 public class ConversationBean implements Serializable {

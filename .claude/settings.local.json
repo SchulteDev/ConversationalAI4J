@@ -7,7 +7,16 @@
       "Bash(export:*)",
       "Bash(find:*)",
       "Bash(rm:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "WebFetch(domain:helidon.io)",
+      "Bash(mv:*)",
+      "Bash(../gradlew test:*)",
+      "Bash(../gradlew clean test:*)",
+      "Bash(pkill:*)",
+      "Bash(taskkill:*)",
+      "Bash(mkdir:*)",
+      "Bash(cp:*)",
+      "Bash(../gradlew run)"
     ],
     "deny": []
   }

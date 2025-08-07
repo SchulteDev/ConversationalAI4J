@@ -4,6 +4,10 @@ plugins {
     id 'application'
 }
 
+war {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
 application {
     mainClass = 'schultedev.conversationalai4j.demo.TomcatRunner'
 }
@@ -15,19 +19,18 @@ test {
 dependencies {
     implementation project(':library')
 
-    // Jakarta EE Web Profile
-    providedCompile 'jakarta.platform:jakarta.jakartaee-web-api:10.0.0'
-
-    // Jakarta Faces (JSF) implementation
+    // Embedded Tomcat with JSF support
+    implementation 'org.apache.tomcat.embed:tomcat-embed-core:10.1.30'
+    implementation 'org.apache.tomcat.embed:tomcat-embed-jasper:10.1.30'
+    implementation 'org.apache.tomcat.embed:tomcat-embed-websocket:10.1.30'
+    
+    // Jakarta Faces (JSF) - MyFaces implementation
     implementation 'org.apache.myfaces.core:myfaces-impl:4.0.2'
     implementation 'org.apache.myfaces.core:myfaces-api:4.0.2'
     
-    // Minimal CDI for JSF backing beans  
-    implementation 'org.jboss.weld.se:weld-se-core:5.1.3.Final'
-
-    // Embedded Tomcat for running and testing
-    implementation 'org.apache.tomcat.embed:tomcat-embed-core:10.1.28'
-    implementation 'org.apache.tomcat.embed:tomcat-embed-jasper:10.1.28'
+    // Jakarta EE APIs
+    implementation 'jakarta.servlet:jakarta.servlet-api:6.0.0'
+    implementation 'jakarta.annotation:jakarta.annotation-api:2.1.1'
 
     // Integration testing
     testImplementation 'org.apache.httpcomponents:httpclient:4.5.14'
