@@ -1,4 +1,8 @@
 rootProject.name = 'conversational-ai4j'
 
-include 'conversational-ai4j-library'
 include 'conversational-ai4j-demo'
+include 'conversational-ai4j-library'
+
+project(':conversational-ai4j-demo').name = 'demo'
+project(':conversational-ai4j-library').name = 'library'
+
