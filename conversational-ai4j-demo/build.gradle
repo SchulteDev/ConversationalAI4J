@@ -1,43 +1,36 @@
 plugins {
     id 'java'
-    id 'war'
-    id 'application'
+    id 'org.springframework.boot' version '3.3.0'
+    id 'io.spring.dependency-management' version '1.1.5'
 }
 
-war {
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-}
-
-application {
-    mainClass = 'schultedev.conversationalai4j.demo.TomcatRunner'
-}
-
-test {
-    useJUnitPlatform()
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
 }
 
 dependencies {
-    implementation project(':library')
+    implementation(project(':library')) {
+        exclude group: 'org.slf4j', module: 'slf4j-simple'
+    }
 
-    // Embedded Tomcat with JSF support
-    implementation 'org.apache.tomcat.embed:tomcat-embed-core:10.1.30'
-    implementation 'org.apache.tomcat.embed:tomcat-embed-jasper:10.1.30'
-    implementation 'org.apache.tomcat.embed:tomcat-embed-websocket:10.1.30'
+    // Spring Boot starters
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
     
-    // Jakarta Faces (JSF) - MyFaces implementation
-    implementation 'org.apache.myfaces.core:myfaces-impl:4.0.2'
-    implementation 'org.apache.myfaces.core:myfaces-api:4.0.2'
-    
-    // Jakarta EE APIs
-    implementation 'jakarta.servlet:jakarta.servlet-api:6.0.0'
-    implementation 'jakarta.annotation:jakarta.annotation-api:2.1.1'
+    // Development tools
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
-    // Integration testing
-    testImplementation 'org.apache.httpcomponents:httpclient:4.5.14'
+    // Testing - Spring Boot 3.3.0 manages these versions
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation 'org.jsoup:jsoup:1.17.2'
+}
 
-    // JUnit 5
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.13.4'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.13.4'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.13.4'
+tasks.named('test') {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat = 'full'
+    }
 }

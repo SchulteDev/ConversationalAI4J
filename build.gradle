@@ -12,70 +12,36 @@ allprojects {
   }
 }
 
-// Common configurations for all subprojects
-subprojects {
-  // Skip common java plugin for Quarkus projects
-  if (!project.name.contains('demo')) {
-    apply plugin: 'java'
-    apply plugin: 'jacoco'
-    
+// Configure each module individually to avoid conflicts
+project(':library') {
+  apply plugin: 'java'
+  apply plugin: 'jacoco'
+  
+  java {
+    toolchain {
+      languageVersion = JavaLanguageVersion.of(21)
+    }
+  }
+
+  test {
+    useJUnitPlatform()
+  }
+
+  jacocoTestReport {
+    dependsOn test
+    reports {
+      xml.required = true
+    }
+  }
+}
+
+// Demo module: NO parent configuration - let Spring Boot handle everything
+project(':demo') {
+  // Only set Java toolchain, nothing else
+  afterEvaluate {
     java {
       toolchain {
         languageVersion = JavaLanguageVersion.of(21)
-      }
-    }
-  }
-
-  // Common Mockito configuration (skip for Quarkus projects)
-  if (!project.name.contains('demo')) {
-    configurations {
-      mockitoAgent
-    }
-
-    ext.libs = [mockito: 'org.mockito:mockito-core:5.18.0']
-  }
-
-  // Common test dependencies (skip for Quarkus projects)
-  if (!project.name.contains('demo')) {
-    dependencies {
-      // CDI/Weld
-      implementation 'org.jboss.weld.se:weld-se-core:6.0.3.Final'
-
-      // Microprofile Config
-      implementation 'org.eclipse.microprofile.config:microprofile-config-api:3.1'
-      runtimeOnly 'io.smallrye.config:smallrye-config:3.13.4'
-
-      // Logging
-      implementation 'org.slf4j:slf4j-api:2.0.17'
-      runtimeOnly 'org.slf4j:slf4j-simple:2.0.17'
-
-      // Test dependencies
-      testImplementation 'org.junit.jupiter:junit-jupiter-api:5.13.4'
-      testImplementation libs.mockito
-      testImplementation 'org.mockito:mockito-junit-jupiter:5.18.0'
-      mockitoAgent(libs.mockito) { transitive = false }
-      testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.13.4'
-      testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.13.4'
-      testImplementation 'org.jboss.weld:weld-junit5:5.0.1.Final'
-      testImplementation 'io.smallrye.config:smallrye-config:3.13.4'
-    }
-  }
-
-  // Common test configuration (skip for Quarkus projects)
-  if (!project.name.contains('demo')) {
-    test {
-      useJUnitPlatform()
-      // Mockito agent configuration
-      jvmArgs += "-javaagent:${configurations.mockitoAgent.asPath}"
-    }
-  }
-
-  // Common JaCoCo configuration (skip for Quarkus projects)
-  if (!project.name.contains('demo')) {
-    jacocoTestReport {
-      dependsOn test
-      reports {
-        xml.required = true
       }
     }
   }
