@@ -1,14 +1,40 @@
 plugins {
-  id 'application'
+    id 'java'
+    id 'war'
+    id 'application'
 }
 
 application {
-  mainClass = 'schultedev.conversationalai4j.demo.DemoApplication'
+    mainClass = 'schultedev.conversationalai4j.demo.TomcatRunner'
+}
+
+test {
+    useJUnitPlatform()
 }
 
 dependencies {
-  implementation project(':conversational-ai4j-library')
+    implementation project(':library')
 
-  // CLI handling
-  implementation 'info.picocli:picocli:4.7.7'
+    // Jakarta EE Web Profile
+    providedCompile 'jakarta.platform:jakarta.jakartaee-web-api:10.0.0'
+
+    // Jakarta Faces (JSF) implementation
+    implementation 'org.apache.myfaces.core:myfaces-impl:4.0.2'
+    implementation 'org.apache.myfaces.core:myfaces-api:4.0.2'
+    
+    // Minimal CDI for JSF backing beans  
+    implementation 'org.jboss.weld.se:weld-se-core:5.1.3.Final'
+
+    // Embedded Tomcat for running and testing
+    implementation 'org.apache.tomcat.embed:tomcat-embed-core:10.1.28'
+    implementation 'org.apache.tomcat.embed:tomcat-embed-jasper:10.1.28'
+
+    // Integration testing
+    testImplementation 'org.apache.httpcomponents:httpclient:4.5.14'
+    testImplementation 'org.jsoup:jsoup:1.17.2'
+
+    // JUnit 5
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.13.4'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.13.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.13.4'
 }

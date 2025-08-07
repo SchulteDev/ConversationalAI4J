@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew:*)",
+      "Bash(where java)",
+      "Bash(\"/cygdrive/c/Program Files/Common Files/Oracle/Java/javapath/java\" -version)",
+      "Bash(export:*)",
+      "Bash(find:*)",
+      "Bash(rm:*)",
+      "Bash(cat:*)"
+    ],
+    "deny": []
+  }
+}
