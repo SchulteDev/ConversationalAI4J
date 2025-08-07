@@ -46,10 +46,3 @@ jobs:
           path: '**/build/test-results/test/*.xml'
           reporter: 'java-junit'
           fail-on-error: false
-      - name: Publish Coverage Reports
-        if: always()
-        uses: codecov/codecov-action@v5
-        with:
-          files: '**/build/reports/jacoco/test/jacocoTestReport.xml'
-          flags: unittests
-          fail_ci_if_error: false
