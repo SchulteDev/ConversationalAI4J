@@ -27,7 +27,7 @@ dependencies {
   runtimeOnly 'org.slf4j:slf4j-simple:2.0.17'
 
   // LangChain4j with Ollama
-  implementation 'dev.langchain4j:langchain4j:0.36.2'
+  implementation 'dev.langchain4j:langchain4j:1.3.0'
   implementation 'dev.langchain4j:langchain4j-ollama:0.36.2'
   
   // sherpa-onnx JNI bindings (placeholder - actual dependency TBD)
