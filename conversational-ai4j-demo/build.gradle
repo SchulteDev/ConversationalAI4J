@@ -9,21 +9,6 @@ application {
 dependencies {
   implementation project(':conversational-ai4j-library')
 
-  // CDI/Weld
-  implementation "org.jboss.weld.se:weld-se-core:${versions.weld}"
-
   // CLI handling
-  implementation "info.picocli:picocli:${versions.picocli}"
-
-  // Microprofile Config
-  implementation "org.eclipse.microprofile.config:microprofile-config-api:${versions.microprofileConfig}"
-  runtimeOnly "io.smallrye.config:smallrye-config:${versions.smallryeConfig}"
-
-  // Logging
-  implementation "org.slf4j:slf4j-api:${versions.slf4j}"
-  runtimeOnly "org.slf4j:slf4j-simple:${versions.slf4j}"
-
-  // Test dependencies (specific to this module)
-  testImplementation "io.smallrye.config:smallrye-config:${versions.smallryeConfig}"
-  testImplementation 'org.jboss.weld:weld-junit5:5.0.1.Final'
+  implementation 'info.picocli:picocli:4.7.6'
 }
