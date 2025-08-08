@@ -11,8 +11,9 @@ docker-compose up
 ```
 
 **That's it!** 🎉 The system will:
+
 - ✅ Pull Ollama AI service
-- ✅ Download llama3.2:1b model automatically  
+- ✅ Download llama3.2:1b model automatically
 - ✅ Build and start the demo application
 - ✅ Set up proper networking and health checks
 
@@ -26,18 +27,21 @@ Once all services are up and healthy (takes ~2-3 minutes):
 ## 📋 Service Overview
 
 ### 🤖 Ollama Service
+
 - **Purpose**: AI model hosting and processing
 - **Port**: 11434
 - **Model**: llama3.2:1b (1.2B parameters, ~1.3GB)
 - **Health Check**: `/bin/ollama list`
 
-### 🎯 Demo Application  
+### 🎯 Demo Application
+
 - **Purpose**: Spring Boot web interface for conversations
-- **Port**: 8080  
+- **Port**: 8080
 - **Framework**: Spring Boot 3.5.4 with Thymeleaf
 - **Health Check**: `/actuator/health`
 
 ### 🔧 Ollama-Init Service
+
 - **Purpose**: One-time model download and setup
 - **Behavior**: Pulls llama3.2:1b model then exits
 - **Dependencies**: Waits for Ollama to be healthy
@@ -45,6 +49,7 @@ Once all services are up and healthy (takes ~2-3 minutes):
 ## 🛠️ Development Commands
 
 ### Start Services
+
 ```bash
 # Start all services in background
 docker-compose up -d
@@ -57,6 +62,7 @@ docker-compose up --build
 ```
 
 ### Service Management
+
 ```bash
 # Check service status
 docker-compose ps
@@ -73,6 +79,7 @@ docker-compose down -v
 ```
 
 ### Testing
+
 ```bash
 # Test demo application
 curl http://localhost:8080
@@ -94,11 +101,13 @@ curl -X POST -d "message=Hello!" http://localhost:8080/send
 ## 🔍 Architecture Benefits
 
 ### Library Module (Pure API)
+
 - ✅ **No Infrastructure Dependencies**: Just client-side integration code
 - ✅ **Framework Agnostic**: Works with any Java application
 - ✅ **Simple Integration**: `ConversationalAI.builder().withOllamaModel("llama3.2:1b").build()`
 
 ### Demo Module (Complete Infrastructure)
+
 - ✅ **Production Example**: Shows real-world deployment with Docker
 - ✅ **Easy Setup**: `docker-compose up` provides fully working system
 - ✅ **Best Practices**: Health checks, proper networking, containerization
@@ -106,6 +115,7 @@ curl -X POST -d "message=Hello!" http://localhost:8080/send
 ## 🚨 Troubleshooting
 
 ### Service Won't Start
+
 ```bash
 # Check logs
 docker-compose logs [service-name]
@@ -118,6 +128,7 @@ docker-compose up --build --force-recreate
 ```
 
 ### Model Download Issues
+
 ```bash
 # Check ollama-init logs
 docker-compose logs ollama-init
@@ -127,6 +138,7 @@ docker exec conversationalai4j-ollama ollama pull llama3.2:1b
 ```
 
 ### Port Conflicts
+
 ```bash
 # Stop conflicting services
 docker ps
@@ -140,10 +152,11 @@ ports:
 ## 🎯 Next Steps
 
 1. **Try the Demo**: Visit http://localhost:8080 and chat with the AI
-2. **Explore the API**: Check the ConversationalAI library integration  
+2. **Explore the API**: Check the ConversationalAI library integration
 3. **Customize**: Modify docker-compose.yml for your needs
 4. **Scale**: Add multiple demo instances or different models
 
 ---
 
-**🎉 Congratulations!** You now have a complete, production-ready conversational AI system running with Docker!
+**🎉 Congratulations!** You now have a complete, production-ready conversational AI system running
+with Docker!

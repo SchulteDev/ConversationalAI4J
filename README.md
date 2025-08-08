@@ -204,12 +204,14 @@ java -jar conversational-ai4j-demo/build/libs/conversational-ai4j-demo-1.0-SNAPS
 #### Phase 4: Containerized Infrastructure & Speech Integration
 
 **Priority 1 - Container Infrastructure:**
+
 - [ ] **Docker Compose Setup**: Complete Ollama + Demo containerization
 - [ ] **Ollama Container**: Dedicated service for AI model hosting
 - [ ] **Demo Container**: Containerized Spring Boot application
 - [ ] **Production Example**: Complete working system via `docker-compose up`
 
 **Priority 2 - Speech Integration:**
+
 - [ ] **Library APIs**: Speech interface definitions (no infrastructure)
 - [ ] **Speech Container**: Containerized sherpa-onnx speech-to-text service
 - [ ] **Demo Integration**: Complete speech pipeline demonstration
@@ -294,6 +296,8 @@ This project is licensed under the EUPL License — see the [LICENSE](LICENSE) f
 
 **Ready for Production Use** - Core AI functionality complete and thoroughly tested! 🚀
 
-**Next Priority**: Docker Compose Infrastructure (Phase 4a) - Replace echo-mode with complete working Ollama + Demo system!
+**Next Priority**: Docker Compose Infrastructure (Phase 4a) - Replace echo-mode with complete
+working Ollama + Demo system!
 
-*After that*: Speech Integration (Phase 4b) - Add containerized speech-to-text and text-to-speech capabilities!
+*After that*: Speech Integration (Phase 4b) - Add containerized speech-to-text and text-to-speech
+capabilities!

@@ -2,7 +2,6 @@ package schultedev.conversationalai4j;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import dev.langchain4j.model.chat.ChatModel;
 import org.junit.jupiter.api.Test;
 
 class ConversationalAITest {
@@ -34,8 +33,7 @@ class ConversationalAITest {
   @Test
   void testBuilderWithCustomBaseUrl() {
     // Given: Builder with custom Ollama URL
-    var builder =
-        ConversationalAI.builder().withOllamaModel("llama2", "http://custom:11434");
+    var builder = ConversationalAI.builder().withOllamaModel("llama2", "http://custom:11434");
 
     // When: Build ConversationalAI
     var ai = builder.build();
@@ -48,8 +46,7 @@ class ConversationalAITest {
   @Test
   void testBuilderWithMemory() {
     // Given: Builder with memory configuration
-    var builder =
-        ConversationalAI.builder().withOllamaModel("llama2").withMemory(5);
+    var builder = ConversationalAI.builder().withOllamaModel("llama2").withMemory(5);
 
     // When: Build ConversationalAI
     var ai = builder.build();
@@ -76,8 +73,7 @@ class ConversationalAITest {
   @Test
   void testBuilderWithTemperature() {
     // Given: Builder with temperature
-    var builder =
-        ConversationalAI.builder().withOllamaModel("llama2").withTemperature(0.5);
+    var builder = ConversationalAI.builder().withOllamaModel("llama2").withTemperature(0.5);
 
     // When: Build ConversationalAI
     var ai = builder.build();

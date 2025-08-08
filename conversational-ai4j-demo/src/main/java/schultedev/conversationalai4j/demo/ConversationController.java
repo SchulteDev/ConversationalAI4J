@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import schultedev.conversationalai4j.ConversationalAI;
-import schultedev.conversationalai4j.SpeechConfig;
 
 /**
  * Spring MVC Controller for handling conversation interactions in the demo application. Provides a
@@ -22,14 +21,13 @@ import schultedev.conversationalai4j.SpeechConfig;
 public class ConversationController {
 
   private static final Logger log = LoggerFactory.getLogger(ConversationController.class);
+  private final ConversationalAI conversationalAI;
 
   @Value("${ollama.base-url:http://localhost:11434}")
   private String ollamaBaseUrl;
 
   @Value("${ollama.model-name:llama3.2:3b}")
   private String ollamaModelName;
-
-  private final ConversationalAI conversationalAI;
 
   /**
    * Constructor that initializes the ConversationalAI instance with configurable Ollama settings.
@@ -39,11 +37,15 @@ public class ConversationController {
     ConversationalAI tempAI;
     try {
       // Use Spring-injected values after construction
-      var modelName = System.getProperty("ollama.model-name", 
-                     System.getenv().getOrDefault("OLLAMA_MODEL_NAME", "llama3.2:3b"));
-      var baseUrl = System.getProperty("ollama.base-url", 
-                   System.getenv().getOrDefault("OLLAMA_BASE_URL", "http://localhost:11434"));
-      
+      var modelName =
+          System.getProperty(
+              "ollama.model-name",
+              System.getenv().getOrDefault("OLLAMA_MODEL_NAME", "llama3.2:3b"));
+      var baseUrl =
+          System.getProperty(
+              "ollama.base-url",
+              System.getenv().getOrDefault("OLLAMA_BASE_URL", "http://localhost:11434"));
+
       log.info("Initializing ConversationalAI with Ollama model '{}' at '{}'", modelName, baseUrl);
 
       tempAI =
@@ -128,164 +130,157 @@ public class ConversationController {
     model.addAttribute("response", response);
     return "conversation";
   }
-  
+
   /**
-   * Voice-to-voice conversation endpoint: Process audio input and return audio response.
-   * Expects WAV audio data and returns WAV audio response.
-   * 
+   * Voice-to-voice conversation endpoint: Process audio input and return audio response. Expects
+   * WAV audio data and returns WAV audio response.
+   *
    * @param audioData Raw audio data in WAV format (16kHz, 16-bit, mono)
    * @return Audio response in WAV format, or error response
    */
-  @PostMapping(value = "/voice-chat", 
-               consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE,
-               produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+  @PostMapping(
+      value = "/voice-chat",
+      consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE,
+      produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
   public ResponseEntity<byte[]> voiceChat(@RequestBody byte[] audioData) {
     if (conversationalAI == null) {
       log.warn("ConversationalAI not available for voice chat");
       return ResponseEntity.status(503)
           .body("ConversationalAI service is not available".getBytes());
     }
-    
+
     if (!conversationalAI.isSpeechEnabled()) {
       log.warn("Speech services not available for voice chat");
-      return ResponseEntity.badRequest()
-          .body("Speech services are not configured".getBytes());
+      return ResponseEntity.badRequest().body("Speech services are not configured".getBytes());
     }
-    
+
     if (audioData == null || audioData.length == 0) {
       log.debug("Received empty audio data");
-      return ResponseEntity.badRequest()
-          .body("Audio data is required".getBytes());
+      return ResponseEntity.badRequest().body("Audio data is required".getBytes());
     }
-    
+
     log.info("Processing voice chat with {} bytes of audio input", audioData.length);
-    
+
     try {
       var audioResponse = conversationalAI.voiceChat(audioData);
-      
+
       if (audioResponse.length == 0) {
         log.warn("No audio response generated");
         return ResponseEntity.internalServerError()
             .body("Failed to generate audio response".getBytes());
       }
-      
+
       log.info("Successfully generated {} bytes of audio response", audioResponse.length);
       return ResponseEntity.ok()
           .contentType(MediaType.parseMediaType("audio/wav"))
           .body(audioResponse);
-          
+
     } catch (Exception e) {
       log.error("Error processing voice chat: {}", e.getMessage(), e);
       return ResponseEntity.internalServerError()
           .body(("Voice chat error: " + e.getMessage()).getBytes());
     }
   }
-  
+
   /**
    * Text input with voice response: Process text and return audio response.
-   * 
+   *
    * @param message Text message to process
    * @return Audio response in WAV format, or error response
    */
-  @PostMapping(value = "/text-to-voice", 
-               consumes = MediaType.TEXT_PLAIN_VALUE,
-               produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+  @PostMapping(
+      value = "/text-to-voice",
+      consumes = MediaType.TEXT_PLAIN_VALUE,
+      produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
   public ResponseEntity<byte[]> textToVoice(@RequestBody String message) {
     if (conversationalAI == null) {
       log.warn("ConversationalAI not available for text-to-voice");
       return ResponseEntity.status(503)
           .body("ConversationalAI service is not available".getBytes());
     }
-    
+
     if (!conversationalAI.isTextToSpeechEnabled()) {
       log.warn("Text-to-speech not available");
       return ResponseEntity.badRequest()
           .body("Text-to-speech service is not configured".getBytes());
     }
-    
+
     if (message == null || message.trim().isEmpty()) {
       log.debug("Received empty text message");
-      return ResponseEntity.badRequest()
-          .body("Text message is required".getBytes());
+      return ResponseEntity.badRequest().body("Text message is required".getBytes());
     }
-    
+
     log.info("Processing text-to-voice for message: '{}'", message);
-    
+
     try {
       var audioResponse = conversationalAI.chatWithVoiceResponse(message);
-      
+
       if (audioResponse.length == 0) {
         log.warn("No audio response generated for text input");
         return ResponseEntity.internalServerError()
             .body("Failed to generate audio response".getBytes());
       }
-      
+
       log.info("Successfully generated {} bytes of audio response for text", audioResponse.length);
       return ResponseEntity.ok()
           .contentType(MediaType.parseMediaType("audio/wav"))
           .body(audioResponse);
-          
+
     } catch (Exception e) {
       log.error("Error processing text-to-voice: {}", e.getMessage(), e);
       return ResponseEntity.internalServerError()
           .body(("Text-to-voice error: " + e.getMessage()).getBytes());
     }
   }
-  
+
   /**
    * Voice input with text response: Process audio and return text response.
-   * 
+   *
    * @param audioData Raw audio data in WAV format (16kHz, 16-bit, mono)
    * @return Text response from AI, or error message
    */
-  @PostMapping(value = "/voice-to-text", 
-               consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE,
-               produces = MediaType.TEXT_PLAIN_VALUE)
+  @PostMapping(
+      value = "/voice-to-text",
+      consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE,
+      produces = MediaType.TEXT_PLAIN_VALUE)
   public ResponseEntity<String> voiceToText(@RequestBody byte[] audioData) {
     if (conversationalAI == null) {
       log.warn("ConversationalAI not available for voice-to-text");
-      return ResponseEntity.status(503)
-          .body("ConversationalAI service is not available");
+      return ResponseEntity.status(503).body("ConversationalAI service is not available");
     }
-    
+
     if (!conversationalAI.isSpeechToTextEnabled()) {
       log.warn("Speech-to-text not available");
-      return ResponseEntity.badRequest()
-          .body("Speech-to-text service is not configured");
+      return ResponseEntity.badRequest().body("Speech-to-text service is not configured");
     }
-    
+
     if (audioData == null || audioData.length == 0) {
       log.debug("Received empty audio data");
-      return ResponseEntity.badRequest()
-          .body("Audio data is required");
+      return ResponseEntity.badRequest().body("Audio data is required");
     }
-    
+
     log.info("Processing voice-to-text with {} bytes of audio input", audioData.length);
-    
+
     try {
       var textResponse = conversationalAI.chatWithTextResponse(audioData);
-      
+
       if (textResponse.trim().isEmpty()) {
         log.warn("No text response generated for audio input");
-        return ResponseEntity.internalServerError()
-            .body("Failed to generate text response");
+        return ResponseEntity.internalServerError().body("Failed to generate text response");
       }
-      
+
       log.info("Successfully generated text response: '{}'", textResponse);
-      return ResponseEntity.ok()
-          .contentType(MediaType.TEXT_PLAIN)
-          .body(textResponse);
-          
+      return ResponseEntity.ok().contentType(MediaType.TEXT_PLAIN).body(textResponse);
+
     } catch (Exception e) {
       log.error("Error processing voice-to-text: {}", e.getMessage(), e);
-      return ResponseEntity.internalServerError()
-          .body("Voice-to-text error: " + e.getMessage());
+      return ResponseEntity.internalServerError().body("Voice-to-text error: " + e.getMessage());
     }
   }
-  
+
   /**
    * Check speech service status endpoint.
-   * 
+   *
    * @return Status information about available speech services
    */
   @GetMapping(value = "/speech-status", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -294,15 +289,16 @@ public class ConversationController {
       return ResponseEntity.ok(
           "{\"available\": false, \"reason\": \"ConversationalAI service not available\"}");
     }
-    
+
     boolean speechEnabled = conversationalAI.isSpeechEnabled();
     boolean sttEnabled = conversationalAI.isSpeechToTextEnabled();
     boolean ttsEnabled = conversationalAI.isTextToSpeechEnabled();
-    
-    var status = String.format(
-        "{\"available\": %s, \"speechToText\": %s, \"textToSpeech\": %s, \"fullSpeech\": %s}",
-        speechEnabled, sttEnabled, ttsEnabled, speechEnabled);
-    
+
+    var status =
+        String.format(
+            "{\"available\": %s, \"speechToText\": %s, \"textToSpeech\": %s, \"fullSpeech\": %s}",
+            speechEnabled, sttEnabled, ttsEnabled, speechEnabled);
+
     log.debug("Speech status: {}", status);
     return ResponseEntity.ok(status);
   }

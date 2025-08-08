@@ -29,7 +29,7 @@ dependencies {
   //   Docker: Use provided Dockerfile with sherpa-onnx
   //   Other platforms: Falls back to mock implementation
   // See: https://github.com/k2-fsa/sherpa-onnx for installation
-  
+
   // ONNX Runtime for potential speech model loading (optional)
   implementation 'com.microsoft.onnxruntime:onnxruntime:1.22.0'
 

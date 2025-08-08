@@ -1,6 +1,7 @@
 # Speech Integration Guide
 
-ConversationalAI4J supports speech-to-text and text-to-speech capabilities through sherpa-onnx integration.
+ConversationalAI4J supports speech-to-text and text-to-speech capabilities through sherpa-onnx
+integration.
 
 ## Platform Requirements
 
@@ -73,14 +74,14 @@ ConversationalAI ai = ConversationalAI.builder()
 
 // Advanced configuration
 SpeechConfig speechConfig = SpeechConfig.custom(
-    Paths.get("/path/to/stt-model.onnx"),
-    Paths.get("/path/to/tts-model.onnx")
+  Paths.get("/path/to/stt-model.onnx"),
+  Paths.get("/path/to/tts-model.onnx")
 );
 
 ConversationalAI ai = ConversationalAI.builder()
-    .withOllamaModel("llama3.2:3b")
-    .withSpeech(speechConfig)
-    .build();
+  .withOllamaModel("llama3.2:3b")
+  .withSpeech(speechConfig)
+  .build();
 ```
 
 ## REST API Endpoints
@@ -88,18 +89,20 @@ ConversationalAI ai = ConversationalAI.builder()
 The demo application provides speech endpoints:
 
 - `POST /voice-chat` - Audio input → Audio output
-- `POST /text-to-voice` - Text input → Audio output  
+- `POST /text-to-voice` - Text input → Audio output
 - `POST /voice-to-text` - Audio input → Text output
 - `GET /speech-status` - Check speech service availability
 
 ## Platform Behavior
 
 ### On Linux (with sherpa-onnx installed)
+
 - ✅ Real speech processing using native libraries
 - ✅ High-quality STT and TTS
 - ✅ Offline processing (privacy-first)
 
 ### On Windows/macOS (development)
+
 - ⚠️ Mock implementation returns placeholder audio
 - ✅ API compatibility maintained
 - ✅ Development and testing possible
@@ -127,8 +130,9 @@ The demo application provides speech endpoints:
 ### Docker Issues
 
 1. **Ensure sufficient memory:**
-   - Ollama container needs 8GB for llama3.2:3b
-   - Increase Docker Desktop memory allocation
+
+- Ollama container needs 8GB for llama3.2:3b
+- Increase Docker Desktop memory allocation
 
 2. **Check container logs:**
    ```bash
@@ -145,14 +149,17 @@ The demo application provides speech endpoints:
 ### Recommended Models
 
 For English speech processing:
+
 - **STT**: sherpa-onnx streaming models (smaller, faster)
 - **TTS**: VITS or Piper models (good quality/size balance)
 
-See [sherpa-onnx model gallery](https://github.com/k2-fsa/sherpa-onnx/releases) for available models.
+See [sherpa-onnx model gallery](https://github.com/k2-fsa/sherpa-onnx/releases) for available
+models.
 
 ## Integration Examples
 
 See `conversational-ai4j-demo` for complete integration examples:
+
 - Web interface with speech controls
 - REST API usage
 - Error handling and fallbacks

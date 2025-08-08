@@ -25,7 +25,6 @@ public class ConversationMemory {
     return MessageWindowChatMemory.withMaxMessages(maxMessages);
   }
 
-
   /**
    * Create default memory with 10 message sliding window
    *
@@ -34,5 +33,4 @@ public class ConversationMemory {
   public static MessageWindowChatMemory defaultMemory() {
     return sliding(10);
   }
-
 }

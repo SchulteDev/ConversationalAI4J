@@ -1,36 +1,36 @@
 plugins {
-    id 'java'
-    id 'org.springframework.boot' version '3.5.4'
-    id 'io.spring.dependency-management' version '1.1.7'
+  id 'java'
+  id 'org.springframework.boot' version '3.5.4'
+  id 'io.spring.dependency-management' version '1.1.7'
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
+  sourceCompatibility = JavaVersion.VERSION_21
 }
 
 dependencies {
-    implementation(project(':library')) {
-        exclude group: 'org.slf4j', module: 'slf4j-simple'
-    }
+  implementation(project(':library')) {
+    exclude group: 'org.slf4j', module: 'slf4j-simple'
+  }
 
-    // Spring Boot starters
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
-    
-    // Development tools
-    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+  // Spring Boot starters
+  implementation 'org.springframework.boot:spring-boot-starter-web'
+  implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+  implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
-    // Testing - Spring Boot 3.3.0 manages these versions
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    testImplementation 'org.jsoup:jsoup:1.21.1'
+  // Development tools
+  developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+  // Testing - Spring Boot 3.3.0 manages these versions
+  testImplementation 'org.springframework.boot:spring-boot-starter-test'
+  testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+  testImplementation 'org.jsoup:jsoup:1.21.1'
 }
 
 tasks.named('test') {
-    useJUnitPlatform()
-    testLogging {
-        events "passed", "skipped", "failed"
-        exceptionFormat = 'full'
-    }
+  useJUnitPlatform()
+  testLogging {
+    events "passed", "skipped", "failed"
+    exceptionFormat = 'full'
+  }
 }
