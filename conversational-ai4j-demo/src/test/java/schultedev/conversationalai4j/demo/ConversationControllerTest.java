@@ -26,7 +26,7 @@ class ConversationControllerTest {
 
   @Test
   void testSendMessage_WithValidMessage() throws Exception {
-    String testMessage = "Hello, AI!";
+    var testMessage = "Hello, AI!";
 
     mockMvc
         .perform(post("/send").param("message", testMessage))

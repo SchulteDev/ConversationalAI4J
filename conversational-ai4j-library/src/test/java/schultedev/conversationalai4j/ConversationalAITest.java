@@ -10,10 +10,10 @@ class ConversationalAITest {
   @Test
   void testBuilderRequiresModel() {
     // Given: Builder without model configuration
-    ConversationalAI.Builder builder = ConversationalAI.builder();
+    var builder = ConversationalAI.builder();
 
     // When/Then: Build should fail
-    IllegalStateException exception = assertThrows(IllegalStateException.class, builder::build);
+    var exception = assertThrows(IllegalStateException.class, builder::build);
     assertEquals(
         "Model must be configured. Use withOllamaModel() or withModel()", exception.getMessage());
   }
@@ -21,10 +21,10 @@ class ConversationalAITest {
   @Test
   void testBuilderWithOllamaModel() {
     // Given: Builder with Ollama model
-    ConversationalAI.Builder builder = ConversationalAI.builder().withOllamaModel("llama2");
+    var builder = ConversationalAI.builder().withOllamaModel("llama2");
 
     // When: Build ConversationalAI
-    ConversationalAI ai = builder.build();
+    var ai = builder.build();
 
     // Then: Should create successfully
     assertNotNull(ai);
@@ -34,11 +34,11 @@ class ConversationalAITest {
   @Test
   void testBuilderWithCustomBaseUrl() {
     // Given: Builder with custom Ollama URL
-    ConversationalAI.Builder builder =
+    var builder =
         ConversationalAI.builder().withOllamaModel("llama2", "http://custom:11434");
 
     // When: Build ConversationalAI
-    ConversationalAI ai = builder.build();
+    var ai = builder.build();
 
     // Then: Should create successfully
     assertNotNull(ai);
@@ -48,11 +48,11 @@ class ConversationalAITest {
   @Test
   void testBuilderWithMemory() {
     // Given: Builder with memory configuration
-    ConversationalAI.Builder builder =
+    var builder =
         ConversationalAI.builder().withOllamaModel("llama2").withMemory(5);
 
     // When: Build ConversationalAI
-    ConversationalAI ai = builder.build();
+    var ai = builder.build();
 
     // Then: Should create successfully
     assertNotNull(ai);
@@ -61,13 +61,13 @@ class ConversationalAITest {
   @Test
   void testBuilderWithSystemPrompt() {
     // Given: Builder with system prompt
-    ConversationalAI.Builder builder =
+    var builder =
         ConversationalAI.builder()
             .withOllamaModel("llama2")
             .withSystemPrompt("You are a helpful assistant");
 
     // When: Build ConversationalAI
-    ConversationalAI ai = builder.build();
+    var ai = builder.build();
 
     // Then: Should create successfully
     assertNotNull(ai);
@@ -76,11 +76,11 @@ class ConversationalAITest {
   @Test
   void testBuilderWithTemperature() {
     // Given: Builder with temperature
-    ConversationalAI.Builder builder =
+    var builder =
         ConversationalAI.builder().withOllamaModel("llama2").withTemperature(0.5);
 
     // When: Build ConversationalAI
-    ConversationalAI ai = builder.build();
+    var ai = builder.build();
 
     // Then: Should create successfully
     assertNotNull(ai);
@@ -89,14 +89,14 @@ class ConversationalAITest {
   @Test
   void testBuilderWithInvalidTemperature() {
     // Given: Builder with invalid temperature
-    ConversationalAI.Builder builder = ConversationalAI.builder();
+    var builder = ConversationalAI.builder();
 
     // When/Then: Should throw exception for invalid temperature
-    IllegalArgumentException exception1 =
+    var exception1 =
         assertThrows(IllegalArgumentException.class, () -> builder.withTemperature(-0.1));
     assertEquals("Temperature must be between 0.0 and 1.0", exception1.getMessage());
 
-    IllegalArgumentException exception2 =
+    var exception2 =
         assertThrows(IllegalArgumentException.class, () -> builder.withTemperature(1.1));
     assertEquals("Temperature must be between 0.0 and 1.0", exception2.getMessage());
   }
@@ -104,7 +104,7 @@ class ConversationalAITest {
   @Test
   void testBuilderFluentInterface() {
     // Given/When: Chain builder methods
-    ConversationalAI ai =
+    var ai =
         ConversationalAI.builder()
             .withOllamaModel("llama2")
             .withMemory(20)
@@ -120,10 +120,10 @@ class ConversationalAITest {
   @Test
   void testGetModel() {
     // Given: ConversationalAI instance
-    ConversationalAI ai = ConversationalAI.builder().withOllamaModel("llama2").build();
+    var ai = ConversationalAI.builder().withOllamaModel("llama2").build();
 
     // When: Get model
-    ChatModel model = ai.getModel();
+    var model = ai.getModel();
 
     // Then: Should return the configured model
     assertNotNull(model);

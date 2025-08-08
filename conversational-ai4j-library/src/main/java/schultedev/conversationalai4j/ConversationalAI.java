@@ -45,7 +45,7 @@ public class ConversationalAI {
   /** Send a message and get AI response */
   public String chat(String message) {
     log.trace("Processing chat message: {}", message);
-    String response = service.chat(message);
+    var response = service.chat(message);
     log.trace("Generated response of {} characters", response != null ? response.length() : 0);
     return response;
   }
