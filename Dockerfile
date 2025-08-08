@@ -1,5 +1,5 @@
 # Multi-stage build for ConversationalAI4J Demo Application
-FROM gradle:8.5-jdk21 AS builder
+FROM gradle:9.0-jdk21 AS builder
 
 # Set working directory
 WORKDIR /app
