@@ -15,14 +15,14 @@ configurations {
 ext.libs = [mockito: 'org.mockito:mockito-core:5.18.0']
 
 dependencies {
-  // LangChain4j with Ollama - Updated versions for compatibility
+  // LangChain4j with Ollama
   implementation 'dev.langchain4j:langchain4j:0.36.2'
   implementation 'dev.langchain4j:langchain4j-ollama:0.36.2'
-  
+
   // Logging
   implementation 'org.slf4j:slf4j-api:2.0.17'
   runtimeOnly 'org.slf4j:slf4j-simple:2.0.17'
-  
+
   // sherpa-onnx JNI bindings (placeholder - actual dependency TBD)
   // implementation 'com.k2fsa:sherpa-onnx:+'
 
