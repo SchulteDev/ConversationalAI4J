@@ -3,17 +3,13 @@ package schultedev.conversationalai4j.demo;
 import static org.junit.jupiter.api.Assertions.*;
 
 import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 
 /**
  * Integration tests for the ConversationalAI4J demo web application. Tests the complete web
@@ -34,13 +30,13 @@ class DemoIntegrationTest {
   @Test
   void testApplicationStartup() {
     // When
-    ResponseEntity<String> response = restTemplate.getForEntity(getBaseUrl() + "/", String.class);
+    var response = restTemplate.getForEntity(getBaseUrl() + "/", String.class);
 
     // Then
     assertEquals(
         HttpStatus.OK, response.getStatusCode(), "Application should respond with HTTP 200");
 
-    String content = response.getBody();
+    var content = response.getBody();
     assertNotNull(content, "Response content should not be null");
     assertTrue(
         content.contains("ConversationalAI4J Demo"), "Page should contain application title");
@@ -49,19 +45,19 @@ class DemoIntegrationTest {
   @Test
   void testConversationPageRendering() {
     // When
-    ResponseEntity<String> response = restTemplate.getForEntity(getBaseUrl() + "/", String.class);
+    var response = restTemplate.getForEntity(getBaseUrl() + "/", String.class);
 
     // Then
     assertEquals(HttpStatus.OK, response.getStatusCode());
 
-    String content = response.getBody();
-    Document doc = Jsoup.parse(content);
+    var content = response.getBody();
+    var doc = Jsoup.parse(content);
 
     // Verify form elements are present
-    Element messageInput = doc.selectFirst("input[name='message']");
+    var messageInput = doc.selectFirst("input[name='message']");
     assertNotNull(messageInput, "Message input field should be present");
 
-    Element submitButton = doc.selectFirst("button[type='submit']");
+    var submitButton = doc.selectFirst("button[type='submit']");
     assertNotNull(submitButton, "Submit button should be present");
 
     // Verify welcome text is displayed
@@ -71,17 +67,16 @@ class DemoIntegrationTest {
   @Test
   void testConversationFlow() {
     // When - Submit a message
-    String testMessage = "Hello, AI!";
-    MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+    var testMessage = "Hello, AI!";
+    var formData = new LinkedMultiValueMap<String, String>();
     formData.add("message", testMessage);
 
-    ResponseEntity<String> response =
-        restTemplate.postForEntity(getBaseUrl() + "/send", formData, String.class);
+    var response = restTemplate.postForEntity(getBaseUrl() + "/send", formData, String.class);
 
     // Then
     assertEquals(HttpStatus.OK, response.getStatusCode());
 
-    String content = response.getBody();
+    var content = response.getBody();
     assertNotNull(content, "Response content should not be null");
 
     // Verify the response is displayed - either AI response or fallback echo
@@ -97,16 +92,15 @@ class DemoIntegrationTest {
   @Test
   void testEmptyMessageHandling() {
     // When - Submit empty message
-    MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+    var formData = new LinkedMultiValueMap<String, String>();
     formData.add("message", "");
 
-    ResponseEntity<String> response =
-        restTemplate.postForEntity(getBaseUrl() + "/send", formData, String.class);
+    var response = restTemplate.postForEntity(getBaseUrl() + "/send", formData, String.class);
 
     // Then
     assertEquals(HttpStatus.OK, response.getStatusCode());
 
-    String content = response.getBody();
+    var content = response.getBody();
     assertTrue(
         content.contains("Please enter a message."),
         "Should display error message for empty input");
@@ -115,8 +109,7 @@ class DemoIntegrationTest {
   @Test
   void testActuatorHealthEndpoint() {
     // When
-    ResponseEntity<String> response =
-        restTemplate.getForEntity(getBaseUrl() + "/actuator/health", String.class);
+    var response = restTemplate.getForEntity(getBaseUrl() + "/actuator/health", String.class);
 
     // Then
     assertEquals(HttpStatus.OK, response.getStatusCode());

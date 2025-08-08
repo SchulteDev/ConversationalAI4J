@@ -1,22 +1,11 @@
 package schultedev.conversationalai4j;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 import dev.langchain4j.model.chat.ChatModel;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 class ConversationalAITest {
-
-  @Mock private ChatModel mockModel;
-
-  @BeforeEach
-  void setUp() {
-    MockitoAnnotations.openMocks(this);
-  }
 
   @Test
   void testBuilderRequiresModel() {
