@@ -18,6 +18,8 @@ public class ConversationalAI {
 
   private final ChatModel model;
   private final ConversationService service;
+  private final SpeechToText speechToText;
+  private final TextToSpeech textToSpeech;
 
   private ConversationalAI(Builder builder) {
     log.debug(
@@ -34,6 +36,19 @@ public class ConversationalAI {
     }
 
     this.service = aiServiceBuilder.build();
+    
+    // Initialize speech services if configured
+    if (builder.speechConfig != null && builder.speechConfig.isEnabled()) {
+      log.debug("Initializing speech services with config: {}", builder.speechConfig);
+      this.speechToText = new SpeechToText(builder.speechConfig.getSttModelPath(), builder.speechConfig.getLanguage());
+      this.textToSpeech = new TextToSpeech(builder.speechConfig.getTtsModelPath(), builder.speechConfig.getLanguage(), builder.speechConfig.getVoice());
+      log.info("Speech services initialized successfully");
+    } else {
+      log.debug("Speech services disabled - text-only mode");
+      this.speechToText = null;
+      this.textToSpeech = null;
+    }
+    
     log.debug("ConversationalAI instance created successfully");
   }
 
@@ -54,6 +69,180 @@ public class ConversationalAI {
   public ChatModel getModel() {
     return model;
   }
+  
+  /**
+   * Voice-to-voice conversation: Process audio input and return audio response.
+   * Combines speech-to-text, AI processing, and text-to-speech in one call.
+   * 
+   * @param audioInput Raw audio data in WAV format (16kHz, 16-bit, mono)
+   * @return Audio response in WAV format, or empty array if processing failed
+   * @throws UnsupportedOperationException if speech services are not configured
+   * @throws IllegalArgumentException if audio input is null or empty
+   */
+  public byte[] voiceChat(byte[] audioInput) {
+    if (speechToText == null || textToSpeech == null) {
+      throw new UnsupportedOperationException("Speech services are not configured. Use withSpeech() in builder.");
+    }
+    
+    if (audioInput == null || audioInput.length == 0) {
+      throw new IllegalArgumentException("Audio input cannot be null or empty");
+    }
+    
+    log.debug("Processing voice chat with {} bytes of audio input", audioInput.length);
+    
+    try {
+      // Step 1: Convert speech to text
+      var text = speechToText.transcribe(audioInput);
+      log.debug("Transcribed text: '{}'", text);
+      
+      if (text.trim().isEmpty()) {
+        log.warn("No text transcribed from audio input");
+        return new byte[0];
+      }
+      
+      // Step 2: Get AI response
+      var aiResponse = chat(text);
+      log.debug("AI response: '{}'", aiResponse);
+      
+      if (aiResponse.trim().isEmpty()) {
+        log.warn("No AI response generated");
+        return new byte[0];
+      }
+      
+      // Step 3: Convert response to speech
+      var audioResponse = textToSpeech.synthesize(aiResponse);
+      log.debug("Generated {} bytes of audio response", audioResponse.length);
+      
+      return audioResponse;
+      
+    } catch (Exception e) {
+      log.error("Error in voice chat processing: {}", e.getMessage(), e);
+      return new byte[0];
+    }
+  }
+  
+  /**
+   * Mixed modality: Process text input and return audio response.
+   * 
+   * @param textInput Text message to process
+   * @return Audio response in WAV format, or empty array if processing failed
+   * @throws UnsupportedOperationException if text-to-speech is not configured
+   * @throws IllegalArgumentException if text input is null or empty
+   */
+  public byte[] chatWithVoiceResponse(String textInput) {
+    if (textToSpeech == null) {
+      throw new UnsupportedOperationException("Text-to-speech service is not configured. Use withSpeech() in builder.");
+    }
+    
+    if (textInput == null || textInput.trim().isEmpty()) {
+      throw new IllegalArgumentException("Text input cannot be null or empty");
+    }
+    
+    log.debug("Processing text input with voice response: '{}'", textInput);
+    
+    try {
+      // Get AI response as text
+      var aiResponse = chat(textInput);
+      
+      // Convert to speech
+      var audioResponse = textToSpeech.synthesize(aiResponse);
+      log.debug("Generated {} bytes of audio response for text input", audioResponse.length);
+      
+      return audioResponse;
+      
+    } catch (Exception e) {
+      log.error("Error generating voice response for text: {}", e.getMessage(), e);
+      return new byte[0];
+    }
+  }
+  
+  /**
+   * Mixed modality: Process audio input and return text response.
+   * 
+   * @param audioInput Raw audio data in WAV format (16kHz, 16-bit, mono)
+   * @return Text response from AI, or empty string if processing failed
+   * @throws UnsupportedOperationException if speech-to-text is not configured
+   * @throws IllegalArgumentException if audio input is null or empty
+   */
+  public String chatWithTextResponse(byte[] audioInput) {
+    if (speechToText == null) {
+      throw new UnsupportedOperationException("Speech-to-text service is not configured. Use withSpeech() in builder.");
+    }
+    
+    if (audioInput == null || audioInput.length == 0) {
+      throw new IllegalArgumentException("Audio input cannot be null or empty");
+    }
+    
+    log.debug("Processing audio input with text response: {} bytes", audioInput.length);
+    
+    try {
+      // Convert speech to text
+      var text = speechToText.transcribe(audioInput);
+      log.debug("Transcribed text: '{}'", text);
+      
+      if (text.trim().isEmpty()) {
+        log.warn("No text transcribed from audio input");
+        return "";
+      }
+      
+      // Get AI response
+      var aiResponse = chat(text);
+      log.debug("Generated text response for audio input: '{}'", aiResponse);
+      
+      return aiResponse;
+      
+    } catch (Exception e) {
+      log.error("Error generating text response for audio: {}", e.getMessage(), e);
+      return "";
+    }
+  }
+  
+  /**
+   * Check if speech services are available.
+   * 
+   * @return true if both speech-to-text and text-to-speech are configured and ready
+   */
+  public boolean isSpeechEnabled() {
+    return speechToText != null && textToSpeech != null && 
+           speechToText.isReady() && textToSpeech.isReady();
+  }
+  
+  /**
+   * Check if text-to-speech service is available.
+   * 
+   * @return true if text-to-speech is configured and ready
+   */
+  public boolean isTextToSpeechEnabled() {
+    return textToSpeech != null && textToSpeech.isReady();
+  }
+  
+  /**
+   * Check if speech-to-text service is available.
+   * 
+   * @return true if speech-to-text is configured and ready
+   */
+  public boolean isSpeechToTextEnabled() {
+    return speechToText != null && speechToText.isReady();
+  }
+  
+  /**
+   * Clean up resources used by the conversational AI system.
+   * This includes speech services and any allocated native resources.
+   * Should be called when the ConversationalAI instance is no longer needed.
+   */
+  public void close() {
+    log.debug("Cleaning up ConversationalAI resources");
+    
+    if (speechToText != null) {
+      speechToText.close();
+    }
+    
+    if (textToSpeech != null) {
+      textToSpeech.close();
+    }
+    
+    log.debug("ConversationalAI resources cleaned up");
+  }
 
   /** Internal service interface for AI interactions */
   private interface ConversationService {
@@ -66,6 +255,7 @@ public class ConversationalAI {
     private MessageWindowChatMemory memory = MessageWindowChatMemory.withMaxMessages(10);
     private String systemPrompt;
     private double temperature = 0.7;
+    private SpeechConfig speechConfig;
 
     private Builder() {}
 
@@ -116,6 +306,24 @@ public class ConversationalAI {
         throw new IllegalArgumentException("Temperature must be between 0.0 and 1.0");
       }
       this.temperature = temperature;
+      return this;
+    }
+    
+    /** Enable speech capabilities with default English configuration */
+    public Builder withSpeech() {
+      this.speechConfig = SpeechConfig.defaults();
+      return this;
+    }
+    
+    /** Enable speech capabilities with specific language and voice */
+    public Builder withSpeech(String language, String voice) {
+      this.speechConfig = SpeechConfig.of(language, voice);
+      return this;
+    }
+    
+    /** Enable speech capabilities with custom configuration */
+    public Builder withSpeech(SpeechConfig speechConfig) {
+      this.speechConfig = speechConfig;
       return this;
     }
 

@@ -87,7 +87,7 @@ conversational-ai4j/
 - **API Design**: Simple Builder Pattern for easy integration
 - **AI/ML**: LangChain4j 1.3.0 with Ollama integration
 - **Logging**: SLF4J for structured logging
-- **Speech**: sherpa-onnx placeholder for speech-to-text
+- **Speech**: sherpa-onnx integration (Linux only)
 - **Testing**: JUnit 5 + Mockito for comprehensive testing
 
 #### Demo Module
@@ -105,6 +105,7 @@ conversational-ai4j/
 - **Java**: 21 (required)
 - **Build Tool**: Gradle with wrapper
 - **OS**: Windows, macOS, Linux
+- **Speech Features**: Linux only (sherpa-onnx dependency)
 
 ### Common Commands
 

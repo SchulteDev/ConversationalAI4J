@@ -9,6 +9,8 @@ services:
     environment:
       - OLLAMA_HOST=0.0.0.0
     restart: unless-stopped
+    mem_limit: 8g
+    mem_reservation: 4g
     healthcheck:
       test: ["CMD", "/bin/ollama", "list"]
       interval: 30s
@@ -31,8 +33,8 @@ services:
       -c "
         echo 'Waiting for Ollama service to be ready...' &&
         sleep 10 &&
-        echo 'Pulling llama3.2:1b model...' &&
-        ollama pull llama3.2:1b &&
+        echo 'Pulling llama3.2:3b model...' &&
+        ollama pull llama3.2:3b &&
         echo 'Model pulled successfully!'
       "
     restart: "no"
@@ -52,8 +54,17 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - OLLAMA_BASE_URL=http://ollama:11434
-      - OLLAMA_MODEL_NAME=llama3.2:1b
+      - OLLAMA_MODEL_NAME=llama3.2:3b
+      - SPEECH_ENABLED=true
+      - STT_MODEL_PATH=/app/models/speech/stt
+      - TTS_MODEL_PATH=/app/models/speech/tts
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
       interval: 30s

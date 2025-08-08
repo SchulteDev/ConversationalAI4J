@@ -23,8 +23,15 @@ dependencies {
   implementation 'org.slf4j:slf4j-api:2.0.17'
   runtimeOnly 'org.slf4j:slf4j-simple:2.0.17'
 
-  // sherpa-onnx JNI bindings (placeholder - actual dependency TBD)
-  // implementation 'com.k2fsa:sherpa-onnx:+'
+  // Speech functionality (Linux only) - sherpa-onnx integration
+  // No Maven dependency available - requires system installation:
+  //   Linux: Install sherpa-onnx system package (apt-get install sherpa-onnx)
+  //   Docker: Use provided Dockerfile with sherpa-onnx
+  //   Other platforms: Falls back to mock implementation
+  // See: https://github.com/k2-fsa/sherpa-onnx for installation
+  
+  // ONNX Runtime for potential speech model loading (optional)
+  implementation 'com.microsoft.onnxruntime:onnxruntime:1.22.0'
 
   // Test dependencies
   testImplementation 'org.junit.jupiter:junit-jupiter-api:5.13.4'
@@ -34,6 +41,10 @@ dependencies {
   testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.13.4'
   testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.13.4'
 }
+
+// Note: sherpa-onnx JNI libraries are provided in Docker environment only
+// For local development, the mock implementation is used
+// Real speech functionality is available when running in Docker container
 
 test {
   useJUnitPlatform()
