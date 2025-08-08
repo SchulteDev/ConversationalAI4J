@@ -2,7 +2,7 @@ package schultedev.conversationalai4j;
 
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.memory.chat.TokenWindowChatMemory;
-import dev.langchain4j.model.Tokenizer;
+import dev.langchain4j.model.TokenCountEstimator;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -13,7 +13,7 @@ import static org.mockito.Mockito.*;
 class ConversationMemoryTest {
 
     @Mock
-    private Tokenizer mockTokenizer;
+    private TokenCountEstimator mockTokenizer;
 
     @Test
     void testSlidingMemory() {

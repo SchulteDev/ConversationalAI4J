@@ -2,7 +2,7 @@ package schultedev.conversationalai4j;
 
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.memory.chat.TokenWindowChatMemory;
-import dev.langchain4j.model.Tokenizer;
+import dev.langchain4j.model.TokenCountEstimator;
 
 /**
  * Utility class for creating conversation memory configurations.
@@ -34,7 +34,7 @@ public class ConversationMemory {
      * @param tokenizer Tokenizer to use for counting tokens
      * @return TokenWindowChatMemory configured with the specified token limit
      */
-    public static TokenWindowChatMemory tokenBased(int maxTokens, Tokenizer tokenizer) {
+    public static TokenWindowChatMemory tokenBased(int maxTokens, TokenCountEstimator tokenizer) {
         if (maxTokens <= 0) {
             throw new IllegalArgumentException("maxTokens must be positive");
         }

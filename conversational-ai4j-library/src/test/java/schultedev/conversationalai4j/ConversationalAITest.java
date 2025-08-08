@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.model.output.Response;
 
@@ -14,7 +14,7 @@ import static org.mockito.Mockito.*;
 class ConversationalAITest {
 
     @Mock
-    private ChatLanguageModel mockModel;
+    private ChatModel mockModel;
 
     @BeforeEach
     void setUp() {
@@ -139,7 +139,7 @@ class ConversationalAITest {
             .build();
         
         // When: Get model
-        ChatLanguageModel model = ai.getModel();
+        ChatModel model = ai.getModel();
         
         // Then: Should return the configured model
         assertNotNull(model);

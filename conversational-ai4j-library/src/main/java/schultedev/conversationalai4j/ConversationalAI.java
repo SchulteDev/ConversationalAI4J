@@ -1,6 +1,6 @@
 package schultedev.conversationalai4j;
 
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.service.AiServices;
@@ -12,13 +12,13 @@ import dev.langchain4j.service.UserMessage;
  */
 public class ConversationalAI {
     
-    private final ChatLanguageModel model;
+    private final ChatModel model;
     private final ConversationService service;
     
     private ConversationalAI(Builder builder) {
         this.model = builder.model;
         var aiServiceBuilder = AiServices.builder(ConversationService.class)
-            .chatLanguageModel(model)
+            .chatModel(model)
             .chatMemory(builder.memory);
             
         if (builder.systemPrompt != null && !builder.systemPrompt.trim().isEmpty()) {
@@ -38,7 +38,7 @@ public class ConversationalAI {
     /**
      * Get the underlying chat model
      */
-    public ChatLanguageModel getModel() {
+    public ChatModel getModel() {
         return model;
     }
     
@@ -53,7 +53,7 @@ public class ConversationalAI {
      * Builder for ConversationalAI configuration
      */
     public static class Builder {
-        private ChatLanguageModel model;
+        private ChatModel model;
         private MessageWindowChatMemory memory = MessageWindowChatMemory.withMaxMessages(10);
         private String systemPrompt;
         private double temperature = 0.7;
