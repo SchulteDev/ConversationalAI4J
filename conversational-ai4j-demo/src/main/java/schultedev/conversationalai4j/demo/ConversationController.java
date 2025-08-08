@@ -290,9 +290,9 @@ public class ConversationController {
           "{\"available\": false, \"reason\": \"ConversationalAI service not available\"}");
     }
 
-    boolean speechEnabled = conversationalAI.isSpeechEnabled();
-    boolean sttEnabled = conversationalAI.isSpeechToTextEnabled();
-    boolean ttsEnabled = conversationalAI.isTextToSpeechEnabled();
+    var speechEnabled = conversationalAI.isSpeechEnabled();
+    var sttEnabled = conversationalAI.isSpeechToTextEnabled();
+    var ttsEnabled = conversationalAI.isTextToSpeechEnabled();
 
     var status =
         String.format(

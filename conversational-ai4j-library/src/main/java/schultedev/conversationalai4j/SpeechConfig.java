@@ -156,8 +156,8 @@ public class SpeechConfig {
 
     private void resolveDefaultModelPaths() {
       // Check for Docker environment with pre-configured models
-      String dockerSttPath = System.getenv("STT_MODEL_PATH");
-      String dockerTtsPath = System.getenv("TTS_MODEL_PATH");
+      var dockerSttPath = System.getenv("STT_MODEL_PATH");
+      var dockerTtsPath = System.getenv("TTS_MODEL_PATH");
 
       if (dockerSttPath != null && dockerTtsPath != null) {
         // Use Docker environment paths

@@ -39,7 +39,7 @@ public class SherpaOnnxNative {
     initializationAttempted = true;
 
     // Platform check - only support Linux
-    String os = System.getProperty("os.name").toLowerCase();
+    var os = System.getProperty("os.name").toLowerCase();
     if (!os.contains("linux")) {
       log.info(
           "Speech functionality requires Linux platform. Current OS: {}. Using mock implementation.",
@@ -221,11 +221,11 @@ public class SherpaOnnxNative {
 
   // Mock WAV data generation (same as before)
   private static byte[] generateMockWavData(String text) {
-    int sampleRate = 16000;
-    int duration = Math.max(1, text.length() / 10);
-    int numSamples = sampleRate * duration;
+    var sampleRate = 16000;
+    var duration = Math.max(1, text.length() / 10);
+    var numSamples = sampleRate * duration;
 
-    byte[] wavData = new byte[44 + numSamples * 2];
+    var wavData = new byte[44 + numSamples * 2];
 
     // WAV header
     System.arraycopy("RIFF".getBytes(), 0, wavData, 0, 4);
@@ -243,10 +243,10 @@ public class SherpaOnnxNative {
     writeInt32LE(wavData, 40, numSamples * 2);
 
     // Simple sine wave audio data
-    int frequency = 440 + (text.hashCode() % 200);
-    for (int i = 0; i < numSamples; i++) {
-      double sample = Math.sin(2 * Math.PI * frequency * i / sampleRate) * 0.3;
-      short sampleValue = (short) (sample * Short.MAX_VALUE);
+    var frequency = 440 + (text.hashCode() % 200);
+    for (var i = 0; i < numSamples; i++) {
+      var sample = Math.sin(2 * Math.PI * frequency * i / sampleRate) * 0.3;
+      var sampleValue = (short) (sample * Short.MAX_VALUE);
       writeInt16LE(wavData, 44 + i * 2, sampleValue);
     }
 
@@ -274,14 +274,14 @@ public class SherpaOnnxNative {
       var tempFile = java.nio.file.Files.createTempFile("sherpa-audio", ".wav");
       java.nio.file.Files.write(tempFile, audioData);
 
-      String sttModelPath = System.getenv("STT_MODEL_PATH");
+      var sttModelPath = System.getenv("STT_MODEL_PATH");
       if (sttModelPath == null) {
         log.warn("STT_MODEL_PATH not set for Python transcription");
         return "STT model path not configured";
       }
 
       // Call Python sherpa-onnx STT
-      ProcessBuilder pb =
+      var pb =
           new ProcessBuilder(
               "python3",
               "-c",
@@ -296,10 +296,10 @@ public class SherpaOnnxNative {
                       + "print(stream.result.text)",
                   sttModelPath, sttModelPath, sttModelPath, sttModelPath, tempFile));
 
-      Process process = pb.start();
+      var process = pb.start();
       process.waitFor(10, java.util.concurrent.TimeUnit.SECONDS);
 
-      String result = new String(process.getInputStream().readAllBytes()).trim();
+      var result = new String(process.getInputStream().readAllBytes()).trim();
       java.nio.file.Files.deleteIfExists(tempFile);
 
       log.debug("Python STT result: '{}'", result);
@@ -314,7 +314,7 @@ public class SherpaOnnxNative {
   /** Synthesizes speech using Python sherpa-onnx CLI. */
   private static byte[] synthesizeWithPython(String text) {
     try {
-      String ttsModelPath = System.getenv("TTS_MODEL_PATH");
+      var ttsModelPath = System.getenv("TTS_MODEL_PATH");
       if (ttsModelPath == null) {
         log.warn("TTS_MODEL_PATH not set for Python synthesis");
         return generateMockWavData(text);
@@ -323,7 +323,7 @@ public class SherpaOnnxNative {
       var tempFile = java.nio.file.Files.createTempFile("sherpa-tts", ".wav");
 
       // Call Python sherpa-onnx TTS
-      ProcessBuilder pb =
+      var pb =
           new ProcessBuilder(
               "python3",
               "-c",
@@ -339,11 +339,11 @@ public class SherpaOnnxNative {
                   text.replace("'", "\\'"),
                   tempFile.toString()));
 
-      Process process = pb.start();
+      var process = pb.start();
       process.waitFor(15, java.util.concurrent.TimeUnit.SECONDS);
 
       if (java.nio.file.Files.exists(tempFile) && java.nio.file.Files.size(tempFile) > 0) {
-        byte[] audioData = java.nio.file.Files.readAllBytes(tempFile);
+        var audioData = java.nio.file.Files.readAllBytes(tempFile);
         java.nio.file.Files.deleteIfExists(tempFile);
         log.debug("Python TTS generated {} bytes", audioData.length);
         return audioData;
