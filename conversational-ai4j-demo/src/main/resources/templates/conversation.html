@@ -1,88 +1,97 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>ConversationalAI4J Demo</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            margin: 20px; 
-            background-color: #f5f5f5;
-        }
-        .container { 
-            max-width: 600px; 
-            margin: 0 auto; 
-            background-color: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .form-group { 
-            margin-bottom: 20px; 
-        }
-        label { 
-            display: block; 
-            margin-bottom: 8px; 
-            font-weight: bold; 
-            color: #333;
-        }
-        input[type="text"] { 
-            width: 100%; 
-            padding: 12px; 
-            border: 2px solid #ddd; 
-            border-radius: 6px; 
-            font-size: 16px;
-            box-sizing: border-box;
-        }
-        input[type="text"]:focus {
-            border-color: #007bff;
-            outline: none;
-        }
-        .btn { 
-            background-color: #007bff; 
-            color: white; 
-            padding: 12px 24px; 
-            border: none; 
-            border-radius: 6px; 
-            cursor: pointer; 
-            font-size: 16px;
-            transition: background-color 0.2s;
-        }
-        .btn:hover { 
-            background-color: #0056b3; 
-        }
-        .response { 
-            margin-top: 30px; 
-            padding: 20px; 
-            background-color: #e9f7ff; 
-            border-left: 4px solid #007bff;
-            border-radius: 6px; 
-        }
-        h1 {
-            color: #333;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-    </style>
+  <title>ConversationalAI4J Demo</title>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f5f5f5;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    input[type="text"]:focus {
+      border-color: #007bff;
+      outline: none;
+    }
+
+    .btn {
+      background-color: #007bff;
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.2s;
+    }
+
+    .btn:hover {
+      background-color: #0056b3;
+    }
+
+    .response {
+      margin-top: 30px;
+      padding: 20px;
+      background-color: #e9f7ff;
+      border-left: 4px solid #007bff;
+      border-radius: 6px;
+    }
+
+    h1 {
+      color: #333;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1 th:text="${welcomeText}">ConversationalAI4J Demo</h1>
-        
-        <form action="/send" method="post">
-            <div class="form-group">
-                <label for="message">Your Message:</label>
-                <input type="text" id="message" name="message" 
-                       th:value="${message}" required/>
-            </div>
-            
-            <button type="submit" class="btn">Send Message</button>
-        </form>
-        
-        <div th:if="${response}" class="response">
-            <strong>Response:</strong><br/>
-            <span th:text="${response}"></span>
-        </div>
+<div class="container">
+  <h1 th:text="${welcomeText}">ConversationalAI4J Demo</h1>
+
+  <form action="/send" method="post">
+    <div class="form-group">
+      <label for="message">Your Message:</label>
+      <input id="message" name="message" required
+             th:value="${message}" type="text"/>
     </div>
+
+    <button class="btn" type="submit">Send Message</button>
+  </form>
+
+  <div class="response" th:if="${response}">
+    <strong>Response:</strong><br/>
+    <span th:text="${response}"></span>
+  </div>
+</div>
 </body>
 </html>

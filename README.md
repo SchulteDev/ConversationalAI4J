@@ -6,7 +6,8 @@
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=SchulteDev_ConversationalAI4J&metric=alert_status&token=d82a94ffeaa4b434396b27080eab2189e4b032e8)](https://sonarcloud.io/summary/new_code?id=SchulteDev_ConversationalAI4J)
 [![Test](https://github.com/SchulteDev/ConversationalAI4J/actions/workflows/test.yml/badge.svg)](https://github.com/SchulteDev/ConversationalAI4J/actions/workflows/test.yml)
 
-A Java library for conversational AI applications with complete speech-to-text, AI processing, and text-to-speech capabilities.
+A Java library for conversational AI applications with complete speech-to-text, AI processing, and
+text-to-speech capabilities.
 
 ## 🚀 Quick Start
 
@@ -25,7 +26,8 @@ cd ConversationalAI4J
 
 ## 📋 Project Overview
 
-ConversationalAI4J is a multi-module Gradle project designed for building conversational AI applications with a clean, modern architecture:
+ConversationalAI4J is a multi-module Gradle project designed for building conversational AI
+applications with a clean, modern architecture:
 
 ```
 conversational-ai4j/
@@ -63,6 +65,7 @@ conversational-ai4j/
 ### Technology Stack
 
 #### Library Module
+
 - **CDI**: Weld SE 6.0.3 for dependency injection
 - **Configuration**: MicroProfile Config 3.1 with SmallRye
 - **AI/ML**: LangChain4j 0.36.2 with Ollama integration
@@ -70,6 +73,7 @@ conversational-ai4j/
 - **Testing**: JUnit 5 + Mockito + Weld test extensions
 
 #### Demo Module
+
 - **Framework**: Spring Boot 3.3.0 with auto-configuration
 - **Web**: Spring MVC with ConversationController
 - **Templating**: Thymeleaf for server-side rendering
@@ -87,6 +91,7 @@ conversational-ai4j/
 ### Common Commands
 
 #### Building and Testing
+
 ```bash
 # Build all modules
 ./gradlew build
@@ -102,6 +107,7 @@ conversational-ai4j/
 ```
 
 #### Running the Demo Application
+
 ```bash
 # Run Spring Boot demo in dev mode (with hot reload)
 ./gradlew :demo:bootRun
@@ -116,6 +122,7 @@ java -jar conversational-ai4j-demo/build/libs/conversational-ai4j-demo-1.0-SNAPS
 ```
 
 #### Module-Specific Commands
+
 ```bash
 # Test only the library
 ./gradlew :library:test
@@ -138,6 +145,7 @@ java -jar conversational-ai4j-demo/build/libs/conversational-ai4j-demo-1.0-SNAPS
 ## 📈 Development Status
 
 ### ✅ Phase 1: Foundation (Completed)
+
 - [x] Multi-module Gradle project setup with clean separation
 - [x] Library module with CDI/Weld dependency injection
 - [x] MicroProfile Config integration
@@ -148,6 +156,7 @@ java -jar conversational-ai4j-demo/build/libs/conversational-ai4j-demo-1.0-SNAPS
 **Successfully Migrated: JSF/Tomcat → Spring Boot + Thymeleaf**
 
 #### Completed Migration Results:
+
 - [x] ✅ Modern Spring Boot 3.3.0 framework
 - [x] ✅ Clean Spring MVC architecture with ConversationController
 - [x] ✅ Responsive Thymeleaf templates (conversation.html)
@@ -160,12 +169,14 @@ java -jar conversational-ai4j-demo/build/libs/conversational-ai4j-demo-1.0-SNAPS
 ### 🚧 Phase 3: Core AI Implementation (In Progress)
 
 #### Current State:
+
 - [x] ✅ LangChain4j dependency configured (v0.36.2)
 - [x] ✅ Ollama integration ready for local AI models
 - [x] ✅ Functional web interface with echo conversation flow
 - [x] ✅ Clean separation between library (AI) and demo (web) concerns
 
 #### Next Implementation Tasks:
+
 - [ ] 🎯 **PRIMARY**: Implement LangChain4j conversation chain
 - [ ] Configure Ollama model integration and selection
 - [ ] Add conversation context and memory management
@@ -174,18 +185,21 @@ java -jar conversational-ai4j-demo/build/libs/conversational-ai4j-demo-1.0-SNAPS
 ### ⏳ Planned Phases
 
 #### Phase 4: Speech Integration
+
 - [ ] sherpa-onnx JNI bindings integration
 - [ ] Speech-to-text pipeline implementation
 - [ ] Audio processing and streaming capabilities
 - [ ] Web interface enhancements for audio input/output
 
 #### Phase 5: Advanced Features
+
 - [ ] WebSocket support for real-time conversation streaming
 - [ ] Conversation history persistence and management
 - [ ] Multiple AI model support and dynamic switching
 - [ ] Enhanced web interface with rich conversation features
 
 #### Phase 6: Production Readiness
+
 - [ ] Comprehensive error handling and input validation
 - [ ] Performance optimization and response caching
 - [ ] Security implementation (rate limiting, input sanitization)
@@ -203,15 +217,16 @@ java -jar conversational-ai4j-demo/build/libs/conversational-ai4j-demo-1.0-SNAPS
 
 ### ✅ Current Status: Excellent (95/100)
 
-| Component | Status | Details |
-|-----------|--------|---------|
-| **Functionality** | ✅ Perfect | Application works flawlessly |
-| **Tests** | ✅ Perfect | 9/9 tests passing |
-| **Architecture** | ✅ Perfect | Clean multi-module separation |
-| **Build System** | ✅ Excellent | Fast, reliable, well-configured |
-| **Documentation** | ✅ Complete | Comprehensive guides and plans |
+| Component         | Status      | Details                         |
+|-------------------|-------------|---------------------------------|
+| **Functionality** | ✅ Perfect   | Application works flawlessly    |
+| **Tests**         | ✅ Perfect   | 9/9 tests passing               |
+| **Architecture**  | ✅ Perfect   | Clean multi-module separation   |
+| **Build System**  | ✅ Excellent | Fast, reliable, well-configured |
+| **Documentation** | ✅ Complete  | Comprehensive guides and plans  |
 
 ### Key Metrics:
+
 - **Startup Time**: 2.8 seconds
 - **Test Coverage**: Comprehensive (9/9 passing)
 - **Build Performance**: Optimized with caching
@@ -242,7 +257,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🏢 Target Users
 
 - Voice assistant developers
-- Call center automation teams  
+- Call center automation teams
 - Privacy-conscious application developers
 - Educational technology creators
 - Accessibility tool developers

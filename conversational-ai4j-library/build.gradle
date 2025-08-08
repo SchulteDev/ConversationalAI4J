@@ -9,7 +9,7 @@ java {
 }
 
 configurations {
-    mockitoAgent
+  mockitoAgent
 }
 
 ext.libs = [mockito: 'org.mockito:mockito-core:5.18.0']

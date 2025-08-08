@@ -16,7 +16,7 @@ allprojects {
 project(':library') {
   apply plugin: 'java'
   apply plugin: 'jacoco'
-  
+
   java {
     toolchain {
       languageVersion = JavaLanguageVersion.of(21)
