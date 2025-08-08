@@ -5,6 +5,8 @@ import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.UserMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Main entry point for conversational AI functionality.
@@ -12,27 +14,36 @@ import dev.langchain4j.service.UserMessage;
  */
 public class ConversationalAI {
     
+    private static final Logger log = LoggerFactory.getLogger(ConversationalAI.class);
+    
     private final ChatModel model;
     private final ConversationService service;
     
     private ConversationalAI(Builder builder) {
+        log.debug("Creating ConversationalAI instance with model: {}", builder.model.getClass().getSimpleName());
+        
         this.model = builder.model;
         var aiServiceBuilder = AiServices.builder(ConversationService.class)
             .chatModel(model)
             .chatMemory(builder.memory);
             
         if (builder.systemPrompt != null && !builder.systemPrompt.trim().isEmpty()) {
+            log.trace("Setting system prompt: {}", builder.systemPrompt);
             aiServiceBuilder.systemMessageProvider(chatMemoryId -> builder.systemPrompt);
         }
             
         this.service = aiServiceBuilder.build();
+        log.debug("ConversationalAI instance created successfully");
     }
     
     /**
      * Send a message and get AI response
      */
     public String chat(String message) {
-        return service.chat(message);
+        log.trace("Processing chat message: {}", message);
+        String response = service.chat(message);
+        log.trace("Generated response of {} characters", response != null ? response.length() : 0);
+        return response;
     }
     
     /**
@@ -71,6 +82,7 @@ public class ConversationalAI {
          * Configure Ollama model with custom base URL
          */
         public Builder withOllamaModel(String modelName, String baseUrl) {
+            log.debug("Configuring Ollama model '{}' with base URL: {}", modelName, baseUrl);
             this.model = OllamaChatModel.builder()
                 .baseUrl(baseUrl)
                 .modelName(modelName)

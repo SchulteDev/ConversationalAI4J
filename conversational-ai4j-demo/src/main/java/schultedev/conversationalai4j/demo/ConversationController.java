@@ -1,5 +1,7 @@
 package schultedev.conversationalai4j.demo;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,6 +16,8 @@ import schultedev.conversationalai4j.ConversationalAI;
 @Controller
 public class ConversationController {
     
+    private static final Logger log = LoggerFactory.getLogger(ConversationController.class);
+    
     private final ConversationalAI conversationalAI;
     
     /**
@@ -23,7 +27,8 @@ public class ConversationController {
     public ConversationController() {
         ConversationalAI tempAI;
         try {
-            // Initialize with Ollama model - fallback to echo mode if model not available
+            log.info("Initializing ConversationalAI with Ollama model 'llama2'");
+            
             tempAI = ConversationalAI.builder()
                 .withOllamaModel("llama2")  // Assumes Ollama is running with llama2
                 .withMemory()  // Use default memory
@@ -31,8 +36,13 @@ public class ConversationController {
                                 "Keep responses concise and friendly.")
                 .withTemperature(0.7)
                 .build();
+            
+            log.info("ConversationalAI successfully initialized with Ollama model");
         } catch (Exception e) {
-            // If Ollama is not available, we'll use null and fall back to echo mode
+            log.warn("Failed to initialize ConversationalAI with Ollama: {}. Falling back to echo mode", e.getMessage());
+            if (log.isDebugEnabled()) {
+                log.debug("ConversationalAI initialization error details", e);
+            }
             tempAI = null;
         }
         this.conversationalAI = tempAI;
@@ -65,18 +75,25 @@ public class ConversationController {
         
         String response;
         if (message == null || message.trim().isEmpty()) {
+            log.debug("Received empty message from user");
             response = "Please enter a message.";
         } else {
+            log.debug("Processing user message: {}", message);
+            
             try {
                 if (conversationalAI != null) {
-                    // Use the ConversationalAI library
+                    log.trace("Using ConversationalAI to process message");
                     response = conversationalAI.chat(message);
+                    log.debug("Successfully generated AI response");
                 } else {
-                    // Fallback to echo mode if AI is not available
+                    log.debug("ConversationalAI unavailable, using echo mode");
                     response = "Echo (AI unavailable): " + message;
                 }
             } catch (Exception e) {
-                // Handle any errors gracefully
+                log.error("Error processing message '{}': {}", message, e.getMessage());
+                if (log.isDebugEnabled()) {
+                    log.debug("Message processing error details", e);
+                }
                 response = "Sorry, I'm having trouble processing your request. " +
                           "Error: " + e.getMessage() + 
                           "\nFallback echo: " + message;
