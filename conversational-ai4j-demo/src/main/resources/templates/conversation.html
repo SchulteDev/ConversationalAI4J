@@ -53,10 +53,85 @@
       cursor: pointer;
       font-size: 16px;
       transition: background-color 0.2s;
+      margin-right: 10px;
     }
 
     .btn:hover {
       background-color: #0056b3;
+    }
+
+    .btn:disabled {
+      background-color: #6c757d;
+      cursor: not-allowed;
+    }
+
+    .btn-voice {
+      background-color: #28a745;
+      font-size: 20px;
+      padding: 15px 20px;
+      border-radius: 50px;
+    }
+
+    .btn-voice:hover {
+      background-color: #1e7e34;
+    }
+
+    .btn-voice.recording {
+      background-color: #dc3545;
+      animation: pulse 1s infinite;
+    }
+
+    .btn-voice.recording:hover {
+      background-color: #c82333;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    .voice-controls {
+      text-align: center;
+      margin: 30px 0;
+      padding: 20px;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      border: 1px solid #dee2e6;
+    }
+
+    .audio-player {
+      margin: 15px 0;
+    }
+
+    .status {
+      margin: 10px 0;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .status.info {
+      background-color: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+
+    .status.success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .status.error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .status.hidden {
+      display: none;
     }
 
     .response {
@@ -72,12 +147,66 @@
       text-align: center;
       margin-bottom: 30px;
     }
+
+    .divider {
+      margin: 30px 0;
+      text-align: center;
+      color: #6c757d;
+      font-weight: bold;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: '';
+      display: inline-block;
+      width: 100px;
+      height: 1px;
+      background-color: #dee2e6;
+      vertical-align: middle;
+      margin: 0 10px;
+    }
   </style>
 </head>
 <body>
 <div class="container">
   <h1 th:text="${welcomeText}">ConversationalAI4J Demo</h1>
 
+  <!-- Real-time Voice Chat Section -->
+  <div class="voice-controls">
+    <h3>🎤 Voice Chat</h3>
+    <p>Hold to talk</p>
+    
+    <div class="status hidden" id="status"></div>
+    
+    <button class="btn btn-voice" id="voice-btn" disabled>
+      🎤
+    </button>
+    
+    <div class="audio-player">
+      <audio id="ai-response" controls style="display: none;">
+        Your browser does not support the audio element.
+      </audio>
+    </div>
+    
+    <div id="transcription" class="response" style="display: none; background-color: #f0f8ff;">
+      <strong>You said:</strong><br/>
+      <span id="transcription-content"></span>
+    </div>
+    
+    <div id="text-response" class="response" style="display: none;">
+      <strong>AI Response:</strong><br/>
+      <span id="text-response-content"></span>
+    </div>
+    
+    <div>
+      <button class="btn" id="connect-btn" onclick="connectVoiceStream()">Connect</button>
+      <button class="btn" id="disconnect-btn" onclick="disconnectVoiceStream()" style="display: none;">Disconnect</button>
+    </div>
+  </div>
+
+  <div class="divider">OR</div>
+
+  <!-- Text Chat Section -->
   <form action="/send" method="post">
     <div class="form-group">
       <label for="message">Your Message:</label>
@@ -93,5 +222,189 @@
     <span th:text="${response}"></span>
   </div>
 </div>
+
+<script>
+// Simple globals
+let socket, audioStream, mediaRecorder, isConnected = false, isRecording = false;
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('voice-btn').addEventListener('mousedown', startRecording);
+    document.getElementById('voice-btn').addEventListener('mouseup', stopRecording);
+    document.getElementById('voice-btn').addEventListener('contextmenu', e => e.preventDefault());
+    updateUI();
+});
+
+function connectVoiceStream() {
+    showStatus('info', 'Connecting...');
+    
+    navigator.mediaDevices.getUserMedia({ audio: { sampleRate: 16000, channelCount: 1 } })
+        .then(stream => { audioStream = stream; setupWebSocket(); })
+        .catch(error => showStatus('error', 'Microphone access failed: ' + error.message));
+}
+
+function setupWebSocket() {
+    socket = new WebSocket(`ws://${window.location.host}/voice-stream`);
+    
+    socket.onopen = function() {
+        isConnected = true;
+        updateUI();
+        showStatus('success', 'Connected! Hold microphone to talk.');
+    };
+    
+    socket.onmessage = function(event) {
+        if (event.data instanceof Blob) {
+            handleAudioResponse(event.data);
+        } else {
+            try {
+                handleControlMessage(JSON.parse(event.data));
+            } catch (e) {
+                console.log('Message:', event.data);
+            }
+        }
+    };
+    
+    socket.onerror = () => showStatus('error', 'Connection error');
+    socket.onclose = function() {
+        isConnected = false;
+        updateUI();
+        showStatus('info', 'Disconnected');
+        cleanup();
+    };
+}
+
+function handleControlMessage(message) {
+    if (message.type === 'status') {
+        const statusType = message.status === 'error' ? 'error' : 
+                          message.status === 'complete' ? 'success' : 'info';
+        showStatus(statusType, message.message);
+    } else if (message.type === 'transcription') {
+        // Show what the user said (speech-to-text result)
+        displayTranscription(message.text);
+        showStatus('info', 'Speech recognized: ' + message.text);
+    } else if (message.type === 'text_response') {
+        // Handle text response when audio processing is not available
+        displayTextResponse(message.message);
+        showStatus('success', 'AI responded (text mode)');
+    }
+}
+
+function handleAudioResponse(audioBlob) {
+    console.log('Received audio response:', audioBlob.size, 'bytes');
+    
+    const audioUrl = URL.createObjectURL(audioBlob);
+    aiResponseAudio.src = audioUrl;
+    aiResponseAudio.style.display = 'block';
+    
+    // Hide text response when showing audio
+    document.getElementById('text-response').style.display = 'none';
+    
+    aiResponseAudio.play()
+        .then(() => showStatus('success', 'Playing AI speech response'))
+        .catch(() => showStatus('error', 'Audio playback failed'));
+    
+    aiResponseAudio.onended = () => URL.revokeObjectURL(audioUrl);
+}
+
+function disconnectVoiceStream() {
+    cleanup();
+}
+
+function startRecording(event) {
+    event.preventDefault();
+    
+    if (!isConnected || !audioStream || isRecording) return;
+    
+    try {
+        mediaRecorder = new MediaRecorder(audioStream, { mimeType: 'audio/webm;codecs=opus' });
+        mediaRecorder.ondataavailable = event => {
+            if (event.data.size > 0) socket.send(event.data);
+        };
+        
+        mediaRecorder.start(100);
+        isRecording = true;
+        updateUI();
+        socket.send('start_recording');
+        showStatus('info', 'Recording...');
+        
+    } catch (error) {
+        showStatus('error', 'Recording failed: ' + error.message);
+    }
+}
+
+function stopRecording(event) {
+    event.preventDefault();
+    
+    if (!isRecording) return;
+    
+    mediaRecorder.stop();
+    isRecording = false;
+    updateUI();
+    socket.send('stop_recording');
+    showStatus('info', 'Processing...');
+}
+
+function updateUI() {
+    const voiceBtn = document.getElementById('voice-btn');
+    const connectBtn = document.getElementById('connect-btn');
+    const disconnectBtn = document.getElementById('disconnect-btn');
+    
+    connectBtn.style.display = isConnected ? 'none' : 'inline-block';
+    disconnectBtn.style.display = isConnected ? 'inline-block' : 'none';
+    voiceBtn.disabled = !isConnected;
+    voiceBtn.classList.toggle('recording', isRecording);
+    voiceBtn.textContent = isRecording ? '🔴' : '🎤';
+}
+
+function showStatus(type, message) {
+    const statusDiv = document.getElementById('status');
+    statusDiv.className = 'status ' + type;
+    statusDiv.textContent = message;
+    statusDiv.classList.remove('hidden');
+    
+    if (type === 'success') {
+        setTimeout(() => statusDiv.classList.add('hidden'), 3000);
+    }
+}
+
+function displayTranscription(text) {
+    const transcriptionDiv = document.getElementById('transcription');
+    const transcriptionContent = document.getElementById('transcription-content');
+    
+    transcriptionContent.textContent = text;
+    transcriptionDiv.style.display = 'block';
+}
+
+function displayTextResponse(text) {
+    const textResponseDiv = document.getElementById('text-response');
+    const textContent = document.getElementById('text-response-content');
+    
+    textContent.textContent = text;
+    textResponseDiv.style.display = 'block';
+    
+    // Hide audio player when showing text
+    document.getElementById('ai-response').style.display = 'none';
+}
+
+function cleanup() {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+    }
+    if (audioStream) {
+        audioStream.getTracks().forEach(track => track.stop());
+        audioStream = null;
+    }
+    if (socket) {
+        socket.close();
+        socket = null;
+    }
+    
+    mediaRecorder = null;
+    isRecording = false;
+    isConnected = false;
+    updateUI();
+}
+
+</script>
+
 </body>
 </html>

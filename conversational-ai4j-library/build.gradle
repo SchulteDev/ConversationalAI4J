@@ -24,7 +24,7 @@ dependencies {
   runtimeOnly 'org.slf4j:slf4j-simple:2.0.17'
 
   // Speech functionality (Linux only) - sherpa-onnx integration
-  // No Maven dependency available - requires system installation:
+  // No Maven dependency available - requires system installation:lib
   //   Linux: Install sherpa-onnx system package (apt-get install sherpa-onnx)
   //   Docker: Use provided Dockerfile with sherpa-onnx
   //   Other platforms: Falls back to mock implementation

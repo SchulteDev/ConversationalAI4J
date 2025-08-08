@@ -61,3 +61,129 @@ sonar {
     property "sonar.junit.reportPaths", "**/build/test-results/test"
   }
 }
+
+// =============================================================================
+// Developer Experience Tasks
+// =============================================================================
+
+task dockerStart(type: Exec) {
+  group = 'development'
+  description = 'Start Docker environment with auto-rebuild'
+  
+  commandLine 'docker-compose', 'up', '--build'
+  
+  doFirst {
+    println '🚀 Starting development environment...'
+    println 'Demo will be available at: http://localhost:8080'
+  }
+}
+
+task dockerLogs(type: Exec) {
+  group = 'development' 
+  description = 'Show Docker container logs'
+  
+  commandLine 'docker-compose', 'logs', '-f'
+  
+  doFirst {
+    println '📋 Showing Docker logs...'
+  }
+}
+
+task dockerReset(type: Exec) {
+  group = 'development'
+  description = 'Reset Docker environment (useful when containers fail)'
+  
+  commandLine 'sh', '-c', 'docker-compose down && docker system prune -f && docker-compose up --build'
+  
+  doFirst {
+    println '🔄 Resetting Docker environment...'
+  }
+}
+
+task dockerStop(type: Exec) {
+  group = 'development'
+  description = 'Stop Docker environment'
+  
+  commandLine 'docker-compose', 'down'
+  
+  doFirst {
+    println '🛑 Stopping Docker environment...'
+  }
+}
+
+task dev {
+  group = 'development'
+  description = 'Start demo in development mode with hot reload'
+  
+  dependsOn ':demo:bootRun'
+  
+  doFirst {
+    println '💻 Starting demo in development mode...'
+    println 'Demo will be available at: http://localhost:8080'
+    println 'Hot reload enabled - modify files and refresh!'
+  }
+}
+
+task testAll {
+  group = 'verification'
+  description = 'Run all tests with summary'
+  
+  dependsOn ':library:test', ':demo:test'
+  
+  doLast {
+    println '🧪 All tests completed!'
+    println "Library tests: ./gradlew :library:test"
+    println "Demo tests: ./gradlew :demo:test" 
+  }
+}
+
+task cleanBuild {
+  group = 'build'
+  description = 'Clean build all modules'
+  
+  dependsOn 'clean', 'build'
+  
+  doFirst {
+    println '🧹 Clean building all modules...'
+  }
+  
+  doLast {
+    println '✅ Clean build completed!'
+  }
+}
+
+task devHelp {
+  group = 'help'
+  description = 'Show developer commands'
+  
+  doLast {
+    println '''
+╔══════════════════════════════════════════════════════════════╗
+║                ConversationalAI4J Developer Tasks            ║
+╠══════════════════════════════════════════════════════════════╣
+║ Quick Start:                                                 ║
+║   ./gradlew dockerStart    - Start Docker environment        ║
+║   ./gradlew dev           - Development mode (hot reload)    ║
+║                                                              ║
+║ Testing:                                                     ║
+║   ./gradlew testAll       - Run all tests                    ║
+║   ./gradlew cleanBuild    - Clean build                      ║
+║                                                              ║
+║ Docker Management:                                           ║
+║   ./gradlew dockerLogs    - Show container logs              ║
+║   ./gradlew dockerReset   - Reset when things break         ║
+║   ./gradlew dockerStop    - Stop containers                  ║
+║                                                              ║
+║ Module-Specific:                                             ║
+║   ./gradlew :library:test - Test library only               ║
+║   ./gradlew :demo:test    - Test demo only                   ║
+║   ./gradlew :demo:bootRun - Run demo (alternative to dev)   ║
+╚══════════════════════════════════════════════════════════════╝
+
+🎯 Recommended workflow:
+   1. ./gradlew dockerStart     (for full system with Ollama)
+   2. ./gradlew dev            (for fast development iteration)
+   3. ./gradlew testAll        (before committing changes)
+'''
+  }
+}

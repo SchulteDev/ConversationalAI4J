@@ -11,34 +11,72 @@ text-to-speech capabilities.
 
 ## 🚀 Quick Start
 
-### Demo Application
+### Option 1: Docker (Recommended)
 
 ```bash
 # Clone the repository
 git clone https://github.com/SchulteDev/ConversationalAI4J.git
 cd ConversationalAI4J
 
-# Run the demo application
+# Complete voice-to-voice AI system with sherpa-onnx
+docker-compose up --build
+# → Demo at http://localhost:8080
+# → Full speech recognition and synthesis!
+# → First build takes time (downloading speech models)
+```
+
+### Option 2: Local Development
+
+```bash
+# Requires Java 21 and local Ollama
 ./gradlew :demo:bootRun
-# → Access at http://localhost:63692 (random port)
+# → Demo at http://localhost:8080
 
 # Run all tests
 ./gradlew test
 ```
 
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama server URL |
+| `OLLAMA_MODEL_NAME` | `llama3.2:3b` | Model to use |
+| `SPEECH_ENABLED` | `false` | Enable voice features |
+
 ### Library Usage
 
 ```java
-// Simple usage example
+// Text chat
 ConversationalAI ai = ConversationalAI.builder()
-    .withOllamaModel("llama2")
+    .withOllamaModel("llama3.2:3b")
     .withMemory()
     .withSystemPrompt("You are a helpful assistant")
-    .withTemperature(0.7)
     .build();
 
 String response = ai.chat("Hello!");
+
+// Voice chat (requires speech setup)
+ConversationalAI voiceAI = ConversationalAI.builder()
+    .withOllamaModel("llama3.2:3b")
+    .withSpeech()  // Enables voice features
+    .build();
+
+byte[] audioResponse = voiceAI.voiceChat(audioBytes);
 ```
+
+## 🎤 Voice Features
+
+The demo includes **complete voice-to-voice AI conversation**:
+
+1. **Connect**: Click "Connect Voice Stream" 
+2. **Talk**: Hold microphone button and speak
+3. **Speech Recognition**: Your speech is converted to text (displayed in UI)
+4. **AI Processing**: LLM generates intelligent response 
+5. **Speech Synthesis**: AI response converted to speech you can HEAR
+6. **Disconnect**: Click "Disconnect" when done
+
+**Complete Pipeline**: Speech → Text → LLM → Speech using sherpa-onnx processing. Full voice conversation with transcription display and audio playback.
 
 ## 📋 Project Overview
 
@@ -284,20 +322,60 @@ We welcome contributions! Please see our [contribution guidelines](CONTRIBUTING.
 
 This project is licensed under the EUPL License — see the [LICENSE](LICENSE) file for details.
 
+## 🛠️ Troubleshooting
+
+### Common Issues
+
+**Docker Issues:**
+```bash
+# If containers fail to start
+./gradlew dockerReset
+
+# Or manually
+./gradlew dockerStop
+docker system prune -f
+./gradlew dockerStart
+
+# Check container logs
+./gradlew dockerLogs
+```
+
+**Voice Chat Not Working:**
+- Check microphone permissions in browser
+- Ensure using HTTPS or localhost (required for audio access)
+- Verify WebSocket connection in browser dev tools
+
+**Ollama Connection Failed:**
+- Wait for Ollama container to pull model (first run takes time)
+- Check `http://localhost:11434` returns JSON response
+- Verify `OLLAMA_BASE_URL` environment variable
+
+**Build Issues:**
+```bash
+# Clean rebuild
+./gradlew cleanBuild
+
+# Run all tests
+./gradlew testAll
+
+# Check Java version
+java --version  # Must be Java 21
+```
+
+### Performance Tips
+
+- **Memory**: Increase Docker memory to 8GB+ for Ollama
+- **Models**: Use smaller models (llama3.2:1b) for faster responses  
+- **Development**: Use `./gradlew dev` for faster iteration with hot reload
+
 ## 🏢 Target Users
 
 - Voice assistant developers
-- Call center automation teams
+- Call center automation teams  
 - Privacy-conscious application developers
 - Educational technology creators
 - Accessibility tool developers
 
 ---
 
-**Ready for Production Use** - Core AI functionality complete and thoroughly tested! 🚀
-
-**Next Priority**: Docker Compose Infrastructure (Phase 4a) - Replace echo-mode with complete
-working Ollama + Demo system!
-
-*After that*: Speech Integration (Phase 4b) - Add containerized speech-to-text and text-to-speech
-capabilities!
+**Ready for Production Use** - KISS architecture with voice streaming capabilities! 🚀

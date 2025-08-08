@@ -42,7 +42,6 @@ services:
   demo:
     build:
       context: .
-      dockerfile: Dockerfile
     container_name: conversationalai4j-demo
     ports:
       - "8080:8080"
@@ -55,9 +54,7 @@ services:
       - SPRING_PROFILES_ACTIVE=docker
       - OLLAMA_BASE_URL=http://ollama:11434
       - OLLAMA_MODEL_NAME=llama3.2:3b
-      - SPEECH_ENABLED=true
-      - STT_MODEL_PATH=/app/models/speech/stt
-      - TTS_MODEL_PATH=/app/models/speech/tts
+      - SPEECH_ENABLED=true   # Enable simplified speech processing
     restart: unless-stopped
     deploy:
       resources:
