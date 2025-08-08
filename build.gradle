@@ -39,9 +39,11 @@ project(':library') {
 project(':demo') {
   // Only set Java toolchain, nothing else
   afterEvaluate {
-    java {
-      toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+    if (project.plugins.hasPlugin('java')) {
+      java {
+        toolchain {
+          languageVersion = JavaLanguageVersion.of(21)
+        }
       }
     }
   }

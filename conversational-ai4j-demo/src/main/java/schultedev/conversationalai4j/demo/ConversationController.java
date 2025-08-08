@@ -2,6 +2,7 @@ package schultedev.conversationalai4j.demo;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,20 +19,32 @@ public class ConversationController {
 
   private static final Logger log = LoggerFactory.getLogger(ConversationController.class);
 
+  @Value("${ollama.base-url:http://localhost:11434}")
+  private String ollamaBaseUrl;
+
+  @Value("${ollama.model-name:llama3.2:1b}")
+  private String ollamaModelName;
+
   private final ConversationalAI conversationalAI;
 
   /**
-   * Constructor that initializes the ConversationalAI instance with default configuration. In a
-   * production environment, this could be configured via Spring properties.
+   * Constructor that initializes the ConversationalAI instance with configurable Ollama settings.
+   * Supports both local development and Docker containerized environments.
    */
   public ConversationController() {
     ConversationalAI tempAI;
     try {
-      log.info("Initializing ConversationalAI with Ollama model 'llama2'");
+      // Use Spring-injected values after construction
+      var modelName = System.getProperty("ollama.model-name", 
+                     System.getenv().getOrDefault("OLLAMA_MODEL_NAME", "llama3.2:1b"));
+      var baseUrl = System.getProperty("ollama.base-url", 
+                   System.getenv().getOrDefault("OLLAMA_BASE_URL", "http://localhost:11434"));
+      
+      log.info("Initializing ConversationalAI with Ollama model '{}' at '{}'", modelName, baseUrl);
 
       tempAI =
           ConversationalAI.builder()
-              .withOllamaModel("llama2") // Assumes Ollama is running with llama2
+              .withOllamaModel(modelName, baseUrl)
               .withMemory() // Use default memory
               .withSystemPrompt(
                   "You are a helpful AI assistant in a demo application. "

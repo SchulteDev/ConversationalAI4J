@@ -1,0 +1,32 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+*.md
+plan*.md
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Build artifacts
+build/
+.gradle/
+out/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+Dockerfile
+docker-compose*.yml
+
+# Temporary files
+*.tmp
+*.temp
