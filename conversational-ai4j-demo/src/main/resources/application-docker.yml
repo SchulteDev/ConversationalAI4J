@@ -8,7 +8,7 @@ server:
 # Ollama configuration for Docker environment
 ollama:
   base-url: http://ollama:11434
-  model-name: llama3.2:1b
+  model-name: llama3.2:3b
 
 # Logging configuration
 logging:
