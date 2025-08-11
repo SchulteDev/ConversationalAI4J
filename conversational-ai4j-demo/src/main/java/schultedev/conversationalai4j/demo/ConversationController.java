@@ -99,18 +99,18 @@ public class ConversationController {
 
     String response;
     if (message == null || message.trim().isEmpty()) {
-      log.debug("Received empty message from user");
+      log.info("Received empty message from user");
       response = "Please enter a message.";
     } else {
-      log.debug("Processing user message: {}", message);
+      log.info("USER INPUT: '{}'", message);
 
       try {
         if (conversationalAI != null) {
-          log.trace("Using ConversationalAI to process message");
+          log.info("Processing message with AI...");
           response = conversationalAI.chat(message);
-          log.debug("Successfully generated AI response");
+          log.info("AI RESPONSE: '{}'", response);
         } else {
-          log.debug("ConversationalAI unavailable, using echo mode");
+          log.warn("ConversationalAI unavailable, using echo mode");
           response = "Echo (AI unavailable): " + message;
         }
       } catch (Exception e) {

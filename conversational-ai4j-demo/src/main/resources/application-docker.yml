@@ -13,8 +13,10 @@ ollama:
 # Logging configuration
 logging:
   level:
-    schultedev.conversationalai4j: INFO
     root: INFO
+    schultedev.conversationalai4j: DEBUG
+    schultedev.conversationalai4j.demo: DEBUG
+    org.springframework.web.socket: INFO
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
 

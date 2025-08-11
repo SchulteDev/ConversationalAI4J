@@ -114,14 +114,14 @@ public class SherpaOnnxNative {
    */
   public static String transcribeAudio(long recognizer, byte[] audioData) {
     if (!isNativeLibraryAvailable() || recognizer == 1L) {
-      // Mock implementation
+      // Check if we're using Python sherpa-onnx (Docker environment)
+      if (System.getenv("SPEECH_ENABLED") != null) {
+        return transcribeWithPython(audioData);
+      }
+
+      // Mock implementation for non-Linux platforms
       log.trace("Using mock STT transcription for {} bytes", audioData.length);
       return "Hello, this is a mock transcription from sherpa-onnx.";
-    }
-
-    // Check if we're using Python sherpa-onnx (Docker environment)
-    if (System.getenv("SPEECH_ENABLED") != null) {
-      return transcribeWithPython(audioData);
     }
 
     try {
@@ -169,14 +169,14 @@ public class SherpaOnnxNative {
    */
   public static byte[] synthesizeSpeech(long synthesizer, String text) {
     if (!isNativeLibraryAvailable() || synthesizer == 1L) {
+      // Check if we're using Python sherpa-onnx (Docker environment)
+      if (System.getenv("SPEECH_ENABLED") != null) {
+        return synthesizeWithPython(text);
+      }
+
       // Mock implementation - return the same mock WAV data as before
       log.trace("Using mock TTS synthesis for text: '{}'", text);
       return generateMockWavData(text);
-    }
-
-    // Check if we're using Python sherpa-onnx (Docker environment)
-    if (System.getenv("SPEECH_ENABLED") != null) {
-      return synthesizeWithPython(text);
     }
 
     try {
@@ -292,29 +292,73 @@ public class SherpaOnnxNative {
         return "STT model path not configured";
       }
 
-      // Call Python sherpa-onnx STT
-      var pb =
-          new ProcessBuilder(
-              "python3",
-              "-c",
-              String.format(
-                  "import sherpa_onnx; "
-                      + "recognizer = sherpa_onnx.OnlineRecognizer.from_transducer('%s/tokens.txt', '%s/encoder-epoch-99-avg-1-chunk-16-left-128.int8.onnx', '%s/decoder-epoch-99-avg-1-chunk-16-left-128.int8.onnx', '%s/joiner-epoch-99-avg-1-chunk-16-left-128.int8.onnx'); "
-                      + "stream = recognizer.create_stream(); "
-                      + "import soundfile; "
-                      + "data, sr = soundfile.read('%s'); "
-                      + "stream.accept_waveform(sr, data); "
-                      + "recognizer.decode_stream(stream); "
-                      + "print(stream.result.text)",
-                  sttModelPath, sttModelPath, sttModelPath, sttModelPath, tempFile));
+      log.debug("Transcribing with sherpa-onnx, audio file: {} ({} bytes)", tempFile, audioData.length);
 
+      // Create a Python script file to avoid command line truncation
+      var scriptFile = java.nio.file.Files.createTempFile("stt-script", ".py");
+      var pythonScript = String.format(
+          "import sys\n"
+          + "import sherpa_onnx\n"
+          + "import wave\n"
+          + "import numpy as np\n"
+          + "try:\n"
+          + "    recognizer = sherpa_onnx.OnlineRecognizer.from_transducer(\n"
+          + "        '%s/tokens.txt',\n"
+          + "        '%s/encoder-epoch-99-avg-1-chunk-16-left-128.onnx',\n"
+          + "        '%s/decoder-epoch-99-avg-1-chunk-16-left-128.onnx',\n"
+          + "        '%s/joiner-epoch-99-avg-1-chunk-16-left-128.onnx'\n"
+          + "    )\n"
+          + "    stream = recognizer.create_stream()\n"
+          + "    wf = wave.open('%s', 'rb')\n"
+          + "    sr = wf.getframerate()\n"
+          + "    n = wf.getnframes()\n"
+          + "    raw = wf.readframes(n)\n"
+          + "    wf.close()\n"
+          + "    data = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0\n"
+          + "    print(f'Audio loaded: {len(data)} samples at {sr}Hz', file=sys.stderr)\n"
+          + "    stream.accept_waveform(sr, data)\n"
+          + "    stream.input_finished()\n"
+          + "    while recognizer.is_ready(stream):\n"
+          + "        recognizer.decode_stream(stream)\n"
+          + "    result = recognizer.get_result(stream).strip()\n"
+          + "    print(result if result else 'NO_SPEECH_DETECTED')\n"
+          + "except Exception as e:\n"
+          + "    print(f'STT Error: {e}', file=sys.stderr)\n"
+          + "    print('TRANSCRIPTION_ERROR')\n",
+          sttModelPath, sttModelPath, sttModelPath, sttModelPath, tempFile);
+
+      java.nio.file.Files.write(scriptFile, pythonScript.getBytes());
+
+      var pb = new ProcessBuilder("python3", scriptFile.toString());
       var process = pb.start();
-      process.waitFor(10, java.util.concurrent.TimeUnit.SECONDS);
 
+      var finished = process.waitFor(15, java.util.concurrent.TimeUnit.SECONDS);
+      if (!finished) {
+        process.destroyForcibly();
+        log.warn("Python STT process timed out");
+        return "STT processing timeout";
+      }
+
+      // Read both stdout and stderr
       var result = new String(process.getInputStream().readAllBytes()).trim();
-      java.nio.file.Files.deleteIfExists(tempFile);
+      var errorOutput = new String(process.getErrorStream().readAllBytes()).trim();
 
-      log.debug("Python STT result: '{}'", result);
+      // Clean up temporary files
+      java.nio.file.Files.deleteIfExists(tempFile);
+      java.nio.file.Files.deleteIfExists(scriptFile);
+
+      log.debug("Python STT stdout: '{}', stderr: '{}'", result, errorOutput);
+
+      if ("TRANSCRIPTION_ERROR".equals(result)) {
+        log.error("Python STT transcription failed: {}", errorOutput);
+        return "Speech transcription failed";
+      }
+
+      if ("NO_SPEECH_DETECTED".equals(result)) {
+        log.info("No speech detected in audio");
+        return "No speech detected";
+      }
+
       return result.isEmpty() ? "No speech detected" : result;
 
     } catch (Exception e) {
@@ -340,25 +384,73 @@ public class SherpaOnnxNative {
 
       var tempFile = java.nio.file.Files.createTempFile("sherpa-tts", ".wav");
 
-      // Call Python sherpa-onnx TTS (Piper model format)
-      var pb =
-          new ProcessBuilder(
-              "python3",
-              "-c",
-              String.format(
-                  "import sherpa_onnx; "
-                      + "tts = sherpa_onnx.OfflineTts.from_piper('%s/en_US-amy-low.onnx', '%s/tokens.txt', data_dir='%s/espeak-ng-data'); "
-                      + "audio = tts.generate('%s', speed=1.0); "
-                      + "import soundfile; "
-                      + "soundfile.write('%s', audio.samples, tts.sample_rate)",
-                  ttsModelPath,
-                  ttsModelPath,
-                  ttsModelPath,
-                  text.replace("'", "\\'"),
-                  tempFile.toString()));
+      log.debug("Synthesizing with sherpa-onnx TTS: '{}' -> {}", text, tempFile);
 
+      // Create a Python script file to avoid command line truncation
+      var scriptFile = java.nio.file.Files.createTempFile("tts-script", ".py");
+      var pythonScript = String.format(
+          "import sys\n"
+          + "import sherpa_onnx\n"
+          + "import wave\n"
+          + "import numpy as np\n"
+          + "try:\n"
+          + "    # Configure TTS with proper API\n"
+          + "    config = sherpa_onnx.OfflineTtsConfig(\n"
+          + "        model=sherpa_onnx.OfflineTtsModelConfig(\n"
+          + "            vits=sherpa_onnx.OfflineTtsVitsModelConfig(\n"
+          + "                model='%s/en_US-amy-low.onnx',\n"
+          + "                lexicon='',\n"
+          + "                tokens='%s/tokens.txt',\n"
+          + "                data_dir='%s/espeak-ng-data'\n"
+          + "            )\n"
+          + "        )\n"
+          + "    )\n"
+          + "    tts = sherpa_onnx.OfflineTts(config)\n"
+          + "    audio = tts.generate('%s', speed=1.0, sid=0)\n"
+          + "    sr = tts.sample_rate\n"
+          + "    samples = np.asarray(audio.samples, dtype=np.float32)\n"
+          + "    pcm = (np.clip(samples, -1.0, 1.0) * 32767.0).astype(np.int16).tobytes()\n"
+          + "    with wave.open('%s', 'wb') as wf:\n"
+          + "        wf.setnchannels(1)\n"
+          + "        wf.setsampwidth(2)\n"
+          + "        wf.setframerate(sr)\n"
+          + "        wf.writeframes(pcm)\n"
+          + "    print('TTS_SUCCESS')\n"
+          + "except Exception as e:\n"
+          + "    print(f'TTS Error: {e}', file=sys.stderr)\n"
+          + "    print('TTS_ERROR')\n",
+          ttsModelPath,
+          ttsModelPath,
+          ttsModelPath,
+          text.replace("'", "\\'").replace("\"", "\\\""),
+          tempFile.toString());
+
+      java.nio.file.Files.write(scriptFile, pythonScript.getBytes());
+
+      var pb = new ProcessBuilder("python3", scriptFile.toString());
       var process = pb.start();
-      process.waitFor(15, java.util.concurrent.TimeUnit.SECONDS);
+
+      var finished = process.waitFor(20, java.util.concurrent.TimeUnit.SECONDS);
+      if (!finished) {
+        process.destroyForcibly();
+        log.warn("Python TTS process timed out");
+        return generateMockWavData(text);
+      }
+
+      // Read both stdout and stderr
+      var result = new String(process.getInputStream().readAllBytes()).trim();
+      var errorOutput = new String(process.getErrorStream().readAllBytes()).trim();
+
+      // Clean up script file
+      java.nio.file.Files.deleteIfExists(scriptFile);
+
+      log.debug("Python TTS stdout: '{}', stderr: '{}'", result, errorOutput);
+
+      if ("TTS_ERROR".equals(result)) {
+        log.error("Python TTS synthesis failed: {}", errorOutput);
+        java.nio.file.Files.deleteIfExists(tempFile);
+        return generateMockWavData(text);
+      }
 
       if (java.nio.file.Files.exists(tempFile) && java.nio.file.Files.size(tempFile) > 0) {
         var audioData = java.nio.file.Files.readAllBytes(tempFile);

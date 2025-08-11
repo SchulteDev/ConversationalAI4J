@@ -172,6 +172,36 @@ public class ConversationalAI {
    * @throws UnsupportedOperationException if speech-to-text is not configured
    * @throws IllegalArgumentException if audio input is null or empty
    */
+  /**
+   * Convert speech to text only (no chat processing).
+   * 
+   * @param audioInput Raw audio data in WAV format (16kHz, 16-bit, mono)
+   * @return Transcribed text, or error message if transcription failed
+   * @throws UnsupportedOperationException if speech-to-text is not configured
+   * @throws IllegalArgumentException if audio input is null or empty
+   */
+  public String speechToText(byte[] audioInput) {
+    if (speechToText == null) {
+      throw new UnsupportedOperationException(
+          "Speech-to-text service is not configured. Use withSpeech() in builder.");
+    }
+
+    if (audioInput == null || audioInput.length == 0) {
+      throw new IllegalArgumentException("Audio input cannot be null or empty");
+    }
+
+    log.info("Processing speech-to-text: {} bytes", audioInput.length);
+    
+    try {
+      var text = speechToText.transcribe(audioInput);
+      log.info("Speech-to-text result: '{}'", text);
+      return text;
+    } catch (Exception e) {
+      log.error("Speech-to-text failed: {}", e.getMessage(), e);
+      return "Speech recognition error: " + e.getMessage();
+    }
+  }
+
   public String chatWithTextResponse(byte[] audioInput) {
     if (speechToText == null) {
       throw new UnsupportedOperationException(
@@ -225,6 +255,36 @@ public class ConversationalAI {
    */
   public boolean isTextToSpeechEnabled() {
     return textToSpeech != null && textToSpeech.isReady();
+  }
+
+  /**
+   * Convert text directly to speech without LLM processing.
+   * 
+   * @param text The text to convert to speech
+   * @return Audio data in WAV format, or empty array if processing failed
+   * @throws UnsupportedOperationException if text-to-speech is not configured
+   * @throws IllegalArgumentException if text input is null or empty
+   */
+  public byte[] textToSpeech(String text) {
+    if (textToSpeech == null) {
+      throw new UnsupportedOperationException(
+          "Text-to-speech service is not configured. Use withSpeech() in builder.");
+    }
+
+    if (text == null || text.trim().isEmpty()) {
+      throw new IllegalArgumentException("Text input cannot be null or empty");
+    }
+
+    log.debug("Converting text to speech: '{}'", text);
+
+    try {
+      var audioResponse = textToSpeech.synthesize(text);
+      log.debug("Generated {} bytes of audio for text conversion", audioResponse.length);
+      return audioResponse;
+    } catch (Exception e) {
+      log.error("Error converting text to speech: {}", e.getMessage(), e);
+      return new byte[0];
+    }
   }
 
   /**

@@ -23,15 +23,8 @@ dependencies {
   implementation 'org.slf4j:slf4j-api:2.0.17'
   runtimeOnly 'org.slf4j:slf4j-simple:2.0.17'
 
-  // Speech functionality (Linux only) - sherpa-onnx integration
-  // No Maven dependency available - requires system installation:lib
-  //   Linux: Install sherpa-onnx system package (apt-get install sherpa-onnx)
-  //   Docker: Use provided Dockerfile with sherpa-onnx
-  //   Other platforms: Falls back to mock implementation
-  // See: https://github.com/k2-fsa/sherpa-onnx for installation
-
-  // ONNX Runtime for potential speech model loading (optional)
-  implementation 'com.microsoft.onnxruntime:onnxruntime:1.22.0'
+  // Speech functionality via sherpa-onnx JNI (Docker-based)
+  // JNI library is provided in Docker environment at runtime
 
   // Test dependencies
   testImplementation 'org.junit.jupiter:junit-jupiter-api:5.13.4'

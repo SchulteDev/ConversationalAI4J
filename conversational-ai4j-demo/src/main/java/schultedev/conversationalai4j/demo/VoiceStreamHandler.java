@@ -21,7 +21,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class VoiceStreamHandler implements WebSocketHandler {
 
     private static final Logger log = LoggerFactory.getLogger(VoiceStreamHandler.class);
-    
+
     private final ConversationalAI conversationalAI;
     private final ConcurrentHashMap<String, CopyOnWriteArrayList<ByteBuffer>> audioBuffers = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Boolean> recordingStates = new ConcurrentHashMap<>();
@@ -54,7 +54,7 @@ public class VoiceStreamHandler implements WebSocketHandler {
         log.info("WebSocket voice stream connection established: {}", session.getId());
         audioBuffers.put(session.getId(), new CopyOnWriteArrayList<>());
         recordingStates.put(session.getId(), false);
-        
+
         // Send initial status
         sendStatus(session, "connected", "Voice stream ready");
     }
@@ -62,7 +62,7 @@ public class VoiceStreamHandler implements WebSocketHandler {
     @Override
     public void handleMessage(WebSocketSession session, WebSocketMessage<?> message) throws Exception {
         String sessionId = session.getId();
-        
+
         if (message instanceof TextMessage textMessage) {
             handleTextMessage(session, textMessage);
         } else if (message instanceof BinaryMessage binaryMessage) {
@@ -73,21 +73,21 @@ public class VoiceStreamHandler implements WebSocketHandler {
     private void handleTextMessage(WebSocketSession session, TextMessage message) throws IOException {
         String payload = message.getPayload();
         String sessionId = session.getId();
-        
+
         log.debug("Received text message from {}: {}", sessionId, payload);
-        
+
         if ("start_recording".equals(payload)) {
             recordingStates.put(sessionId, true);
             audioBuffers.get(sessionId).clear();
             sendStatus(session, "recording", "Recording started");
             log.info("Started recording for session {}", sessionId);
-            
+
         } else if ("stop_recording".equals(payload)) {
             recordingStates.put(sessionId, false);
             sendStatus(session, "processing", "Processing voice...");
             log.info("Stopped recording for session {}, processing audio", sessionId);
             processAccumulatedAudio(session);
-            
+
         } else if ("check_status".equals(payload)) {
             sendSpeechStatus(session);
         }
@@ -95,10 +95,10 @@ public class VoiceStreamHandler implements WebSocketHandler {
 
     private void handleBinaryMessage(WebSocketSession session, BinaryMessage message) {
         String sessionId = session.getId();
-        
+
         if (recordingStates.get(sessionId)) {
             audioBuffers.get(sessionId).add(message.getPayload());
-            log.trace("Received audio chunk of {} bytes from session {}", 
+            log.debug("Received audio chunk of {} bytes from session {}",
                 message.getPayload().remaining(), sessionId);
         }
     }
@@ -106,24 +106,33 @@ public class VoiceStreamHandler implements WebSocketHandler {
     private void processAccumulatedAudio(WebSocketSession session) throws IOException {
         String sessionId = session.getId();
         var chunks = audioBuffers.get(sessionId);
-        
+
         if (chunks.isEmpty()) {
             sendStatus(session, "error", "No audio data received");
             return;
         }
 
+        // Log chunk diagnostics
+        int chunkCount = chunks.size();
+        int firstSize = chunks.get(0).remaining();
+        int lastSize = chunks.get(chunkCount - 1).remaining();
+        log.debug("Session {} has {} audio chunks; first={} bytes, last={} bytes", sessionId, chunkCount, firstSize, lastSize);
+
         try {
             // Combine all audio chunks
             ByteArrayOutputStream audioStream = new ByteArrayOutputStream();
+            int totalBytes = 0;
             for (ByteBuffer chunk : chunks) {
                 byte[] chunkBytes = new byte[chunk.remaining()];
                 chunk.get(chunkBytes);
                 audioStream.write(chunkBytes);
+                totalBytes += chunkBytes.length;
                 chunk.rewind(); // Reset for potential reuse
             }
-            
+
             byte[] audioData = audioStream.toByteArray();
             log.info("Processing combined audio data of {} bytes for session {}", audioData.length, sessionId);
+            log.debug("Session {} accumulated bytes sum={}, combined array size={}", sessionId, totalBytes, audioData.length);
 
             if (conversationalAI == null) {
                 sendStatus(session, "error", "AI service not available");
@@ -137,33 +146,43 @@ public class VoiceStreamHandler implements WebSocketHandler {
 
             // Step 1: Speech-to-Text
             sendStatus(session, "stt_processing", "Converting speech to text...");
-            String transcribedText = conversationalAI.chatWithTextResponse(audioData);
-            
+            log.info("Starting speech-to-text conversion for session {} with {} bytes of audio", sessionId, audioData.length);
+            long t0 = System.nanoTime();
+            String transcribedText = conversationalAI.speechToText(audioData);
+            long t1 = System.nanoTime();
+            log.info("STT completed for session {} in {} ms", sessionId, ((t1 - t0) / 1_000_000));
+
             if (transcribedText == null || transcribedText.trim().isEmpty()) {
+                log.warn("Speech-to-text returned empty result for session {}", sessionId);
                 sendStatus(session, "error", "Could not understand speech");
                 return;
             }
-            
-            log.info("Speech-to-Text result for session {}: '{}'", sessionId, transcribedText);
-            
+
+            log.info("VOICE STT RESULT for session {}: '{}'", sessionId, transcribedText);
+
             // Send transcribed text to user interface
             String transcriptJson = String.format(
-                "{\"type\":\"transcription\",\"text\":\"%s\"}", 
+                "{\"type\":\"transcription\",\"text\":\"%s\"}",
                 transcribedText.replace("\"", "\\\""));
             session.sendMessage(new TextMessage(transcriptJson));
 
             // Step 2: LLM Processing
             sendStatus(session, "llm_processing", "AI is thinking...");
+            log.info("VOICE USER INPUT for session {}: '{}'", sessionId, transcribedText);
+            long t2 = System.nanoTime();
             String aiResponse = conversationalAI.chat(transcribedText);
-            
+            long t3 = System.nanoTime();
+            log.info("LLM completed for session {} in {} ms", sessionId, ((t3 - t2) / 1_000_000));
+
             if (aiResponse == null || aiResponse.trim().isEmpty()) {
+                log.warn("LLM returned empty response for session {}", sessionId);
                 sendStatus(session, "error", "AI failed to generate response");
                 return;
             }
-            
-            log.info("LLM response for session {}: '{}'", sessionId, aiResponse);
 
-            // Step 3: Text-to-Speech  
+            log.info("VOICE AI RESPONSE for session {}: '{}'", sessionId, aiResponse);
+
+            // Step 3: Text-to-Speech
             sendStatus(session, "tts_processing", "Converting to speech...");
             sendAIResponse(session, aiResponse, sessionId);
 
@@ -209,7 +228,7 @@ public class VoiceStreamHandler implements WebSocketHandler {
     public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) throws Exception {
         String sessionId = session.getId();
         log.info("WebSocket voice stream connection closed: {} ({})", sessionId, closeStatus);
-        
+
         // Clean up session data
         audioBuffers.remove(sessionId);
         recordingStates.remove(sessionId);
@@ -219,16 +238,24 @@ public class VoiceStreamHandler implements WebSocketHandler {
     public boolean supportsPartialMessages() {
         return true;
     }
-    
+
     private void sendAIResponse(WebSocketSession session, String aiResponse, String sessionId) throws IOException {
         if (conversationalAI.isTextToSpeechEnabled()) {
             try {
-                // Use the existing chatWithVoiceResponse but with a simple prompt to avoid LLM reprocessing
-                byte[] responseAudio = conversationalAI.chatWithVoiceResponse("Say exactly: " + aiResponse);
-                
+                long t0 = System.nanoTime();
+                // Directly convert AI response to speech without reprocessing through LLM
+                byte[] responseAudio = conversationalAI.textToSpeech(aiResponse);
+                long t1 = System.nanoTime();
+
+                if (responseAudio == null || responseAudio.length == 0) {
+                    log.warn("TTS did not generate audio file for session {}", sessionId);
+                    sendTextResponse(session, aiResponse);
+                    return;
+                }
+
                 session.sendMessage(new BinaryMessage(responseAudio));
                 sendStatus(session, "complete", "Speech ready");
-                log.info("Sent {} bytes audio to session {}", responseAudio.length, sessionId);
+                log.info("Sent {} bytes audio to session {} (TTS {} ms)", responseAudio.length, sessionId, ((t1 - t0) / 1_000_000));
             } catch (Exception e) {
                 log.warn("TTS failed for session {}: {}", sessionId, e.getMessage());
                 sendTextResponse(session, aiResponse);
@@ -237,10 +264,10 @@ public class VoiceStreamHandler implements WebSocketHandler {
             sendTextResponse(session, aiResponse);
         }
     }
-    
+
     private void sendTextResponse(WebSocketSession session, String text) throws IOException {
         String responseJson = String.format(
-            "{\"type\":\"text_response\",\"message\":\"%s\"}", 
+            "{\"type\":\"text_response\",\"message\":\"%s\"}",
             text.replace("\"", "\\\""));
         session.sendMessage(new TextMessage(responseJson));
         sendStatus(session, "complete", "Text ready");

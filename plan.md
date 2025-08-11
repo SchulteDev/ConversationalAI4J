@@ -1,6 +1,6 @@
 # ConversationalAI4J Development Plan
 
-## Current Status: Production-Ready Voice AI System with Browser UI ✅
+## Current Status: Voice in Docker - Debugging in Progress 🔧
 
 **ConversationalAI4J** is a **complete voice-to-voice AI conversation system** with browser-based real-time interaction. Users can speak directly to an LLM through their browser and receive intelligent spoken responses.
 
@@ -98,7 +98,7 @@ byte[] audioResponse = ai.voiceChat(audioInput);
 - Comprehensive documentation
 - Helper scripts and troubleshooting guides
 
-## 🎯 **Current Status: Production Ready**
+## 🎯 Current Focus: Docker Voice Debugging
 
 | Component | Status | Details |
 |-----------|--------|---------|
@@ -160,6 +160,11 @@ docker-compose up --build
 
 ---
 
-**Status: COMPLETE** - Production-ready voice AI system with browser interface! 🎤🤖🔊
+**Status: IN PROGRESS** - Docker voice debugging underway. See README Troubleshooting for exactly which logs to capture. Core features and tests pass; enhanced logging added to help isolate STT normalization and TTS playback in Docker.
 
-*Ready for real-world deployment and further customization.*
+Next steps:
+- Re-run docker-compose up --build
+- Open http://localhost:8080 → Connect Voice Stream → hold-to-talk
+- Share the demo container logs from “Started recording …” to “complete” and your browser console [voice] logs
+
+This will allow us to pinpoint whether the issue is in recording, normalization (ffmpeg), STT model/decoding, or TTS synthesis/playback.

@@ -6,117 +6,71 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Speech-to-Text service using sherpa-onnx for privacy-first local processing. Converts audio input
- * to text without requiring internet connection.
+ * Speech-to-Text service for privacy-first local processing.
+ * Simple, clean interface that uses external speech tools.
  */
 public class SpeechToText {
 
   private static final Logger log = LoggerFactory.getLogger(SpeechToText.class);
-
-  private final Path modelPath;
+  private final SpeechService speechService;
+  private final String modelPath;
   private final String language;
-  private final boolean initialized;
-  private final long recognizerHandle;
 
   /**
-   * Creates a new SpeechToText instance with the specified model.
+   * Creates a new SpeechToText instance.
    *
-   * @param modelPath Path to the sherpa-onnx STT model
+   * @param modelPath Path to the STT model (for logging/info purposes)
    * @param language Language code for the model (e.g., "en-US")
-   * @throws IllegalArgumentException if model path is null or doesn't exist
    */
   public SpeechToText(Path modelPath, String language) {
-    this.modelPath = Objects.requireNonNull(modelPath, "Model path cannot be null");
+    this.speechService = new SpeechService();
+    this.modelPath = Objects.requireNonNull(modelPath, "Model path cannot be null").toString();
     this.language = Objects.requireNonNull(language, "Language cannot be null");
 
-    log.info("Initializing SpeechToText with model: {} ({})", modelPath, language);
-    this.recognizerHandle = SherpaOnnxNative.createSttRecognizer(modelPath.toString(), language);
-    this.initialized = (recognizerHandle > 0);
-
-    if (initialized) {
-      if (SherpaOnnxNative.isNativeLibraryAvailable()) {
-        log.info("SpeechToText initialized with native sherpa-onnx library");
-      } else {
-        log.info("SpeechToText initialized with mock implementation (development mode)");
-      }
-    } else {
-      log.warn("Failed to initialize SpeechToText");
-    }
+    log.info("SpeechToText initialized for model: {} ({})", modelPath, language);
   }
 
   /**
    * Transcribes audio data to text.
    *
-   * @param audioData Raw audio data in WAV format (16kHz, 16-bit, mono)
-   * @return Transcribed text, or empty string if transcription failed
-   * @throws IllegalStateException if the model is not initialized
-   * @throws IllegalArgumentException if audio data is null or empty
+   * @param audioData Raw audio data (WAV format preferred)
+   * @return Transcribed text, or error message if transcription failed
+   * @throws IllegalArgumentException if audioData is null or empty
    */
   public String transcribe(byte[] audioData) {
-    if (!initialized) {
-      throw new IllegalStateException("Speech-to-text model is not initialized");
-    }
-
     if (audioData == null || audioData.length == 0) {
       throw new IllegalArgumentException("Audio data cannot be null or empty");
     }
 
     log.debug("Transcribing {} bytes of audio data", audioData.length);
-
-    try {
-      var result = SherpaOnnxNative.transcribeAudio(recognizerHandle, audioData);
-      log.debug("Transcription result: '{}'", result);
-      return result;
-
-    } catch (Exception e) {
-      log.error("Error transcribing audio: {}", e.getMessage(), e);
-      return "";
-    }
+    return speechService.speechToText(audioData);
   }
 
   /**
-   * Checks if the speech-to-text service is ready to process audio.
-   *
-   * @return true if the model is loaded and ready
+   * Checks if the speech-to-text service is ready.
    */
   public boolean isReady() {
-    return initialized;
+    return speechService.isAvailable();
   }
 
   /**
-   * Gets the language code for this STT instance.
-   *
-   * @return Language code (e.g., "en-US")
+   * Gets the language code.
    */
   public String getLanguage() {
     return language;
   }
 
   /**
-   * Gets the model path for this STT instance.
-   *
-   * @return Path to the model file
+   * Gets the model path.
    */
   public Path getModelPath() {
-    return modelPath;
+    return Path.of(modelPath);
   }
-
-  // No longer needed - initialization is handled in constructor via SherpaOnnxNative
 
   /**
-   * Cleans up resources used by the speech-to-text service. Should be called when the service is no
-   * longer needed.
+   * No cleanup needed in this simple implementation.
    */
   public void close() {
-    if (initialized && recognizerHandle > 0) {
-      log.debug("Cleaning up speech-to-text resources");
-      SherpaOnnxNative.releaseSttRecognizer(recognizerHandle);
-    }
-  }
-
-  @Override
-  protected void finalize() throws Throwable {
-    close();
-    super.finalize();
+    log.debug("SpeechToText closed");
   }
 }

@@ -175,29 +175,29 @@
   <div class="voice-controls">
     <h3>🎤 Voice Chat</h3>
     <p>Hold to talk</p>
-    
+
     <div class="status hidden" id="status"></div>
-    
+
     <button class="btn btn-voice" id="voice-btn" disabled>
       🎤
     </button>
-    
+
     <div class="audio-player">
       <audio id="ai-response" controls style="display: none;">
         Your browser does not support the audio element.
       </audio>
     </div>
-    
+
     <div id="transcription" class="response" style="display: none; background-color: #f0f8ff;">
       <strong>You said:</strong><br/>
       <span id="transcription-content"></span>
     </div>
-    
+
     <div id="text-response" class="response" style="display: none;">
       <strong>AI Response:</strong><br/>
       <span id="text-response-content"></span>
     </div>
-    
+
     <div>
       <button class="btn" id="connect-btn" onclick="connectVoiceStream()">Connect</button>
       <button class="btn" id="disconnect-btn" onclick="disconnectVoiceStream()" style="display: none;">Disconnect</button>
@@ -225,7 +225,7 @@
 
 <script>
 // Simple globals
-let socket, audioStream, mediaRecorder, isConnected = false, isRecording = false;
+let socket, audioStream, mediaRecorder, isConnected = false, isRecording = false, recordedChunks = [];
 
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('voice-btn').addEventListener('mousedown', startRecording);
@@ -236,7 +236,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function connectVoiceStream() {
     showStatus('info', 'Connecting...');
-    
+
     navigator.mediaDevices.getUserMedia({ audio: { sampleRate: 16000, channelCount: 1 } })
         .then(stream => { audioStream = stream; setupWebSocket(); })
         .catch(error => showStatus('error', 'Microphone access failed: ' + error.message));
@@ -244,13 +244,16 @@ function connectVoiceStream() {
 
 function setupWebSocket() {
     socket = new WebSocket(`ws://${window.location.host}/voice-stream`);
-    
+    console.log('[voice] opening WebSocket to', `ws://${window.location.host}/voice-stream`);
+
     socket.onopen = function() {
+        console.log('[voice] WebSocket opened');
         isConnected = true;
         updateUI();
         showStatus('success', 'Connected! Hold microphone to talk.');
+        try { socket.send('check_status'); } catch(e) { console.warn('[voice] send check_status failed', e); }
     };
-    
+
     socket.onmessage = function(event) {
         if (event.data instanceof Blob) {
             handleAudioResponse(event.data);
@@ -262,9 +265,10 @@ function setupWebSocket() {
             }
         }
     };
-    
-    socket.onerror = () => showStatus('error', 'Connection error');
-    socket.onclose = function() {
+
+    socket.onerror = (e) => { console.error('[voice] WebSocket error', e); showStatus('error', 'Connection error'); };
+    socket.onclose = function(evt) {
+        console.log('[voice] WebSocket closed', { code: evt.code, reason: evt.reason, wasClean: evt.wasClean });
         isConnected = false;
         updateUI();
         showStatus('info', 'Disconnected');
@@ -273,8 +277,9 @@ function setupWebSocket() {
 }
 
 function handleControlMessage(message) {
+    console.log('[voice] control message', message);
     if (message.type === 'status') {
-        const statusType = message.status === 'error' ? 'error' : 
+        const statusType = message.status === 'error' ? 'error' :
                           message.status === 'complete' ? 'success' : 'info';
         showStatus(statusType, message.message);
     } else if (message.type === 'transcription') {
@@ -290,19 +295,20 @@ function handleControlMessage(message) {
 
 function handleAudioResponse(audioBlob) {
     console.log('Received audio response:', audioBlob.size, 'bytes');
-    
+
     const audioUrl = URL.createObjectURL(audioBlob);
-    aiResponseAudio.src = audioUrl;
-    aiResponseAudio.style.display = 'block';
-    
+    const audioEl = document.getElementById('ai-response');
+    audioEl.src = audioUrl;
+    audioEl.style.display = 'block';
+
     // Hide text response when showing audio
     document.getElementById('text-response').style.display = 'none';
-    
-    aiResponseAudio.play()
+
+    audioEl.play()
         .then(() => showStatus('success', 'Playing AI speech response'))
-        .catch(() => showStatus('error', 'Audio playback failed'));
-    
-    aiResponseAudio.onended = () => URL.revokeObjectURL(audioUrl);
+        .catch(err => showStatus('error', 'Audio playback failed' + (err && err.message ? ': ' + err.message : '')));
+
+    audioEl.onended = () => URL.revokeObjectURL(audioUrl);
 }
 
 function disconnectVoiceStream() {
@@ -311,21 +317,42 @@ function disconnectVoiceStream() {
 
 function startRecording(event) {
     event.preventDefault();
-    
+
     if (!isConnected || !audioStream || isRecording) return;
-    
+
     try {
+        console.log('[voice] starting recording');
         mediaRecorder = new MediaRecorder(audioStream, { mimeType: 'audio/webm;codecs=opus' });
+        recordedChunks = [];
         mediaRecorder.ondataavailable = event => {
-            if (event.data.size > 0) socket.send(event.data);
+            if (event.data && event.data.size > 0) {
+                recordedChunks.push(event.data);
+                console.log('[voice] ondataavailable chunk size', event.data.size);
+            }
         };
-        
-        mediaRecorder.start(100);
+        mediaRecorder.onstart = () => {
+            console.log('[voice] MediaRecorder started, state=', mediaRecorder.state);
+        };
+        mediaRecorder.onstop = () => {
+            try {
+                const blob = new Blob(recordedChunks, { type: 'audio/webm;codecs=opus' });
+                console.log('[voice] MediaRecorder stopped; sending final blob size', blob.size);
+                if (blob.size > 0) {
+                    socket.send(blob);
+                }
+                socket.send('stop_recording');
+                recordedChunks = [];
+            } catch (e) {
+                showStatus('error', 'Failed to send audio: ' + e.message);
+            }
+        };
+
+        mediaRecorder.start();
         isRecording = true;
         updateUI();
         socket.send('start_recording');
         showStatus('info', 'Recording...');
-        
+
     } catch (error) {
         showStatus('error', 'Recording failed: ' + error.message);
     }
@@ -333,13 +360,13 @@ function startRecording(event) {
 
 function stopRecording(event) {
     event.preventDefault();
-    
+
     if (!isRecording) return;
-    
+
+    console.log('[voice] stopRecording invoked; state before stop=', mediaRecorder && mediaRecorder.state);
     mediaRecorder.stop();
     isRecording = false;
     updateUI();
-    socket.send('stop_recording');
     showStatus('info', 'Processing...');
 }
 
@@ -347,7 +374,7 @@ function updateUI() {
     const voiceBtn = document.getElementById('voice-btn');
     const connectBtn = document.getElementById('connect-btn');
     const disconnectBtn = document.getElementById('disconnect-btn');
-    
+
     connectBtn.style.display = isConnected ? 'none' : 'inline-block';
     disconnectBtn.style.display = isConnected ? 'inline-block' : 'none';
     voiceBtn.disabled = !isConnected;
@@ -360,7 +387,7 @@ function showStatus(type, message) {
     statusDiv.className = 'status ' + type;
     statusDiv.textContent = message;
     statusDiv.classList.remove('hidden');
-    
+
     if (type === 'success') {
         setTimeout(() => statusDiv.classList.add('hidden'), 3000);
     }
@@ -369,7 +396,7 @@ function showStatus(type, message) {
 function displayTranscription(text) {
     const transcriptionDiv = document.getElementById('transcription');
     const transcriptionContent = document.getElementById('transcription-content');
-    
+
     transcriptionContent.textContent = text;
     transcriptionDiv.style.display = 'block';
 }
@@ -377,27 +404,31 @@ function displayTranscription(text) {
 function displayTextResponse(text) {
     const textResponseDiv = document.getElementById('text-response');
     const textContent = document.getElementById('text-response-content');
-    
+
     textContent.textContent = text;
     textResponseDiv.style.display = 'block';
-    
+
     // Hide audio player when showing text
     document.getElementById('ai-response').style.display = 'none';
 }
 
 function cleanup() {
+    console.log('[voice] cleanup called');
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        console.log('[voice] stopping active MediaRecorder; state=', mediaRecorder.state);
         mediaRecorder.stop();
     }
     if (audioStream) {
+        console.log('[voice] stopping audio tracks');
         audioStream.getTracks().forEach(track => track.stop());
         audioStream = null;
     }
     if (socket) {
+        console.log('[voice] closing WebSocket');
         socket.close();
         socket = null;
     }
-    
+
     mediaRecorder = null;
     isRecording = false;
     isConnected = false;

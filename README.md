@@ -9,6 +9,8 @@
 A Java library for conversational AI applications with complete speech-to-text, AI processing, and
 text-to-speech capabilities.
 
+> Status Update (2025-08-11): Voice roundtrip is stable in unit/integration tests and local runs, but Docker voice in some environments may still transcribe as "No speech detected" and/or fail to play back TTS. We added detailed DEBUG logging and a troubleshooting guide below. Please run docker-compose up --build and share logs if you encounter issues.
+
 ## 🚀 Quick Start
 
 ### Option 1: Docker (Recommended)
@@ -378,4 +380,55 @@ java --version  # Must be Java 21
 
 ---
 
-**Ready for Production Use** - KISS architecture with voice streaming capabilities! 🚀
+**Status: In Progress** - Docker voice debugging underway; see Troubleshooting below. Core features and tests pass; voice logging enhanced.
+
+
+## 🧰 Troubleshooting: Docker Voice (STT/TTS)
+
+If you run docker-compose up --build and voice doesn’t work as expected, enable and capture logs. The Docker demo now defaults to DEBUG logs for speech components.
+
+What to expect in logs when a roundtrip works:
+- Web UI (browser console):
+  - [voice] opening WebSocket...
+  - [voice] MediaRecorder started / ondataavailable chunk size N
+  - [voice] MediaRecorder stopped; sending final blob size M
+  - [voice] control message { type: 'status', ... }
+  - Received audio response: K bytes; Playing AI speech response
+- Server (demo container):
+  - WebSocket voice stream connection established: <id>
+  - Started recording / Stopped recording ... processing audio
+  - Received audio chunk of X bytes (several)
+  - Processing combined audio data of M bytes for session <id>
+  - Processing speech-to-text: M bytes
+  - Audio normalized via ffmpeg (... ms): M -> W bytes, sr=16000 Hz, ch=1, bits=16
+  - Processing W bytes with sherpa-onnx STT
+  - STT completed for session <id> in T ms
+  - VOICE STT RESULT for session <id>: '...'
+  - LLM completed for session <id> in T ms
+  - Synthesizing with sherpa-onnx TTS: '...'
+  - Sent K bytes audio to session <id> (TTS T ms)
+
+If you see “No speech detected”:
+- Confirm browser recorded audio:
+  - Check console logs: ondataavailable chunk sizes should be > 0 and final blob size M > 0.
+  - Ensure microphone permission granted and the mic input has visible level (OS input meter not muted).
+- Confirm normalization:
+  - Look for “Audio normalized via ffmpeg ... sr=16000 Hz, ch=1, bits=16”. If missing or shows errors, ffmpeg may have failed; the system falls back to raw input which may be unsupported by STT.
+- Confirm STT model exists in container:
+  - Models are placed under /app/models/stt. Dockerfile downloads them during build.
+- Provide full demo logs around your attempt.
+
+If you see “Python TTS did not generate audio file” or you don’t hear sound:
+- Check server log line “Sent K bytes audio to session ...”. If K is 0, share the preceding TTS logs.
+- Check the browser console for playback errors (autoplay restrictions, output device).
+- Ensure your system volume and output device are correct.
+- Models for TTS are under /app/models/tts.
+
+How to collect logs:
+- Server: docker compose logs -f demo (look for the lines listed above)
+- Browser: open DevTools → Console; copy the lines starting with [voice]
+
+Environment variables recap (Docker):
+- SPEECH_ENABLED=true, STT_MODEL_PATH=/app/models/stt, TTS_MODEL_PATH=/app/models/tts
+
+Please share: the demo service logs from “Started recording ...” to “complete”, and the browser console output for a single attempt. This will help us pinpoint issues quickly.
