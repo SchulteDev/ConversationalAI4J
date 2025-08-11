@@ -54,14 +54,14 @@ services:
       - SPRING_PROFILES_ACTIVE=docker
       - OLLAMA_BASE_URL=http://ollama:11434
       - OLLAMA_MODEL_NAME=llama3.2:3b
-      - SPEECH_ENABLED=true   # Enable simplified speech processing
+      - SPEECH_ENABLED=true
     restart: unless-stopped
     deploy:
       resources:
         limits:
-          memory: 1G
+          memory: 2G
         reservations:
-          memory: 512M
+          memory: 1G
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
       interval: 30s

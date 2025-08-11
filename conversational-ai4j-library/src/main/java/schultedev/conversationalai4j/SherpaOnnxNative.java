@@ -87,8 +87,14 @@ public class SherpaOnnxNative {
    */
   public static long createSttRecognizer(String modelPath, String language) {
     if (!isNativeLibraryAvailable()) {
-      log.trace("Native STT recognizer not available - using mock");
-      return 1L; // Mock handle
+      log.trace("Native STT recognizer not available - using Python mode");
+      return 1L; // Mock handle for Python mode
+    }
+
+    // If we're in Docker with Python sherpa-onnx, skip native and use Python
+    if (System.getenv("SPEECH_ENABLED") != null) {
+      log.info("Using Python sherpa-onnx for STT with model: {}", modelPath);
+      return 1L; // Mock handle for Python mode
     }
 
     try {
@@ -136,8 +142,14 @@ public class SherpaOnnxNative {
    */
   public static long createTtsSynthesizer(String modelPath, String language, String voice) {
     if (!isNativeLibraryAvailable()) {
-      log.trace("Native TTS synthesizer not available - using mock");
-      return 1L; // Mock handle
+      log.trace("Native TTS synthesizer not available - using Python mode");
+      return 1L; // Mock handle for Python mode
+    }
+
+    // If we're in Docker with Python sherpa-onnx, skip native and use Python
+    if (System.getenv("SPEECH_ENABLED") != null) {
+      log.info("Using Python sherpa-onnx for TTS with model: {}", modelPath);
+      return 1L; // Mock handle for Python mode
     }
 
     try {
@@ -287,7 +299,7 @@ public class SherpaOnnxNative {
               "-c",
               String.format(
                   "import sherpa_onnx; "
-                      + "recognizer = sherpa_onnx.OnlineRecognizer.from_transducer('%s/tokens.txt', '%s/encoder.int8.onnx', '%s/decoder.int8.onnx', '%s/joiner.int8.onnx'); "
+                      + "recognizer = sherpa_onnx.OnlineRecognizer.from_transducer('%s/tokens.txt', '%s/encoder-epoch-99-avg-1-chunk-16-left-128.int8.onnx', '%s/decoder-epoch-99-avg-1-chunk-16-left-128.int8.onnx', '%s/joiner-epoch-99-avg-1-chunk-16-left-128.int8.onnx'); "
                       + "stream = recognizer.create_stream(); "
                       + "import soundfile; "
                       + "data, sr = soundfile.read('%s'); "
@@ -313,6 +325,12 @@ public class SherpaOnnxNative {
 
   /** Synthesizes speech using Python sherpa-onnx CLI. */
   private static byte[] synthesizeWithPython(String text) {
+    // Check for simple shell TTS command first
+    var ttsCommand = System.getenv("TTS_COMMAND");
+    if (ttsCommand != null) {
+      return synthesizeWithShellCommand(text, ttsCommand);
+    }
+
     try {
       var ttsModelPath = System.getenv("TTS_MODEL_PATH");
       if (ttsModelPath == null) {
@@ -322,14 +340,14 @@ public class SherpaOnnxNative {
 
       var tempFile = java.nio.file.Files.createTempFile("sherpa-tts", ".wav");
 
-      // Call Python sherpa-onnx TTS
+      // Call Python sherpa-onnx TTS (Piper model format)
       var pb =
           new ProcessBuilder(
               "python3",
               "-c",
               String.format(
                   "import sherpa_onnx; "
-                      + "tts = sherpa_onnx.OfflineTts.from_vits('%s/model.onnx', '%s/lexicon.txt', '%s/tokens.txt'); "
+                      + "tts = sherpa_onnx.OfflineTts.from_piper('%s/en_US-amy-low.onnx', '%s/tokens.txt', data_dir='%s/espeak-ng-data'); "
                       + "audio = tts.generate('%s', speed=1.0); "
                       + "import soundfile; "
                       + "soundfile.write('%s', audio.samples, tts.sample_rate)",
@@ -355,6 +373,32 @@ public class SherpaOnnxNative {
 
     } catch (Exception e) {
       log.error("Error in Python TTS synthesis: {}", e.getMessage(), e);
+      return generateMockWavData(text);
+    }
+  }
+
+  /** Synthesizes speech using a shell command (e.g., espeak). */
+  private static byte[] synthesizeWithShellCommand(String text, String command) {
+    try {
+      var tempFile = java.nio.file.Files.createTempFile("shell-tts", ".wav");
+
+      var pb = new ProcessBuilder(command, text, tempFile.toString());
+      var process = pb.start();
+      process.waitFor(10, java.util.concurrent.TimeUnit.SECONDS);
+
+      if (java.nio.file.Files.exists(tempFile) && java.nio.file.Files.size(tempFile) > 0) {
+        var audioData = java.nio.file.Files.readAllBytes(tempFile);
+        java.nio.file.Files.deleteIfExists(tempFile);
+        log.debug("Shell TTS generated {} bytes using command: {}", audioData.length, command);
+        return audioData;
+      } else {
+        log.warn("Shell TTS command did not generate audio file: {}", command);
+        java.nio.file.Files.deleteIfExists(tempFile);
+        return generateMockWavData(text);
+      }
+
+    } catch (Exception e) {
+      log.error("Error in shell TTS synthesis with command '{}': {}", command, e.getMessage(), e);
       return generateMockWavData(text);
     }
   }
