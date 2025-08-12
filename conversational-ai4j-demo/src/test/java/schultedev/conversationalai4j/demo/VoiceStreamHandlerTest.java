@@ -146,6 +146,9 @@ class VoiceStreamHandlerTest {
     // When: Stop recording with no audio chunks
     handler.handleMessage(mockSession, new TextMessage("stop_recording"));
 
+    // Wait for async processing to complete
+    Thread.sleep(100);
+
     // Then: Should handle gracefully and send error status
     var messageCaptor = ArgumentCaptor.forClass(TextMessage.class);
     verify(mockSession, atLeast(2)).sendMessage(messageCaptor.capture());
