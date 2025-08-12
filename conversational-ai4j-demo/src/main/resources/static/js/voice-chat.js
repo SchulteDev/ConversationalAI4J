@@ -2,7 +2,8 @@
 // Handles real-time voice recording, WebSocket communication, and audio playback
 
 // Global variables for voice chat functionality
-let socket, audioStream, mediaRecorder, isConnected = false, isRecording = false, recordedChunks = [];
+let socket, audioStream, mediaRecorder, isConnected = false, isRecording = false,
+  recordedChunks = [];
 
 // Initialize voice chat functionality when DOM is loaded
 document.addEventListener('DOMContentLoaded', function () {
@@ -22,11 +23,11 @@ function connectVoiceStream() {
   showStatus('info', 'Connecting...');
 
   navigator.mediaDevices.getUserMedia({audio: {sampleRate: 16000, channelCount: 1}})
-    .then(stream => {
-      audioStream = stream;
-      setupWebSocket();
-    })
-    .catch(error => showStatus('error', 'Microphone access failed: ' + error.message));
+  .then(stream => {
+    audioStream = stream;
+    setupWebSocket();
+  })
+  .catch(error => showStatus('error', 'Microphone access failed: ' + error.message));
 }
 
 /**
@@ -115,9 +116,9 @@ function handleAudioResponse(audioBlob) {
   document.getElementById('text-response').style.display = 'none';
 
   audioEl.play()
-    .then(() => showStatus('success', 'Playing AI speech response'))
-    .catch(err => showStatus('error',
-      'Audio playback failed' + (err && err.message ? ': ' + err.message : '')));
+  .then(() => showStatus('success', 'Playing AI speech response'))
+  .catch(err => showStatus('error',
+    'Audio playback failed' + (err && err.message ? ': ' + err.message : '')));
 
   audioEl.onended = () => URL.revokeObjectURL(audioUrl);
 }
@@ -208,8 +209,12 @@ function updateUI() {
   const connectBtn = document.getElementById('connect-btn');
   const disconnectBtn = document.getElementById('disconnect-btn');
 
-  if (connectBtn) connectBtn.style.display = isConnected ? 'none' : 'inline-block';
-  if (disconnectBtn) disconnectBtn.style.display = isConnected ? 'inline-block' : 'none';
+  if (connectBtn) {
+    connectBtn.style.display = isConnected ? 'none' : 'inline-block';
+  }
+  if (disconnectBtn) {
+    disconnectBtn.style.display = isConnected ? 'inline-block' : 'none';
+  }
   if (voiceBtn) {
     voiceBtn.disabled = !isConnected;
     voiceBtn.classList.toggle('recording', isRecording);
@@ -278,18 +283,18 @@ function displayTextResponse(text) {
  */
 function cleanup() {
   console.log('[voice] cleanup called');
-  
+
   if (mediaRecorder && mediaRecorder.state !== 'inactive') {
     console.log('[voice] stopping active MediaRecorder; state=', mediaRecorder.state);
     mediaRecorder.stop();
   }
-  
+
   if (audioStream) {
     console.log('[voice] stopping audio tracks');
     audioStream.getTracks().forEach(track => track.stop());
     audioStream = null;
   }
-  
+
   if (socket) {
     console.log('[voice] closing WebSocket');
     socket.close();
