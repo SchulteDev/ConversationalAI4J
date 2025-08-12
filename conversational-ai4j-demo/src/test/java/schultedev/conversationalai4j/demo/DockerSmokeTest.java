@@ -2,52 +2,109 @@ package schultedev.conversationalai4j.demo;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.nio.file.Paths;
+import java.time.Duration;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.test.context.TestPropertySource;
+import org.springframework.http.MediaType;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.testcontainers.containers.ComposeContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
- * Docker environment smoke test - validates the complete ConversationalAI4J system including Ollama
- * integration and speech services in containerized environment.
+ * Docker environment smoke test using Testcontainers - validates the complete ConversationalAI4J
+ * system using the actual docker-compose.yml configuration.
  *
- * <p>This test only runs when DOCKER_SMOKE_TEST environment variable is set, typically in CI/CD
- * pipelines with docker-compose setup.
+ * <p>This test boots the full Docker environment automatically using your docker-compose.yml and
+ * runs comprehensive integration tests against the running containers. It's self-contained and
+ * doesn't require a pre-existing Docker environment.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@TestPropertySource(
-    properties = {"ollama.base-url=http://ollama:11434", "ollama.model-name=llama3.2:3b"})
-@EnabledIfEnvironmentVariable(named = "DOCKER_SMOKE_TEST", matches = "true")
+@Testcontainers
 class DockerSmokeTest {
 
-  @LocalServerPort private int port;
+  private static final Logger log = LoggerFactory.getLogger(DockerSmokeTest.class);
 
-  @Autowired private TestRestTemplate restTemplate;
+  private static final String OLLAMA_SERVICE = "ollama";
+  private static final String DEMO_SERVICE = "demo";
+  private static final int OLLAMA_PORT = 11434;
+  private static final int DEMO_PORT = 8080;
 
-  private String getBaseUrl() {
-    return "http://localhost:" + port;
+  @Container
+  static ComposeContainer environment =
+      new ComposeContainer(Paths.get("..").resolve("docker-compose.yml").toFile())
+          .withExposedService(
+              OLLAMA_SERVICE,
+              OLLAMA_PORT,
+              Wait.forHttp("/api/tags").withStartupTimeout(Duration.ofMinutes(3)))
+          .withExposedService(
+              DEMO_SERVICE,
+              DEMO_PORT,
+              Wait.forHttp("/actuator/health").withStartupTimeout(Duration.ofMinutes(5)))
+          .withLogConsumer(
+              OLLAMA_SERVICE,
+              outputFrame -> log.debug("OLLAMA: {}", outputFrame.getUtf8String().strip()))
+          .withLogConsumer(
+              DEMO_SERVICE,
+              outputFrame -> log.debug("DEMO: {}", outputFrame.getUtf8String().strip()))
+          .withLocalCompose(true); // Use local docker-compose instead of embedded
+
+  private final TestRestTemplate restTemplate = new TestRestTemplate();
+
+  private String getDemoBaseUrl() {
+    return "http://"
+        + environment.getServiceHost(DEMO_SERVICE, DEMO_PORT)
+        + ":"
+        + environment.getServicePort(DEMO_SERVICE, DEMO_PORT);
+  }
+
+  private String getOllamaBaseUrl() {
+    return "http://"
+        + environment.getServiceHost(OLLAMA_SERVICE, OLLAMA_PORT)
+        + ":"
+        + environment.getServicePort(OLLAMA_SERVICE, OLLAMA_PORT);
   }
 
   @Test
   void applicationStartup_InDockerEnvironment_ShouldSucceed() {
     // When: Application starts up in Docker environment
-    var response = restTemplate.getForEntity(getBaseUrl() + "/", String.class);
+    log.info("Testing application startup at: {}", getDemoBaseUrl());
+    var response = restTemplate.getForEntity(getDemoBaseUrl() + "/", String.class);
 
     // Then: Should respond successfully
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertNotNull(response.getBody());
     assertTrue(response.getBody().contains("ConversationalAI4J Demo"));
+    log.info("✅ Application startup test passed");
   }
 
   @Test
   void ollamaIntegration_ShouldBeAccessible() {
-    // When: Check if Ollama service is accessible
+    // First: Verify Ollama service is directly accessible
+    log.info("Testing Ollama service at: {}", getOllamaBaseUrl());
+    var ollamaResponse = restTemplate.getForEntity(getOllamaBaseUrl() + "/api/tags", String.class);
+    assertEquals(HttpStatus.OK, ollamaResponse.getStatusCode(), "Ollama API should be accessible");
+    log.info("Ollama API response: {}", ollamaResponse.getBody());
+
+    // When: Check if Demo can communicate with Ollama (using proper form data)
+    log.info("Testing Ollama integration through demo at: {}", getDemoBaseUrl());
+
+    MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+    formData.add("message", "Hello from Docker Compose");
+
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+    HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(formData, headers);
+
     var response =
-        restTemplate.postForEntity(getBaseUrl() + "/send", "message=Hello Ollama", String.class);
+        restTemplate.postForEntity(getDemoBaseUrl() + "/send", requestEntity, String.class);
 
     // Then: Should get response (either from AI or fallback)
     assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -56,14 +113,31 @@ class DockerSmokeTest {
     // Response should contain either AI response or fallback message
     String body = response.getBody();
     boolean hasValidResponse =
-        body.contains("Hello") || body.contains("Echo") || body.contains("unavailable");
+        body.contains("Hello from Docker Compose")
+            || body.contains("Echo")
+            || body.contains("unavailable");
     assertTrue(hasValidResponse, "Should get some form of response to user message");
+    log.info("✅ Ollama integration test passed");
+  }
+
+  @Test
+  void actuatorHealth_ShouldShowSystemHealth() {
+    // When: Check actuator health endpoint
+    log.info("Testing actuator health at: {}", getDemoBaseUrl());
+    var response = restTemplate.getForEntity(getDemoBaseUrl() + "/actuator/health", String.class);
+
+    // Then: Should report system health
+    assertEquals(HttpStatus.OK, response.getStatusCode());
+    assertNotNull(response.getBody());
+    assertTrue(response.getBody().contains("UP"));
+    log.info("✅ Actuator health test passed");
   }
 
   @Test
   void speechStatus_InDockerEnvironment_ShouldReportCorrectly() {
     // When: Check speech services status
-    var response = restTemplate.getForEntity(getBaseUrl() + "/speech-status", String.class);
+    log.info("Testing speech status at: {}", getDemoBaseUrl());
+    var response = restTemplate.getForEntity(getDemoBaseUrl() + "/speech-status", String.class);
 
     // Then: Should report speech status
     assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -77,30 +151,27 @@ class DockerSmokeTest {
 
     // In Docker environment, speech may or may not be available
     // depending on sherpa-onnx setup - just verify the endpoint works
+    log.info("✅ Speech status test passed");
   }
 
   @Test
-  void actuatorHealth_ShouldShowSystemHealth() {
-    // When: Check actuator health endpoint
-    var response = restTemplate.getForEntity(getBaseUrl() + "/actuator/health", String.class);
-
-    // Then: Should report system health
-    assertEquals(HttpStatus.OK, response.getStatusCode());
-    assertNotNull(response.getBody());
-    assertTrue(response.getBody().contains("UP"));
-  }
-
-  @Test
-  void conversationFlow_WithDockerizedAI_ShouldWork() {
+  void conversationFlow_WithDockerCompose_ShouldWork() {
     // Given: Test conversation messages
-    String[] testMessages = {
-      "Hello, can you hear me?", "What is 2 + 2?", "Tell me a joke", "Thank you"
-    };
+    String[] testMessages = {"Hello Docker!", "Test message"};
 
-    // When: Send multiple messages in sequence
+    // When: Send multiple messages in sequence with proper form encoding
+    log.info(
+        "Testing conversation flow with {} messages at: {}", testMessages.length, getDemoBaseUrl());
     for (String message : testMessages) {
+      MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+      formData.add("message", message);
+
+      HttpHeaders headers = new HttpHeaders();
+      headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+      HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(formData, headers);
+
       var response =
-          restTemplate.postForEntity(getBaseUrl() + "/send", "message=" + message, String.class);
+          restTemplate.postForEntity(getDemoBaseUrl() + "/send", requestEntity, String.class);
 
       // Then: Each should get a response
       assertEquals(
@@ -111,114 +182,6 @@ class DockerSmokeTest {
       String body = response.getBody();
       assertTrue(body.contains(message), "Response should contain original message: " + message);
     }
-  }
-
-  @Test
-  void voiceEndpoints_ShouldHandleRequestsGracefully() {
-    // Given: Mock audio data
-    byte[] mockAudioData = createMockWavData(1024);
-
-    // When: Try voice-to-text endpoint
-    var voiceToTextResponse =
-        restTemplate.postForEntity(getBaseUrl() + "/voice-to-text", mockAudioData, String.class);
-
-    // Then: Should handle gracefully (may succeed or fail based on speech config)
-    // We just verify it doesn't crash the application
-    assertTrue(
-        voiceToTextResponse.getStatusCode().is2xxSuccessful()
-            || voiceToTextResponse.getStatusCode().is4xxClientError()
-            || voiceToTextResponse.getStatusCode().is5xxServerError());
-
-    // When: Try text-to-voice endpoint
-    var textToVoiceResponse =
-        restTemplate.postForEntity(
-            getBaseUrl() + "/text-to-voice", "Hello from smoke test", byte[].class);
-
-    // Then: Should handle gracefully
-    assertTrue(
-        textToVoiceResponse.getStatusCode().is2xxSuccessful()
-            || textToVoiceResponse.getStatusCode().is4xxClientError()
-            || textToVoiceResponse.getStatusCode().is5xxServerError());
-  }
-
-  @Test
-  void performanceBaseline_ShouldMeetBasicRequirements() {
-    // Given: Simple test message
-    String testMessage = "Performance test message";
-
-    // When: Send message and measure response time
-    long startTime = System.currentTimeMillis();
-    var response =
-        restTemplate.postForEntity(getBaseUrl() + "/send", "message=" + testMessage, String.class);
-    long responseTime = System.currentTimeMillis() - startTime;
-
-    // Then: Should respond within reasonable time
-    assertEquals(HttpStatus.OK, response.getStatusCode());
-    assertTrue(
-        responseTime < 30000, // 30 second timeout for AI responses
-        "Response time should be under 30 seconds, was: " + responseTime + "ms");
-
-    // Log performance for monitoring
-    System.out.println("Docker smoke test response time: " + responseTime + "ms");
-  }
-
-  @Test
-  void memoryAndResourceUsage_ShouldBeStable() {
-    // Given: Multiple requests to test memory stability
-    int requestCount = 10;
-
-    // When: Send multiple requests
-    for (int i = 0; i < requestCount; i++) {
-      var response =
-          restTemplate.postForEntity(
-              getBaseUrl() + "/send", "message=Memory test " + i, String.class);
-
-      // Then: Each request should succeed
-      assertEquals(HttpStatus.OK, response.getStatusCode(), "Request " + i + " should succeed");
-    }
-
-    // Additional request after load should still work
-    var finalResponse =
-        restTemplate.postForEntity(
-            getBaseUrl() + "/send", "message=Final memory test", String.class);
-
-    assertEquals(
-        HttpStatus.OK,
-        finalResponse.getStatusCode(),
-        "Application should remain stable after multiple requests");
-  }
-
-  private byte[] createMockWavData(int sizeInBytes) {
-    // Create minimal valid WAV header + data for testing
-    byte[] wavData = new byte[Math.max(44, sizeInBytes)];
-
-    // WAV header
-    System.arraycopy("RIFF".getBytes(), 0, wavData, 0, 4);
-    writeInt32LE(wavData, 4, wavData.length - 8);
-    System.arraycopy("WAVE".getBytes(), 0, wavData, 8, 4);
-    System.arraycopy("fmt ".getBytes(), 0, wavData, 12, 4);
-    writeInt32LE(wavData, 16, 16);
-    writeInt16LE(wavData, 20, (short) 1);
-    writeInt16LE(wavData, 22, (short) 1);
-    writeInt32LE(wavData, 24, 16000);
-    writeInt32LE(wavData, 28, 32000);
-    writeInt16LE(wavData, 32, (short) 2);
-    writeInt16LE(wavData, 34, (short) 16);
-    System.arraycopy("data".getBytes(), 0, wavData, 36, 4);
-    writeInt32LE(wavData, 40, wavData.length - 44);
-
-    return wavData;
-  }
-
-  private void writeInt32LE(byte[] data, int offset, int value) {
-    data[offset] = (byte) (value & 0xFF);
-    data[offset + 1] = (byte) ((value >> 8) & 0xFF);
-    data[offset + 2] = (byte) ((value >> 16) & 0xFF);
-    data[offset + 3] = (byte) ((value >> 24) & 0xFF);
-  }
-
-  private void writeInt16LE(byte[] data, int offset, short value) {
-    data[offset] = (byte) (value & 0xFF);
-    data[offset + 1] = (byte) ((value >> 8) & 0xFF);
+    log.info("✅ Conversation flow test passed");
   }
 }

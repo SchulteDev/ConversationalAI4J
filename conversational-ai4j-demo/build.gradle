@@ -26,6 +26,10 @@ dependencies {
   testImplementation 'org.springframework.boot:spring-boot-starter-test'
   testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
   testImplementation 'org.jsoup:jsoup:1.21.1'
+
+  // Testcontainers for Docker integration tests
+  testImplementation 'org.testcontainers:testcontainers:1.19.3'
+  testImplementation 'org.testcontainers:junit-jupiter:1.19.3'
 }
 
 tasks.named('test') {
