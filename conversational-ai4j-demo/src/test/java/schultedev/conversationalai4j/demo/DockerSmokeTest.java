@@ -101,7 +101,7 @@ class DockerSmokeTest {
 
     var headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-    var requestEntity = new HttpEntity<MultiValueMap<String, String>>(formData, headers);
+    var requestEntity = new HttpEntity<>(formData, headers);
 
     var response =
         restTemplate.postForEntity(getDemoBaseUrl() + "/send", requestEntity, String.class);
@@ -168,7 +168,7 @@ class DockerSmokeTest {
 
       var headers = new HttpHeaders();
       headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-      var requestEntity = new HttpEntity<MultiValueMap<String, String>>(formData, headers);
+      var requestEntity = new HttpEntity<>(formData, headers);
 
       var response =
           restTemplate.postForEntity(getDemoBaseUrl() + "/send", requestEntity, String.class);

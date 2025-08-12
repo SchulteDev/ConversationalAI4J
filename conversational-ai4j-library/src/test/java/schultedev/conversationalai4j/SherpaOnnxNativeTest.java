@@ -3,15 +3,10 @@ package schultedev.conversationalai4j;
 import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class SherpaOnnxNativeTest {
 
-  @BeforeEach
-  void setUp() {
-    // Setup for test isolation - no environment restoration needed
-  }
 
   @AfterEach
   void tearDown() {

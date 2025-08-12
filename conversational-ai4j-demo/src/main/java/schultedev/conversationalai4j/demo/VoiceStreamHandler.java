@@ -62,8 +62,6 @@ public class VoiceStreamHandler implements WebSocketHandler {
   @Override
   public void handleMessage(WebSocketSession session, WebSocketMessage<?> message)
       throws Exception {
-    var sessionId = session.getId();
-
     if (message instanceof TextMessage textMessage) {
       handleTextMessage(session, textMessage);
     } else if (message instanceof BinaryMessage binaryMessage) {

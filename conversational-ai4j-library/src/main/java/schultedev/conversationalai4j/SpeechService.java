@@ -239,8 +239,11 @@ public class SpeechService {
   }
 
   private byte[] generateMockAudio(String text) {
-    // Minimal WAV: 44-byte header + 1 second of silence
-    var wavData = new byte[44 + 16000 * 2];
+    // Generate audio length based on text length (roughly 200ms per word)
+    var wordCount = text == null || text.trim().isEmpty() ? 1 : text.split("\\s+").length;
+    var durationMs = Math.max(500, wordCount * 200); // Minimum 500ms
+    var sampleCount = (int) (16000 * durationMs / 1000.0); // 16kHz sample rate
+    var wavData = new byte[44 + sampleCount * 2]; // 16-bit samples
 
     // WAV header for 16kHz, 16-bit, mono
     System.arraycopy("RIFF".getBytes(), 0, wavData, 0, 4);

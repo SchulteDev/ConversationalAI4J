@@ -3,6 +3,7 @@ package schultedev.conversationalai4j.demo;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -20,11 +21,19 @@ class WebSocketConfigTest {
   @Mock private WebSocketHandlerRegistration mockRegistration;
 
   private WebSocketConfig config;
+  private AutoCloseable mocks;
 
   @BeforeEach
   void setUp() {
-    MockitoAnnotations.openMocks(this);
+    mocks = MockitoAnnotations.openMocks(this);
     config = new WebSocketConfig(mockHandler);
+  }
+
+  @AfterEach
+  void tearDown() throws Exception {
+    if (mocks != null) {
+      mocks.close();
+    }
   }
 
   @Test

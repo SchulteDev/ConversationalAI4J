@@ -50,9 +50,15 @@ public class TextToSpeech {
   }
 
   /**
-   * Synthesizes speech with speed parameter (for API compatibility). Currently speed parameter is
-   * ignored, but method is kept for backward compatibility.
+   * Synthesizes speech with speed and pitch parameters (for API compatibility). Currently speed and 
+   * pitch parameters are ignored, but method is kept for backward compatibility.
+   * 
+   * @param text the text to synthesize
+   * @param speed the speed multiplier (currently ignored)
+   * @param pitch the pitch adjustment (currently ignored)
+   * @return the synthesized audio as WAV bytes
    */
+  @SuppressWarnings("unused")
   public byte[] synthesize(String text, double speed, double pitch) {
     return synthesize(text);
   }

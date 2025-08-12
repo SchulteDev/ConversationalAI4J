@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import java.nio.ByteBuffer;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -16,14 +17,22 @@ class VoiceStreamHandlerTest {
 
   @Mock private WebSocketSession mockSession;
   private VoiceStreamHandler handler;
+  private AutoCloseable mocks;
 
   @BeforeEach
   void setUp() {
-    MockitoAnnotations.openMocks(this);
+    mocks = MockitoAnnotations.openMocks(this);
     var testSessionId = "test-session-123";
     when(mockSession.getId()).thenReturn(testSessionId);
 
     handler = new VoiceStreamHandler();
+  }
+
+  @AfterEach
+  void tearDown() throws Exception {
+    if (mocks != null) {
+      mocks.close();
+    }
   }
 
   @Test
