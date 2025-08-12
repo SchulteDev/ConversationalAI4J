@@ -86,9 +86,15 @@
     }
 
     @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-      100% { transform: scale(1); }
+      0% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.05);
+      }
+      100% {
+        transform: scale(1);
+      }
     }
 
     .voice-controls {
@@ -178,29 +184,31 @@
 
     <div class="status hidden" id="status"></div>
 
-    <button class="btn btn-voice" id="voice-btn" disabled>
+    <button class="btn btn-voice" disabled id="voice-btn">
       🎤
     </button>
 
     <div class="audio-player">
-      <audio id="ai-response" controls style="display: none;">
+      <audio controls id="ai-response" style="display: none;">
         Your browser does not support the audio element.
       </audio>
     </div>
 
-    <div id="transcription" class="response" style="display: none; background-color: #f0f8ff;">
+    <div class="response" id="transcription" style="display: none; background-color: #f0f8ff;">
       <strong>You said:</strong><br/>
       <span id="transcription-content"></span>
     </div>
 
-    <div id="text-response" class="response" style="display: none;">
+    <div class="response" id="text-response" style="display: none;">
       <strong>AI Response:</strong><br/>
       <span id="text-response-content"></span>
     </div>
 
     <div>
       <button class="btn" id="connect-btn" onclick="connectVoiceStream()">Connect</button>
-      <button class="btn" id="disconnect-btn" onclick="disconnectVoiceStream()" style="display: none;">Disconnect</button>
+      <button class="btn" id="disconnect-btn" onclick="disconnectVoiceStream()"
+              style="display: none;">Disconnect
+      </button>
     </div>
   </div>
 
@@ -224,76 +232,88 @@
 </div>
 
 <script>
-// Simple globals
-let socket, audioStream, mediaRecorder, isConnected = false, isRecording = false, recordedChunks = [];
+  // Simple globals
+  let socket, audioStream, mediaRecorder, isConnected = false, isRecording = false,
+    recordedChunks = [];
 
-document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('voice-btn').addEventListener('mousedown', startRecording);
     document.getElementById('voice-btn').addEventListener('mouseup', stopRecording);
     document.getElementById('voice-btn').addEventListener('contextmenu', e => e.preventDefault());
     updateUI();
-});
+  });
 
-function connectVoiceStream() {
+  function connectVoiceStream() {
     showStatus('info', 'Connecting...');
 
-    navigator.mediaDevices.getUserMedia({ audio: { sampleRate: 16000, channelCount: 1 } })
-        .then(stream => { audioStream = stream; setupWebSocket(); })
-        .catch(error => showStatus('error', 'Microphone access failed: ' + error.message));
-}
+    navigator.mediaDevices.getUserMedia({audio: {sampleRate: 16000, channelCount: 1}})
+    .then(stream => {
+      audioStream = stream;
+      setupWebSocket();
+    })
+    .catch(error => showStatus('error', 'Microphone access failed: ' + error.message));
+  }
 
-function setupWebSocket() {
+  function setupWebSocket() {
     socket = new WebSocket(`ws://${window.location.host}/voice-stream`);
     console.log('[voice] opening WebSocket to', `ws://${window.location.host}/voice-stream`);
 
-    socket.onopen = function() {
-        console.log('[voice] WebSocket opened');
-        isConnected = true;
-        updateUI();
-        showStatus('success', 'Connected! Hold microphone to talk.');
-        try { socket.send('check_status'); } catch(e) { console.warn('[voice] send check_status failed', e); }
+    socket.onopen = function () {
+      console.log('[voice] WebSocket opened');
+      isConnected = true;
+      updateUI();
+      showStatus('success', 'Connected! Hold microphone to talk.');
+      try {
+        socket.send('check_status');
+      } catch (e) {
+        console.warn('[voice] send check_status failed', e);
+      }
     };
 
-    socket.onmessage = function(event) {
-        if (event.data instanceof Blob) {
-            handleAudioResponse(event.data);
-        } else {
-            try {
-                handleControlMessage(JSON.parse(event.data));
-            } catch (e) {
-                console.log('Message:', event.data);
-            }
+    socket.onmessage = function (event) {
+      if (event.data instanceof Blob) {
+        handleAudioResponse(event.data);
+      } else {
+        try {
+          handleControlMessage(JSON.parse(event.data));
+        } catch (e) {
+          console.log('Message:', event.data);
         }
+      }
     };
 
-    socket.onerror = (e) => { console.error('[voice] WebSocket error', e); showStatus('error', 'Connection error'); };
-    socket.onclose = function(evt) {
-        console.log('[voice] WebSocket closed', { code: evt.code, reason: evt.reason, wasClean: evt.wasClean });
-        isConnected = false;
-        updateUI();
-        showStatus('info', 'Disconnected');
-        cleanup();
+    socket.onerror = (e) => {
+      console.error('[voice] WebSocket error', e);
+      showStatus('error', 'Connection error');
     };
-}
+    socket.onclose = function (evt) {
+      console.log('[voice] WebSocket closed',
+        {code: evt.code, reason: evt.reason, wasClean: evt.wasClean});
+      isConnected = false;
+      updateUI();
+      showStatus('info', 'Disconnected');
+      cleanup();
+    };
+  }
 
-function handleControlMessage(message) {
+  function handleControlMessage(message) {
     console.log('[voice] control message', message);
     if (message.type === 'status') {
-        const statusType = message.status === 'error' ? 'error' :
-                          message.status === 'complete' ? 'success' : 'info';
-        showStatus(statusType, message.message);
+      const statusType = message.status === 'error' ? 'error' :
+        message.status === 'complete' ? 'success' : 'info';
+      showStatus(statusType, message.message);
     } else if (message.type === 'transcription') {
-        // Show what the user said (speech-to-text result)
-        displayTranscription(message.text);
-        showStatus('info', 'Speech recognized: ' + message.text);
+      // Show what the user said (speech-to-text result)
+      displayTranscription(message.text);
+      showStatus('info', 'Speech recognized: ' + message.text);
     } else if (message.type === 'text_response') {
-        // Handle text response when audio processing is not available
-        displayTextResponse(message.message);
-        showStatus('success', 'AI responded (text mode)');
+      // Handle text response when audio processing is not available
+      displayTextResponse(message.message);
+      showStatus('success', 'AI responded (text mode)');
     }
-}
+  }
 
-function handleAudioResponse(audioBlob) {
+  function handleAudioResponse(audioBlob) {
     console.log('Received audio response:', audioBlob.size, 'bytes');
 
     const audioUrl = URL.createObjectURL(audioBlob);
@@ -305,72 +325,78 @@ function handleAudioResponse(audioBlob) {
     document.getElementById('text-response').style.display = 'none';
 
     audioEl.play()
-        .then(() => showStatus('success', 'Playing AI speech response'))
-        .catch(err => showStatus('error', 'Audio playback failed' + (err && err.message ? ': ' + err.message : '')));
+    .then(() => showStatus('success', 'Playing AI speech response'))
+    .catch(err => showStatus('error',
+      'Audio playback failed' + (err && err.message ? ': ' + err.message : '')));
 
     audioEl.onended = () => URL.revokeObjectURL(audioUrl);
-}
+  }
 
-function disconnectVoiceStream() {
+  function disconnectVoiceStream() {
     cleanup();
-}
+  }
 
-function startRecording(event) {
+  function startRecording(event) {
     event.preventDefault();
 
-    if (!isConnected || !audioStream || isRecording) return;
+    if (!isConnected || !audioStream || isRecording) {
+      return;
+    }
 
     try {
-        console.log('[voice] starting recording');
-        mediaRecorder = new MediaRecorder(audioStream, { mimeType: 'audio/webm;codecs=opus' });
-        recordedChunks = [];
-        mediaRecorder.ondataavailable = event => {
-            if (event.data && event.data.size > 0) {
-                recordedChunks.push(event.data);
-                console.log('[voice] ondataavailable chunk size', event.data.size);
-            }
-        };
-        mediaRecorder.onstart = () => {
-            console.log('[voice] MediaRecorder started, state=', mediaRecorder.state);
-        };
-        mediaRecorder.onstop = () => {
-            try {
-                const blob = new Blob(recordedChunks, { type: 'audio/webm;codecs=opus' });
-                console.log('[voice] MediaRecorder stopped; sending final blob size', blob.size);
-                if (blob.size > 0) {
-                    socket.send(blob);
-                }
-                socket.send('stop_recording');
-                recordedChunks = [];
-            } catch (e) {
-                showStatus('error', 'Failed to send audio: ' + e.message);
-            }
-        };
+      console.log('[voice] starting recording');
+      mediaRecorder = new MediaRecorder(audioStream, {mimeType: 'audio/webm;codecs=opus'});
+      recordedChunks = [];
+      mediaRecorder.ondataavailable = event => {
+        if (event.data && event.data.size > 0) {
+          recordedChunks.push(event.data);
+          console.log('[voice] ondataavailable chunk size', event.data.size);
+        }
+      };
+      mediaRecorder.onstart = () => {
+        console.log('[voice] MediaRecorder started, state=', mediaRecorder.state);
+      };
+      mediaRecorder.onstop = () => {
+        try {
+          const blob = new Blob(recordedChunks, {type: 'audio/webm;codecs=opus'});
+          console.log('[voice] MediaRecorder stopped; sending final blob size', blob.size);
+          if (blob.size > 0) {
+            socket.send(blob);
+          }
+          socket.send('stop_recording');
+          recordedChunks = [];
+        } catch (e) {
+          showStatus('error', 'Failed to send audio: ' + e.message);
+        }
+      };
 
-        mediaRecorder.start();
-        isRecording = true;
-        updateUI();
-        socket.send('start_recording');
-        showStatus('info', 'Recording...');
+      mediaRecorder.start();
+      isRecording = true;
+      updateUI();
+      socket.send('start_recording');
+      showStatus('info', 'Recording...');
 
     } catch (error) {
-        showStatus('error', 'Recording failed: ' + error.message);
+      showStatus('error', 'Recording failed: ' + error.message);
     }
-}
+  }
 
-function stopRecording(event) {
+  function stopRecording(event) {
     event.preventDefault();
 
-    if (!isRecording) return;
+    if (!isRecording) {
+      return;
+    }
 
-    console.log('[voice] stopRecording invoked; state before stop=', mediaRecorder && mediaRecorder.state);
+    console.log('[voice] stopRecording invoked; state before stop=',
+      mediaRecorder && mediaRecorder.state);
     mediaRecorder.stop();
     isRecording = false;
     updateUI();
     showStatus('info', 'Processing...');
-}
+  }
 
-function updateUI() {
+  function updateUI() {
     const voiceBtn = document.getElementById('voice-btn');
     const connectBtn = document.getElementById('connect-btn');
     const disconnectBtn = document.getElementById('disconnect-btn');
@@ -380,28 +406,28 @@ function updateUI() {
     voiceBtn.disabled = !isConnected;
     voiceBtn.classList.toggle('recording', isRecording);
     voiceBtn.textContent = isRecording ? '🔴' : '🎤';
-}
+  }
 
-function showStatus(type, message) {
+  function showStatus(type, message) {
     const statusDiv = document.getElementById('status');
     statusDiv.className = 'status ' + type;
     statusDiv.textContent = message;
     statusDiv.classList.remove('hidden');
 
     if (type === 'success') {
-        setTimeout(() => statusDiv.classList.add('hidden'), 3000);
+      setTimeout(() => statusDiv.classList.add('hidden'), 3000);
     }
-}
+  }
 
-function displayTranscription(text) {
+  function displayTranscription(text) {
     const transcriptionDiv = document.getElementById('transcription');
     const transcriptionContent = document.getElementById('transcription-content');
 
     transcriptionContent.textContent = text;
     transcriptionDiv.style.display = 'block';
-}
+  }
 
-function displayTextResponse(text) {
+  function displayTextResponse(text) {
     const textResponseDiv = document.getElementById('text-response');
     const textContent = document.getElementById('text-response-content');
 
@@ -410,30 +436,30 @@ function displayTextResponse(text) {
 
     // Hide audio player when showing text
     document.getElementById('ai-response').style.display = 'none';
-}
+  }
 
-function cleanup() {
+  function cleanup() {
     console.log('[voice] cleanup called');
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-        console.log('[voice] stopping active MediaRecorder; state=', mediaRecorder.state);
-        mediaRecorder.stop();
+      console.log('[voice] stopping active MediaRecorder; state=', mediaRecorder.state);
+      mediaRecorder.stop();
     }
     if (audioStream) {
-        console.log('[voice] stopping audio tracks');
-        audioStream.getTracks().forEach(track => track.stop());
-        audioStream = null;
+      console.log('[voice] stopping audio tracks');
+      audioStream.getTracks().forEach(track => track.stop());
+      audioStream = null;
     }
     if (socket) {
-        console.log('[voice] closing WebSocket');
-        socket.close();
-        socket = null;
+      console.log('[voice] closing WebSocket');
+      socket.close();
+      socket = null;
     }
 
     mediaRecorder = null;
     isRecording = false;
     isConnected = false;
     updateUI();
-}
+  }
 
 </script>
 

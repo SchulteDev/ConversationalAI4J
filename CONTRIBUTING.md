@@ -56,6 +56,7 @@ class DemoIntegrationTest {
 ## Speech Development
 
 Voice features require Linux containers:
+
 - **Development**: Text-only mode on Windows/macOS
 - **Testing**: Use Docker for full voice pipeline
 - **Models**: sherpa-onnx STT/TTS downloaded during Docker build
@@ -63,7 +64,7 @@ Voice features require Linux containers:
 ## Pull Request Process
 
 1. Create feature branch from `main`
-2. Add tests for new functionality  
+2. Add tests for new functionality
 3. Ensure `./gradlew build` passes
 4. Update module-specific documentation if needed
 5. Create PR with clear description

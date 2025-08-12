@@ -4,7 +4,8 @@
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.0-brightgreen.svg)](https://spring.io/projects/spring-boot)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=SchulteDev_ConversationalAI4J&metric=alert_status&token=d82a94ffeaa4b434396b27080eab2189e4b032e8)](https://sonarcloud.io/summary/new_code?id=SchulteDev_ConversationalAI4J)
 
-A Java library for voice-enabled conversational AI. Speak to an LLM through your browser and get intelligent spoken responses.
+A Java library for voice-enabled conversational AI. Speak to an LLM through your browser and get
+intelligent spoken responses.
 
 ## Quick Start
 
@@ -44,10 +45,10 @@ Pipeline: Speech → Text → LLM → Speech (sherpa-onnx + Ollama)
 
 ## Configuration
 
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama server |
-| `SPEECH_ENABLED` | `false` | Enable voice features |
+| Variable          | Default                  | Purpose               |
+|-------------------|--------------------------|-----------------------|
+| `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama server         |
+| `SPEECH_ENABLED`  | `false`                  | Enable voice features |
 
 ## Troubleshooting
 

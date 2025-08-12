@@ -2,19 +2,19 @@ package schultedev.conversationalai4j;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 class SpeechServiceTest {
 
   private SpeechService speechService;
-  
+
   @BeforeEach
   void setUp() {
     speechService = new SpeechService();
   }
-  
+
   @AfterEach
   void tearDown() {
     if (speechService != null) {
@@ -46,7 +46,7 @@ class SpeechServiceTest {
   void speechToText_ShouldReturnString() {
     // Given: Mock audio data
     byte[] audioData = createMockWavData(1000);
-    
+
     // When: Convert speech to text
     String result = speechService.speechToText(audioData);
 
@@ -59,7 +59,7 @@ class SpeechServiceTest {
   void speechToText_WithNullAudio_ShouldReturnMockResult() {
     // When: Process null audio
     String result = speechService.speechToText(null);
-    
+
     // Then: Should handle gracefully
     assertNotNull(result);
   }
@@ -68,8 +68,8 @@ class SpeechServiceTest {
   void speechToText_WithEmptyAudio_ShouldReturnMockResult() {
     // When: Process empty audio
     String result = speechService.speechToText(new byte[0]);
-    
-    // Then: Should handle gracefully  
+
+    // Then: Should handle gracefully
     assertNotNull(result);
   }
 
@@ -77,10 +77,10 @@ class SpeechServiceTest {
   void speechToText_WithValidWavData_ProcessesCorrectly() {
     // Given: Valid WAV file data
     byte[] wavData = createValidWavData();
-    
+
     // When: Process speech to text
     String result = speechService.speechToText(wavData);
-    
+
     // Then: Should return transcription
     assertNotNull(result);
     assertFalse(result.trim().isEmpty());
@@ -90,10 +90,10 @@ class SpeechServiceTest {
   void audioConversion_WithWebMData_ShouldHandleGracefully() {
     // Given: Mock WebM audio data (typical from browser)
     byte[] webmData = createMockWebMData();
-    
+
     // When: Process through speech service
     String result = speechService.speechToText(webmData);
-    
+
     // Then: Should handle conversion attempt and return result
     assertNotNull(result);
     // Note: Conversion may fail without ffmpeg, but should not crash
@@ -103,7 +103,7 @@ class SpeechServiceTest {
   void textToSpeech_WithEmptyText_ReturnsEmptyOrDefaultAudio() {
     // When: Convert empty text
     byte[] result = speechService.textToSpeech("");
-    
+
     // Then: Should handle gracefully (may return empty or default audio)
     assertNotNull(result);
   }
@@ -122,7 +122,7 @@ class SpeechServiceTest {
   void close_ShouldCleanupResourcesSafely() {
     // When: Close speech service
     assertDoesNotThrow(() -> speechService.close());
-    
+
     // Additional close should also be safe
     assertDoesNotThrow(() -> speechService.close());
   }
@@ -130,7 +130,7 @@ class SpeechServiceTest {
   private byte[] createMockWavData(int sizeInBytes) {
     // Create minimal valid WAV header + data
     byte[] wavData = new byte[Math.max(44, sizeInBytes)];
-    
+
     // WAV header
     System.arraycopy("RIFF".getBytes(), 0, wavData, 0, 4);
     writeInt32LE(wavData, 4, wavData.length - 8);
@@ -145,14 +145,14 @@ class SpeechServiceTest {
     writeInt16LE(wavData, 34, (short) 16);
     System.arraycopy("data".getBytes(), 0, wavData, 36, 4);
     writeInt32LE(wavData, 40, wavData.length - 44);
-    
+
     return wavData;
   }
-  
+
   private byte[] createValidWavData() {
     return createMockWavData(1024); // 1KB of mock WAV data
   }
-  
+
   private byte[] createMockWebMData() {
     // Mock WebM container with some header-like bytes
     byte[] webmData = new byte[256];

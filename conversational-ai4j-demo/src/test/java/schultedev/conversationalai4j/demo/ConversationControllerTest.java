@@ -65,54 +65,51 @@ class ConversationControllerTest {
   void testSendMessage_WhenOllamaUnavailable_ShouldFallbackToEcho() throws Exception {
     // Given: Ollama is unavailable in test environment (no real connection)
     var testMessage = "Test message for unavailable AI";
-    
+
     // When: Send message
-    mockMvc.perform(post("/send").param("message", testMessage))
+    mockMvc
+        .perform(post("/send").param("message", testMessage))
         .andExpect(status().isOk())
         .andExpect(view().name("conversation"))
         .andExpect(model().attribute("message", testMessage))
         .andExpect(model().attributeExists("response"));
-    
+
     // Note: Since ConversationalAI may be null in test environment,
     // we should get either an AI response or echo/error response
   }
 
-  @Test  
+  @Test
   void testVoiceChat_WhenConversationalAINull_ShouldReturnError() throws Exception {
     // Given: Mock audio data
     byte[] mockAudioData = createMockWavData(256);
-    
+
     // When: Try voice chat (ConversationalAI may be initialized but speech unavailable)
-    mockMvc.perform(post("/voice-chat")
-            .contentType("application/octet-stream")
-            .content(mockAudioData))
+    mockMvc
+        .perform(post("/voice-chat").contentType("application/octet-stream").content(mockAudioData))
         .andExpect(status().is4xxClientError()); // 400 or 503 both acceptable
   }
 
   @Test
   void testVoiceChat_WithEmptyAudio_ShouldReturn400() throws Exception {
     // When: Send empty audio data
-    mockMvc.perform(post("/voice-chat")
-            .contentType("application/octet-stream")
-            .content(new byte[0]))
+    mockMvc
+        .perform(post("/voice-chat").contentType("application/octet-stream").content(new byte[0]))
         .andExpect(status().isBadRequest());
   }
 
   @Test
   void testTextToVoice_WhenConversationalAINull_ShouldReturnError() throws Exception {
     // When: Try text-to-voice (ConversationalAI may be initialized but speech unavailable)
-    mockMvc.perform(post("/text-to-voice")
-            .contentType("text/plain")
-            .content("Hello AI"))
+    mockMvc
+        .perform(post("/text-to-voice").contentType("text/plain").content("Hello AI"))
         .andExpect(status().is4xxClientError()); // 400 or 503 both acceptable
   }
 
   @Test
   void testTextToVoice_WithEmptyText_ShouldReturn400() throws Exception {
     // When: Send empty text
-    mockMvc.perform(post("/text-to-voice")
-            .contentType("text/plain")
-            .content(""))
+    mockMvc
+        .perform(post("/text-to-voice").contentType("text/plain").content(""))
         .andExpect(status().isBadRequest());
   }
 
@@ -120,18 +117,19 @@ class ConversationControllerTest {
   void testVoiceToText_WhenConversationalAINull_ShouldReturnError() throws Exception {
     // Given: Mock audio data
     byte[] mockAudioData = createMockWavData(512);
-    
+
     // When: Try voice-to-text (ConversationalAI may be initialized but speech unavailable)
-    mockMvc.perform(post("/voice-to-text")
-            .contentType("application/octet-stream")
-            .content(mockAudioData))
+    mockMvc
+        .perform(
+            post("/voice-to-text").contentType("application/octet-stream").content(mockAudioData))
         .andExpect(status().is4xxClientError()); // 400 or 503 both acceptable
   }
 
   @Test
   void testSpeechStatus_ShouldReturnJsonStatus() throws Exception {
     // When: Check speech status
-    mockMvc.perform(get("/speech-status"))
+    mockMvc
+        .perform(get("/speech-status"))
         .andExpect(status().isOk())
         .andExpect(content().contentType("application/json"))
         .andExpect(jsonPath("$.available").exists());
@@ -142,9 +140,10 @@ class ConversationControllerTest {
   void testSendMessage_WithLongMessage_ShouldHandleGracefully() throws Exception {
     // Given: Very long message
     String longMessage = "This is a very long message ".repeat(100);
-    
+
     // When: Send long message
-    mockMvc.perform(post("/send").param("message", longMessage))
+    mockMvc
+        .perform(post("/send").param("message", longMessage))
         .andExpect(status().isOk())
         .andExpect(view().name("conversation"))
         .andExpect(model().attribute("message", longMessage))
@@ -153,11 +152,12 @@ class ConversationControllerTest {
 
   @Test
   void testSendMessage_WithSpecialCharacters_ShouldHandleCorrectly() throws Exception {
-    // Given: Message with special characters  
+    // Given: Message with special characters
     String specialMessage = "Hello! @#$%^&*()_+ 中文 émojis 🤖";
-    
+
     // When: Send message with special characters
-    mockMvc.perform(post("/send").param("message", specialMessage))
+    mockMvc
+        .perform(post("/send").param("message", specialMessage))
         .andExpect(status().isOk())
         .andExpect(view().name("conversation"))
         .andExpect(model().attribute("message", specialMessage))
@@ -168,14 +168,16 @@ class ConversationControllerTest {
   void testErrorHandling_WithMalformedRequest_ShouldHandleGracefully() throws Exception {
     // When: Send post request (missing message parameter)
     // Spring may return 400 for missing required parameter, which is also acceptable
-    mockMvc.perform(post("/send"))
-        .andExpect(status().is4xxClientError()); // 400 or similar is acceptable for malformed request
+    mockMvc
+        .perform(post("/send"))
+        .andExpect(
+            status().is4xxClientError()); // 400 or similar is acceptable for malformed request
   }
 
   private byte[] createMockWavData(int sizeInBytes) {
     // Create minimal valid WAV header + data
     byte[] wavData = new byte[Math.max(44, sizeInBytes)];
-    
+
     // WAV header
     System.arraycopy("RIFF".getBytes(), 0, wavData, 0, 4);
     writeInt32LE(wavData, 4, wavData.length - 8);
@@ -190,7 +192,7 @@ class ConversationControllerTest {
     writeInt16LE(wavData, 34, (short) 16);
     System.arraycopy("data".getBytes(), 0, wavData, 36, 4);
     writeInt32LE(wavData, 40, wavData.length - 44);
-    
+
     return wavData;
   }
 

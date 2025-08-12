@@ -29,7 +29,7 @@ Browser WebSocket → Demo Module → Library API → Ollama LLM
 ## Key Integration Points
 
 - **LangChain4j**: Library → Ollama communication
-- **WebSocket**: Browser → Demo real-time voice streaming  
+- **WebSocket**: Browser → Demo real-time voice streaming
 - **sherpa-onnx**: Demo speech processing (Linux containers only)
 
 See module-specific ARCHITECTURE.md files for implementation details.

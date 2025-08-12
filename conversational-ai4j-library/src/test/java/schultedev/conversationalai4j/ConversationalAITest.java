@@ -3,12 +3,7 @@ package schultedev.conversationalai4j;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import dev.langchain4j.model.chat.ChatModel;
-import dev.langchain4j.data.message.AiMessage;
-import dev.langchain4j.model.output.Response;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 class ConversationalAITest {
 
@@ -136,7 +131,7 @@ class ConversationalAITest {
     // Given: ConversationalAI with mocked model
     var ai = ConversationalAI.builder().withOllamaModel("llama2").build();
     var testMessage = "Hello AI";
-    
+
     // When: Chat with message (this will fail without Ollama but shouldn't crash)
     try {
       var response = ai.chat(testMessage);
@@ -145,11 +140,12 @@ class ConversationalAITest {
     } catch (Exception e) {
       // Expected when Ollama is not available - verify graceful handling
       assertNotNull(e.getMessage());
-      assertTrue(e.getMessage().contains("Connection") || 
-                e.getMessage().contains("refused") ||
-                e.getMessage().contains("connect") ||
-                e.getMessage().contains("ConnectException"),
-                "Should get connection-related error when Ollama unavailable, got: " + e.getMessage());
+      assertTrue(
+          e.getMessage().contains("Connection")
+              || e.getMessage().contains("refused")
+              || e.getMessage().contains("connect")
+              || e.getMessage().contains("ConnectException"),
+          "Should get connection-related error when Ollama unavailable, got: " + e.getMessage());
     }
   }
 
@@ -157,39 +153,31 @@ class ConversationalAITest {
   void testVoiceChatWithoutSpeechConfig() {
     // Given: ConversationalAI without speech services
     var ai = ConversationalAI.builder().withOllamaModel("llama2").build();
-    var audioData = new byte[]{1, 2, 3, 4};
-    
+    var audioData = new byte[] {1, 2, 3, 4};
+
     // When/Then: Voice chat should throw exception
-    var exception = assertThrows(UnsupportedOperationException.class, 
-        () -> ai.voiceChat(audioData));
+    var exception =
+        assertThrows(UnsupportedOperationException.class, () -> ai.voiceChat(audioData));
     assertTrue(exception.getMessage().contains("Speech services are not configured"));
   }
 
   @Test
   void testVoiceChatWithNullAudio() {
     // Given: ConversationalAI with speech enabled
-    var ai = ConversationalAI.builder()
-        .withOllamaModel("llama2")
-        .withSpeech()
-        .build();
-    
+    var ai = ConversationalAI.builder().withOllamaModel("llama2").withSpeech().build();
+
     // When/Then: Voice chat with null audio should throw exception
-    var exception = assertThrows(IllegalArgumentException.class, 
-        () -> ai.voiceChat(null));
+    var exception = assertThrows(IllegalArgumentException.class, () -> ai.voiceChat(null));
     assertTrue(exception.getMessage().contains("Audio input cannot be null"));
   }
 
   @Test
   void testVoiceChatWithEmptyAudio() {
     // Given: ConversationalAI with speech enabled
-    var ai = ConversationalAI.builder()
-        .withOllamaModel("llama2")
-        .withSpeech()
-        .build();
-    
+    var ai = ConversationalAI.builder().withOllamaModel("llama2").withSpeech().build();
+
     // When/Then: Voice chat with empty audio should throw exception
-    var exception = assertThrows(IllegalArgumentException.class, 
-        () -> ai.voiceChat(new byte[0]));
+    var exception = assertThrows(IllegalArgumentException.class, () -> ai.voiceChat(new byte[0]));
     assertTrue(exception.getMessage().contains("Audio input cannot be null"));
   }
 
@@ -197,11 +185,11 @@ class ConversationalAITest {
   void testSpeechToTextWithoutSpeechConfig() {
     // Given: ConversationalAI without speech services
     var ai = ConversationalAI.builder().withOllamaModel("llama2").build();
-    var audioData = new byte[]{1, 2, 3, 4};
-    
+    var audioData = new byte[] {1, 2, 3, 4};
+
     // When/Then: Speech to text should throw exception
-    var exception = assertThrows(UnsupportedOperationException.class, 
-        () -> ai.speechToText(audioData));
+    var exception =
+        assertThrows(UnsupportedOperationException.class, () -> ai.speechToText(audioData));
     assertTrue(exception.getMessage().contains("Speech-to-text service is not configured"));
   }
 
@@ -209,10 +197,10 @@ class ConversationalAITest {
   void testTextToSpeechWithoutSpeechConfig() {
     // Given: ConversationalAI without speech services
     var ai = ConversationalAI.builder().withOllamaModel("llama2").build();
-    
+
     // When/Then: Text to speech should throw exception
-    var exception = assertThrows(UnsupportedOperationException.class, 
-        () -> ai.textToSpeech("Hello"));
+    var exception =
+        assertThrows(UnsupportedOperationException.class, () -> ai.textToSpeech("Hello"));
     assertTrue(exception.getMessage().contains("Text-to-speech service is not configured"));
   }
 
@@ -220,18 +208,15 @@ class ConversationalAITest {
   void testSpeechStatusMethods() {
     // Given: ConversationalAI without speech
     var aiWithoutSpeech = ConversationalAI.builder().withOllamaModel("llama2").build();
-    
+
     // When/Then: Speech status should be false
     assertFalse(aiWithoutSpeech.isSpeechEnabled());
     assertFalse(aiWithoutSpeech.isSpeechToTextEnabled());
     assertFalse(aiWithoutSpeech.isTextToSpeechEnabled());
-    
+
     // Given: ConversationalAI with speech
-    var aiWithSpeech = ConversationalAI.builder()
-        .withOllamaModel("llama2")
-        .withSpeech()
-        .build();
-    
+    var aiWithSpeech = ConversationalAI.builder().withOllamaModel("llama2").withSpeech().build();
+
     // When/Then: Speech may be available depending on environment
     // (We don't assert true/false since it depends on sherpa-onnx availability)
     assertNotNull(aiWithSpeech.isSpeechEnabled());
@@ -243,7 +228,7 @@ class ConversationalAITest {
   void testResourceCleanup() {
     // Given: ConversationalAI instance
     var ai = ConversationalAI.builder().withOllamaModel("llama2").build();
-    
+
     // When: Close resources
     assertDoesNotThrow(ai::close);
   }
