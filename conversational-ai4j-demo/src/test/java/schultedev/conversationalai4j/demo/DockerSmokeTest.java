@@ -38,7 +38,7 @@ class DockerSmokeTest {
   private static final int DEMO_PORT = 8080;
 
   @Container
-  static ComposeContainer environment =
+  static final ComposeContainer environment =
       new ComposeContainer(Paths.get("..").resolve("docker-compose.yml").toFile())
           .withExposedService(
               OLLAMA_SERVICE,
@@ -99,9 +99,9 @@ class DockerSmokeTest {
     MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
     formData.add("message", "Hello from Docker Compose");
 
-    HttpHeaders headers = new HttpHeaders();
+    var headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-    HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(formData, headers);
+    var requestEntity = new HttpEntity<MultiValueMap<String, String>>(formData, headers);
 
     var response =
         restTemplate.postForEntity(getDemoBaseUrl() + "/send", requestEntity, String.class);
@@ -111,8 +111,8 @@ class DockerSmokeTest {
     assertNotNull(response.getBody());
 
     // Response should contain either AI response or fallback message
-    String body = response.getBody();
-    boolean hasValidResponse =
+    var body = response.getBody();
+    var hasValidResponse =
         body.contains("Hello from Docker Compose")
             || body.contains("Echo")
             || body.contains("unavailable");
@@ -144,7 +144,7 @@ class DockerSmokeTest {
     assertNotNull(response.getBody());
 
     // Should be valid JSON with availability info
-    String jsonResponse = response.getBody();
+    var jsonResponse = response.getBody();
     assertTrue(jsonResponse.contains("available"));
     assertTrue(jsonResponse.contains("speechToText"));
     assertTrue(jsonResponse.contains("textToSpeech"));
@@ -157,18 +157,18 @@ class DockerSmokeTest {
   @Test
   void conversationFlow_WithDockerCompose_ShouldWork() {
     // Given: Test conversation messages
-    String[] testMessages = {"Hello Docker!", "Test message"};
+    var testMessages = new String[] {"Hello Docker!", "Test message"};
 
     // When: Send multiple messages in sequence with proper form encoding
     log.info(
         "Testing conversation flow with {} messages at: {}", testMessages.length, getDemoBaseUrl());
-    for (String message : testMessages) {
+    for (var message : testMessages) {
       MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
       formData.add("message", message);
 
-      HttpHeaders headers = new HttpHeaders();
+      var headers = new HttpHeaders();
       headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-      HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(formData, headers);
+      var requestEntity = new HttpEntity<MultiValueMap<String, String>>(formData, headers);
 
       var response =
           restTemplate.postForEntity(getDemoBaseUrl() + "/send", requestEntity, String.class);
@@ -179,7 +179,7 @@ class DockerSmokeTest {
       assertNotNull(response.getBody());
 
       // Response should contain the message and some form of response
-      String body = response.getBody();
+      var body = response.getBody();
       assertTrue(body.contains(message), "Response should contain original message: " + message);
     }
     log.info("✅ Conversation flow test passed");

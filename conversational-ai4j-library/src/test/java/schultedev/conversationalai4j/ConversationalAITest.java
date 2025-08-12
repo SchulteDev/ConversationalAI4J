@@ -1,7 +1,6 @@
 package schultedev.conversationalai4j;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 import org.junit.jupiter.api.Test;
 

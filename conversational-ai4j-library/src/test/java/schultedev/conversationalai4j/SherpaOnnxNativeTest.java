@@ -2,19 +2,15 @@ package schultedev.conversationalai4j;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class SherpaOnnxNativeTest {
 
-  private Map<String, String> originalEnv;
-
   @BeforeEach
   void setUp() {
-    // Store original environment to restore later
-    originalEnv = System.getenv();
+    // Setup for test isolation - no environment restoration needed
   }
 
   @AfterEach
@@ -37,7 +33,7 @@ class SherpaOnnxNativeTest {
   void isNativeLibraryAvailable_OnNonLinux_ShouldReturnFalse() {
     // Given: Non-Linux system (this test will likely run on Windows in CI)
     // When: Check if native library is available
-    boolean available = SherpaOnnxNative.isNativeLibraryAvailable();
+    var available = SherpaOnnxNative.isNativeLibraryAvailable();
 
     // Then: Should return false on non-Linux systems
     // Note: This test may pass or fail depending on the OS and library availability
@@ -47,7 +43,7 @@ class SherpaOnnxNativeTest {
   @Test
   void createSttRecognizer_WhenNativeNotAvailable_ShouldReturnMockHandle() {
     // When: Create STT recognizer (will use mock on most systems)
-    long recognizer = SherpaOnnxNative.createSttRecognizer("/mock/path", "en-US");
+    var recognizer = SherpaOnnxNative.createSttRecognizer("/mock/path", "en-US");
 
     // Then: Should return a handle (either real or mock)
     assertTrue(recognizer >= 0L);
@@ -56,7 +52,7 @@ class SherpaOnnxNativeTest {
   @Test
   void createTtsSynthesizer_WhenNativeNotAvailable_ShouldReturnMockHandle() {
     // When: Create TTS synthesizer (will use mock on most systems)
-    long synthesizer = SherpaOnnxNative.createTtsSynthesizer("/mock/path", "en-US", "female");
+    var synthesizer = SherpaOnnxNative.createTtsSynthesizer("/mock/path", "en-US", "female");
 
     // Then: Should return a handle (either real or mock)
     assertTrue(synthesizer >= 0L);
@@ -65,11 +61,11 @@ class SherpaOnnxNativeTest {
   @Test
   void transcribeAudio_WithMockImplementation_ShouldReturnText() {
     // Given: Mock audio data
-    byte[] audioData = createMockWavData(1024);
-    long recognizer = SherpaOnnxNative.createSttRecognizer("/mock/path", "en-US");
+    var audioData = createMockWavData(1024);
+    var recognizer = SherpaOnnxNative.createSttRecognizer("/mock/path", "en-US");
 
     // When: Transcribe audio
-    String result = SherpaOnnxNative.transcribeAudio(recognizer, audioData);
+    var result = SherpaOnnxNative.transcribeAudio(recognizer, audioData);
 
     // Then: Should return transcription text
     assertNotNull(result);
@@ -79,11 +75,11 @@ class SherpaOnnxNativeTest {
   @Test
   void transcribeAudio_WithNullAudio_ShouldHandleGracefully() {
     // Given: Null audio data
-    long recognizer = SherpaOnnxNative.createSttRecognizer("/mock/path", "en-US");
+    var recognizer = SherpaOnnxNative.createSttRecognizer("/mock/path", "en-US");
 
     // When: Transcribe null audio
     try {
-      String result = SherpaOnnxNative.transcribeAudio(recognizer, null);
+      var result = SherpaOnnxNative.transcribeAudio(recognizer, null);
       // Then: Should handle gracefully if no exception
       assertNotNull(result);
     } catch (Exception e) {
@@ -97,11 +93,11 @@ class SherpaOnnxNativeTest {
   @Test
   void synthesizeSpeech_WithMockImplementation_ShouldReturnAudioData() {
     // Given: Text to synthesize
-    String text = "Hello, this is a test.";
-    long synthesizer = SherpaOnnxNative.createTtsSynthesizer("/mock/path", "en-US", "female");
+    var text = "Hello, this is a test.";
+    var synthesizer = SherpaOnnxNative.createTtsSynthesizer("/mock/path", "en-US", "female");
 
     // When: Synthesize speech
-    byte[] result = SherpaOnnxNative.synthesizeSpeech(synthesizer, text);
+    var result = SherpaOnnxNative.synthesizeSpeech(synthesizer, text);
 
     // Then: Should return audio data
     assertNotNull(result);
@@ -123,10 +119,10 @@ class SherpaOnnxNativeTest {
   @Test
   void synthesizeSpeech_WithEmptyText_ShouldReturnValidAudio() {
     // Given: Empty text
-    long synthesizer = SherpaOnnxNative.createTtsSynthesizer("/mock/path", "en-US", "female");
+    var synthesizer = SherpaOnnxNative.createTtsSynthesizer("/mock/path", "en-US", "female");
 
     // When: Synthesize empty text
-    byte[] result = SherpaOnnxNative.synthesizeSpeech(synthesizer, "");
+    var result = SherpaOnnxNative.synthesizeSpeech(synthesizer, "");
 
     // Then: Should return some audio data (even if minimal)
     assertNotNull(result);
@@ -135,7 +131,7 @@ class SherpaOnnxNativeTest {
   @Test
   void releaseSttRecognizer_ShouldNotThrow() {
     // Given: Created recognizer
-    long recognizer = SherpaOnnxNative.createSttRecognizer("/mock/path", "en-US");
+    var recognizer = SherpaOnnxNative.createSttRecognizer("/mock/path", "en-US");
 
     // When: Release recognizer
     assertDoesNotThrow(() -> SherpaOnnxNative.releaseSttRecognizer(recognizer));
@@ -147,7 +143,7 @@ class SherpaOnnxNativeTest {
   @Test
   void releaseTtsSynthesizer_ShouldNotThrow() {
     // Given: Created synthesizer
-    long synthesizer = SherpaOnnxNative.createTtsSynthesizer("/mock/path", "en-US", "female");
+    var synthesizer = SherpaOnnxNative.createTtsSynthesizer("/mock/path", "en-US", "female");
 
     // When: Release synthesizer
     assertDoesNotThrow(() -> SherpaOnnxNative.releaseTtsSynthesizer(synthesizer));
@@ -159,10 +155,10 @@ class SherpaOnnxNativeTest {
   @Test
   void transcribeAudio_WithInvalidHandle_ShouldHandleGracefully() {
     // Given: Invalid recognizer handle
-    byte[] audioData = createMockWavData(512);
+    var audioData = createMockWavData(512);
 
     // When: Try to transcribe with invalid handle
-    String result = SherpaOnnxNative.transcribeAudio(0L, audioData);
+    var result = SherpaOnnxNative.transcribeAudio(0L, audioData);
 
     // Then: Should handle gracefully
     assertNotNull(result);
@@ -171,7 +167,7 @@ class SherpaOnnxNativeTest {
   @Test
   void synthesizeSpeech_WithInvalidHandle_ShouldHandleGracefully() {
     // When: Try to synthesize with invalid handle
-    byte[] result = SherpaOnnxNative.synthesizeSpeech(0L, "test");
+    var result = SherpaOnnxNative.synthesizeSpeech(0L, "test");
 
     // Then: Should handle gracefully
     assertNotNull(result);
@@ -180,14 +176,14 @@ class SherpaOnnxNativeTest {
   @Test
   void mockWavGeneration_ShouldCreateValidFormat() {
     // Given: Text of different lengths
-    String shortText = "Hi";
-    String longText = "This is a much longer text that should generate a longer audio file";
+    var shortText = "Hi";
+    var longText = "This is a much longer text that should generate a longer audio file";
 
-    long synthesizer = SherpaOnnxNative.createTtsSynthesizer("/mock/path", "en-US", "female");
+    var synthesizer = SherpaOnnxNative.createTtsSynthesizer("/mock/path", "en-US", "female");
 
     // When: Generate audio for different text lengths
-    byte[] shortAudio = SherpaOnnxNative.synthesizeSpeech(synthesizer, shortText);
-    byte[] longAudio = SherpaOnnxNative.synthesizeSpeech(synthesizer, longText);
+    var shortAudio = SherpaOnnxNative.synthesizeSpeech(synthesizer, shortText);
+    var longAudio = SherpaOnnxNative.synthesizeSpeech(synthesizer, longText);
 
     // Then: Both should be valid WAV format
     assertTrue(shortAudio.length >= 44, "Short audio should have at least WAV header");
@@ -200,7 +196,7 @@ class SherpaOnnxNativeTest {
 
   private byte[] createMockWavData(int sizeInBytes) {
     // Create minimal valid WAV header + data
-    byte[] wavData = new byte[Math.max(44, sizeInBytes)];
+    var wavData = new byte[Math.max(44, sizeInBytes)];
 
     // WAV header
     System.arraycopy("RIFF".getBytes(), 0, wavData, 0, 4);

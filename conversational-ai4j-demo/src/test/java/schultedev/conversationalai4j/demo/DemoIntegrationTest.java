@@ -51,6 +51,7 @@ class DemoIntegrationTest {
     assertEquals(HttpStatus.OK, response.getStatusCode());
 
     var content = response.getBody();
+    assertNotNull(content, "Response body should not be null");
     var doc = Jsoup.parse(content);
 
     // Verify form elements are present
@@ -101,6 +102,7 @@ class DemoIntegrationTest {
     assertEquals(HttpStatus.OK, response.getStatusCode());
 
     var content = response.getBody();
+    assertNotNull(content, "Response body should not be null");
     assertTrue(
         content.contains("Please enter a message."),
         "Should display error message for empty input");
@@ -113,6 +115,8 @@ class DemoIntegrationTest {
 
     // Then
     assertEquals(HttpStatus.OK, response.getStatusCode());
-    assertTrue(response.getBody().contains("UP"), "Health endpoint should return UP status");
+    var content = response.getBody();
+    assertNotNull(content, "Health endpoint response should not be null");
+    assertTrue(content.contains("UP"), "Health endpoint should return UP status");
   }
 }

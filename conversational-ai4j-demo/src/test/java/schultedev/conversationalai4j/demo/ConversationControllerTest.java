@@ -81,7 +81,7 @@ class ConversationControllerTest {
   @Test
   void testVoiceChat_WhenConversationalAINull_ShouldReturnError() throws Exception {
     // Given: Mock audio data
-    byte[] mockAudioData = createMockWavData(256);
+    var mockAudioData = createMockWavData(256);
 
     // When: Try voice chat (ConversationalAI may be initialized but speech unavailable)
     mockMvc
@@ -116,7 +116,7 @@ class ConversationControllerTest {
   @Test
   void testVoiceToText_WhenConversationalAINull_ShouldReturnError() throws Exception {
     // Given: Mock audio data
-    byte[] mockAudioData = createMockWavData(512);
+    var mockAudioData = createMockWavData(512);
 
     // When: Try voice-to-text (ConversationalAI may be initialized but speech unavailable)
     mockMvc
@@ -139,7 +139,7 @@ class ConversationControllerTest {
   @Test
   void testSendMessage_WithLongMessage_ShouldHandleGracefully() throws Exception {
     // Given: Very long message
-    String longMessage = "This is a very long message ".repeat(100);
+    var longMessage = "This is a very long message ".repeat(100);
 
     // When: Send long message
     mockMvc
@@ -153,7 +153,7 @@ class ConversationControllerTest {
   @Test
   void testSendMessage_WithSpecialCharacters_ShouldHandleCorrectly() throws Exception {
     // Given: Message with special characters
-    String specialMessage = "Hello! @#$%^&*()_+ 中文 émojis 🤖";
+    var specialMessage = "Hello! @#$%^&*()_+ 中文 émojis 🤖";
 
     // When: Send message with special characters
     mockMvc
@@ -176,7 +176,7 @@ class ConversationControllerTest {
 
   private byte[] createMockWavData(int sizeInBytes) {
     // Create minimal valid WAV header + data
-    byte[] wavData = new byte[Math.max(44, sizeInBytes)];
+    var wavData = new byte[Math.max(44, sizeInBytes)];
 
     // WAV header
     System.arraycopy("RIFF".getBytes(), 0, wavData, 0, 4);

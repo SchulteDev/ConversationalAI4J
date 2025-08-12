@@ -299,34 +299,36 @@ public class SherpaOnnxNative {
       var scriptFile = java.nio.file.Files.createTempFile("stt-script", ".py");
       var pythonScript =
           String.format(
-              "import sys\n"
-                  + "import sherpa_onnx\n"
-                  + "import wave\n"
-                  + "import numpy as np\n"
-                  + "try:\n"
-                  + "    recognizer = sherpa_onnx.OnlineRecognizer.from_transducer(\n"
-                  + "        '%s/tokens.txt',\n"
-                  + "        '%s/encoder-epoch-99-avg-1-chunk-16-left-128.onnx',\n"
-                  + "        '%s/decoder-epoch-99-avg-1-chunk-16-left-128.onnx',\n"
-                  + "        '%s/joiner-epoch-99-avg-1-chunk-16-left-128.onnx'\n"
-                  + "    )\n"
-                  + "    stream = recognizer.create_stream()\n"
-                  + "    wf = wave.open('%s', 'rb')\n"
-                  + "    sr = wf.getframerate()\n"
-                  + "    n = wf.getnframes()\n"
-                  + "    raw = wf.readframes(n)\n"
-                  + "    wf.close()\n"
-                  + "    data = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0\n"
-                  + "    print(f'Audio loaded: {len(data)} samples at {sr}Hz', file=sys.stderr)\n"
-                  + "    stream.accept_waveform(sr, data)\n"
-                  + "    stream.input_finished()\n"
-                  + "    while recognizer.is_ready(stream):\n"
-                  + "        recognizer.decode_stream(stream)\n"
-                  + "    result = recognizer.get_result(stream).strip()\n"
-                  + "    print(result if result else 'NO_SPEECH_DETECTED')\n"
-                  + "except Exception as e:\n"
-                  + "    print(f'STT Error: {e}', file=sys.stderr)\n"
-                  + "    print('TRANSCRIPTION_ERROR')\n",
+              """
+              import sys
+              import sherpa_onnx
+              import wave
+              import numpy as np
+              try:
+                  recognizer = sherpa_onnx.OnlineRecognizer.from_transducer(
+                      '%s/tokens.txt',
+                      '%s/encoder-epoch-99-avg-1-chunk-16-left-128.onnx',
+                      '%s/decoder-epoch-99-avg-1-chunk-16-left-128.onnx',
+                      '%s/joiner-epoch-99-avg-1-chunk-16-left-128.onnx'
+                  )
+                  stream = recognizer.create_stream()
+                  wf = wave.open('%s', 'rb')
+                  sr = wf.getframerate()
+                  n = wf.getnframes()
+                  raw = wf.readframes(n)
+                  wf.close()
+                  data = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0
+                  print(f'Audio loaded: {len(data)} samples at {sr}Hz', file=sys.stderr)
+                  stream.accept_waveform(sr, data)
+                  stream.input_finished()
+                  while recognizer.is_ready(stream):
+                      recognizer.decode_stream(stream)
+                  result = recognizer.get_result(stream).strip()
+                  print(result if result else 'NO_SPEECH_DETECTED')
+              except Exception as e:
+                  print(f'STT Error: {e}', file=sys.stderr)
+                  print('TRANSCRIPTION_ERROR')
+              """,
               sttModelPath, sttModelPath, sttModelPath, sttModelPath, tempFile);
 
       java.nio.file.Files.write(scriptFile, pythonScript.getBytes());
@@ -392,36 +394,38 @@ public class SherpaOnnxNative {
       var scriptFile = java.nio.file.Files.createTempFile("tts-script", ".py");
       var pythonScript =
           String.format(
-              "import sys\n"
-                  + "import sherpa_onnx\n"
-                  + "import wave\n"
-                  + "import numpy as np\n"
-                  + "try:\n"
-                  + "    # Configure TTS with proper API\n"
-                  + "    config = sherpa_onnx.OfflineTtsConfig(\n"
-                  + "        model=sherpa_onnx.OfflineTtsModelConfig(\n"
-                  + "            vits=sherpa_onnx.OfflineTtsVitsModelConfig(\n"
-                  + "                model='%s/en_US-amy-low.onnx',\n"
-                  + "                lexicon='',\n"
-                  + "                tokens='%s/tokens.txt',\n"
-                  + "                data_dir='%s/espeak-ng-data'\n"
-                  + "            )\n"
-                  + "        )\n"
-                  + "    )\n"
-                  + "    tts = sherpa_onnx.OfflineTts(config)\n"
-                  + "    audio = tts.generate('%s', speed=1.0, sid=0)\n"
-                  + "    sr = tts.sample_rate\n"
-                  + "    samples = np.asarray(audio.samples, dtype=np.float32)\n"
-                  + "    pcm = (np.clip(samples, -1.0, 1.0) * 32767.0).astype(np.int16).tobytes()\n"
-                  + "    with wave.open('%s', 'wb') as wf:\n"
-                  + "        wf.setnchannels(1)\n"
-                  + "        wf.setsampwidth(2)\n"
-                  + "        wf.setframerate(sr)\n"
-                  + "        wf.writeframes(pcm)\n"
-                  + "    print('TTS_SUCCESS')\n"
-                  + "except Exception as e:\n"
-                  + "    print(f'TTS Error: {e}', file=sys.stderr)\n"
-                  + "    print('TTS_ERROR')\n",
+              """
+              import sys
+              import sherpa_onnx
+              import wave
+              import numpy as np
+              try:
+                  # Configure TTS with proper API
+                  config = sherpa_onnx.OfflineTtsConfig(
+                      model=sherpa_onnx.OfflineTtsModelConfig(
+                          vits=sherpa_onnx.OfflineTtsVitsModelConfig(
+                              model='%s/en_US-amy-low.onnx',
+                              lexicon='',
+                              tokens='%s/tokens.txt',
+                              data_dir='%s/espeak-ng-data'
+                          )
+                      )
+                  )
+                  tts = sherpa_onnx.OfflineTts(config)
+                  audio = tts.generate('%s', speed=1.0, sid=0)
+                  sr = tts.sample_rate
+                  samples = np.asarray(audio.samples, dtype=np.float32)
+                  pcm = (np.clip(samples, -1.0, 1.0) * 32767.0).astype(np.int16).tobytes()
+                  with wave.open('%s', 'wb') as wf:
+                      wf.setnchannels(1)
+                      wf.setsampwidth(2)
+                      wf.setframerate(sr)
+                      wf.writeframes(pcm)
+                  print('TTS_SUCCESS')
+              except Exception as e:
+                  print(f'TTS Error: {e}', file=sys.stderr)
+                  print('TTS_ERROR')
+              """,
               ttsModelPath,
               ttsModelPath,
               ttsModelPath,

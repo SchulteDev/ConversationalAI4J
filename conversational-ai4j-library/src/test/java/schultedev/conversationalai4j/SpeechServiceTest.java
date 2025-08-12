@@ -25,7 +25,7 @@ class SpeechServiceTest {
   @Test
   void textToSpeech_ShouldReturnValidWavData() {
     // When: Convert text to speech
-    byte[] result = speechService.textToSpeech("Hello world");
+    var result = speechService.textToSpeech("Hello world");
 
     // Then: Should return valid WAV data
     assertNotNull(result);
@@ -45,10 +45,10 @@ class SpeechServiceTest {
   @Test
   void speechToText_ShouldReturnString() {
     // Given: Mock audio data
-    byte[] audioData = createMockWavData(1000);
+    var audioData = createMockWavData(1000);
 
     // When: Convert speech to text
-    String result = speechService.speechToText(audioData);
+    var result = speechService.speechToText(audioData);
 
     // Then: Should return transcription text
     assertNotNull(result);
@@ -58,7 +58,7 @@ class SpeechServiceTest {
   @Test
   void speechToText_WithNullAudio_ShouldReturnMockResult() {
     // When: Process null audio
-    String result = speechService.speechToText(null);
+    var result = speechService.speechToText(null);
 
     // Then: Should handle gracefully
     assertNotNull(result);
@@ -67,7 +67,7 @@ class SpeechServiceTest {
   @Test
   void speechToText_WithEmptyAudio_ShouldReturnMockResult() {
     // When: Process empty audio
-    String result = speechService.speechToText(new byte[0]);
+    var result = speechService.speechToText(new byte[0]);
 
     // Then: Should handle gracefully
     assertNotNull(result);
@@ -76,10 +76,10 @@ class SpeechServiceTest {
   @Test
   void speechToText_WithValidWavData_ProcessesCorrectly() {
     // Given: Valid WAV file data
-    byte[] wavData = createValidWavData();
+    var wavData = createValidWavData();
 
     // When: Process speech to text
-    String result = speechService.speechToText(wavData);
+    var result = speechService.speechToText(wavData);
 
     // Then: Should return transcription
     assertNotNull(result);
@@ -89,10 +89,10 @@ class SpeechServiceTest {
   @Test
   void audioConversion_WithWebMData_ShouldHandleGracefully() {
     // Given: Mock WebM audio data (typical from browser)
-    byte[] webmData = createMockWebMData();
+    var webmData = createMockWebMData();
 
     // When: Process through speech service
-    String result = speechService.speechToText(webmData);
+    var result = speechService.speechToText(webmData);
 
     // Then: Should handle conversion attempt and return result
     assertNotNull(result);
@@ -102,7 +102,7 @@ class SpeechServiceTest {
   @Test
   void textToSpeech_WithEmptyText_ReturnsEmptyOrDefaultAudio() {
     // When: Convert empty text
-    byte[] result = speechService.textToSpeech("");
+    var result = speechService.textToSpeech("");
 
     // Then: Should handle gracefully (may return empty or default audio)
     assertNotNull(result);
@@ -111,7 +111,7 @@ class SpeechServiceTest {
   @Test
   void isAvailable_ShouldReturnBoolean() {
     // When: Check availability
-    boolean available = speechService.isAvailable();
+    var available = speechService.isAvailable();
 
     // Then: Should return a boolean value based on SPEECH_ENABLED env
     // In test environment, should reflect actual configuration
@@ -129,7 +129,7 @@ class SpeechServiceTest {
 
   private byte[] createMockWavData(int sizeInBytes) {
     // Create minimal valid WAV header + data
-    byte[] wavData = new byte[Math.max(44, sizeInBytes)];
+    var wavData = new byte[Math.max(44, sizeInBytes)];
 
     // WAV header
     System.arraycopy("RIFF".getBytes(), 0, wavData, 0, 4);
@@ -155,7 +155,7 @@ class SpeechServiceTest {
 
   private byte[] createMockWebMData() {
     // Mock WebM container with some header-like bytes
-    byte[] webmData = new byte[256];
+    var webmData = new byte[256];
     webmData[0] = 0x1A; // WebM EBML signature start
     webmData[1] = 0x45;
     webmData[2] = (byte) 0xDF;

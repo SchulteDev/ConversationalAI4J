@@ -28,8 +28,8 @@ public class VoiceStreamHandler implements WebSocketHandler {
   public VoiceStreamHandler() {
     ConversationalAI tempAI;
     try {
-      String modelName = System.getenv().getOrDefault("OLLAMA_MODEL_NAME", "llama3.2:3b");
-      String baseUrl = System.getenv().getOrDefault("OLLAMA_BASE_URL", "http://localhost:11434");
+      var modelName = System.getenv().getOrDefault("OLLAMA_MODEL_NAME", "llama3.2:3b");
+      var baseUrl = System.getenv().getOrDefault("OLLAMA_BASE_URL", "http://localhost:11434");
 
       log.info("Initializing VoiceStreamHandler with model '{}' at '{}'", modelName, baseUrl);
 
@@ -62,7 +62,7 @@ public class VoiceStreamHandler implements WebSocketHandler {
   @Override
   public void handleMessage(WebSocketSession session, WebSocketMessage<?> message)
       throws Exception {
-    String sessionId = session.getId();
+    var sessionId = session.getId();
 
     if (message instanceof TextMessage textMessage) {
       handleTextMessage(session, textMessage);
@@ -72,30 +72,30 @@ public class VoiceStreamHandler implements WebSocketHandler {
   }
 
   private void handleTextMessage(WebSocketSession session, TextMessage message) throws IOException {
-    String payload = message.getPayload();
-    String sessionId = session.getId();
+    var payload = message.getPayload();
+    var sessionId = session.getId();
 
     log.debug("Received text message from {}: {}", sessionId, payload);
 
-    if ("start_recording".equals(payload)) {
-      recordingStates.put(sessionId, true);
-      audioBuffers.get(sessionId).clear();
-      sendStatus(session, "recording", "Recording started");
-      log.info("Started recording for session {}", sessionId);
-
-    } else if ("stop_recording".equals(payload)) {
-      recordingStates.put(sessionId, false);
-      sendStatus(session, "processing", "Processing voice...");
-      log.info("Stopped recording for session {}, processing audio", sessionId);
-      processAccumulatedAudio(session);
-
-    } else if ("check_status".equals(payload)) {
-      sendSpeechStatus(session);
+    switch (payload) {
+      case "start_recording" -> {
+        recordingStates.put(sessionId, true);
+        audioBuffers.get(sessionId).clear();
+        sendStatus(session, "recording", "Recording started");
+        log.info("Started recording for session {}", sessionId);
+      }
+      case "stop_recording" -> {
+        recordingStates.put(sessionId, false);
+        sendStatus(session, "processing", "Processing voice...");
+        log.info("Stopped recording for session {}, processing audio", sessionId);
+        processAccumulatedAudio(session);
+      }
+      case "check_status" -> sendSpeechStatus(session);
     }
   }
 
   private void handleBinaryMessage(WebSocketSession session, BinaryMessage message) {
-    String sessionId = session.getId();
+    var sessionId = session.getId();
 
     if (recordingStates.get(sessionId)) {
       audioBuffers.get(sessionId).add(message.getPayload());
@@ -107,7 +107,7 @@ public class VoiceStreamHandler implements WebSocketHandler {
   }
 
   private void processAccumulatedAudio(WebSocketSession session) throws IOException {
-    String sessionId = session.getId();
+    var sessionId = session.getId();
     var chunks = audioBuffers.get(sessionId);
 
     if (chunks.isEmpty()) {
@@ -116,9 +116,9 @@ public class VoiceStreamHandler implements WebSocketHandler {
     }
 
     // Log chunk diagnostics
-    int chunkCount = chunks.size();
-    int firstSize = chunks.get(0).remaining();
-    int lastSize = chunks.get(chunkCount - 1).remaining();
+    var chunkCount = chunks.size();
+    var firstSize = chunks.getFirst().remaining();
+    var lastSize = chunks.get(chunkCount - 1).remaining();
     log.debug(
         "Session {} has {} audio chunks; first={} bytes, last={} bytes",
         sessionId,
@@ -128,17 +128,17 @@ public class VoiceStreamHandler implements WebSocketHandler {
 
     try {
       // Combine all audio chunks
-      ByteArrayOutputStream audioStream = new ByteArrayOutputStream();
-      int totalBytes = 0;
-      for (ByteBuffer chunk : chunks) {
-        byte[] chunkBytes = new byte[chunk.remaining()];
+      var audioStream = new ByteArrayOutputStream();
+      var totalBytes = 0;
+      for (var chunk : chunks) {
+        var chunkBytes = new byte[chunk.remaining()];
         chunk.get(chunkBytes);
         audioStream.write(chunkBytes);
         totalBytes += chunkBytes.length;
         chunk.rewind(); // Reset for potential reuse
       }
 
-      byte[] audioData = audioStream.toByteArray();
+      var audioData = audioStream.toByteArray();
       log.info(
           "Processing combined audio data of {} bytes for session {}", audioData.length, sessionId);
       log.debug(
@@ -163,9 +163,9 @@ public class VoiceStreamHandler implements WebSocketHandler {
           "Starting speech-to-text conversion for session {} with {} bytes of audio",
           sessionId,
           audioData.length);
-      long t0 = System.nanoTime();
-      String transcribedText = conversationalAI.speechToText(audioData);
-      long t1 = System.nanoTime();
+      var t0 = System.nanoTime();
+      var transcribedText = conversationalAI.speechToText(audioData);
+      var t1 = System.nanoTime();
       log.info("STT completed for session {} in {} ms", sessionId, ((t1 - t0) / 1_000_000));
 
       if (transcribedText == null || transcribedText.trim().isEmpty()) {
@@ -177,7 +177,7 @@ public class VoiceStreamHandler implements WebSocketHandler {
       log.info("VOICE STT RESULT for session {}: '{}'", sessionId, transcribedText);
 
       // Send transcribed text to user interface
-      String transcriptJson =
+      var transcriptJson =
           String.format(
               "{\"type\":\"transcription\",\"text\":\"%s\"}",
               transcribedText.replace("\"", "\\\""));
@@ -186,9 +186,9 @@ public class VoiceStreamHandler implements WebSocketHandler {
       // Step 2: LLM Processing
       sendStatus(session, "llm_processing", "AI is thinking...");
       log.info("VOICE USER INPUT for session {}: '{}'", sessionId, transcribedText);
-      long t2 = System.nanoTime();
-      String aiResponse = conversationalAI.chat(transcribedText);
-      long t3 = System.nanoTime();
+      var t2 = System.nanoTime();
+      var aiResponse = conversationalAI.chat(transcribedText);
+      var t3 = System.nanoTime();
       log.info("LLM completed for session {} in {} ms", sessionId, ((t3 - t2) / 1_000_000));
 
       if (aiResponse == null || aiResponse.trim().isEmpty()) {
@@ -214,7 +214,7 @@ public class VoiceStreamHandler implements WebSocketHandler {
 
   private void sendStatus(WebSocketSession session, String status, String message)
       throws IOException {
-    String statusJson =
+    var statusJson =
         String.format(
             "{\"type\":\"status\",\"status\":\"%s\",\"message\":\"%s\"}", status, message);
     session.sendMessage(new TextMessage(statusJson));
@@ -222,17 +222,17 @@ public class VoiceStreamHandler implements WebSocketHandler {
 
   private void sendSpeechStatus(WebSocketSession session) throws IOException {
     if (conversationalAI == null) {
-      String status =
+      var status =
           "{\"type\":\"speech_status\",\"available\":false,\"reason\":\"AI service not available\"}";
       session.sendMessage(new TextMessage(status));
       return;
     }
 
-    boolean speechEnabled = conversationalAI.isSpeechEnabled();
-    boolean sttEnabled = conversationalAI.isSpeechToTextEnabled();
-    boolean ttsEnabled = conversationalAI.isTextToSpeechEnabled();
+    var speechEnabled = conversationalAI.isSpeechEnabled();
+    var sttEnabled = conversationalAI.isSpeechToTextEnabled();
+    var ttsEnabled = conversationalAI.isTextToSpeechEnabled();
 
-    String status =
+    var status =
         String.format(
             "{\"type\":\"speech_status\",\"available\":%s,\"speechToText\":%s,\"textToSpeech\":%s,\"fullSpeech\":%s}",
             speechEnabled, sttEnabled, ttsEnabled, speechEnabled);
@@ -242,7 +242,7 @@ public class VoiceStreamHandler implements WebSocketHandler {
   }
 
   @Override
-  public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
+  public void handleTransportError(WebSocketSession session, Throwable exception) {
     log.error(
         "WebSocket transport error for session {}: {}",
         session.getId(),
@@ -251,9 +251,8 @@ public class VoiceStreamHandler implements WebSocketHandler {
   }
 
   @Override
-  public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus)
-      throws Exception {
-    String sessionId = session.getId();
+  public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) {
+    var sessionId = session.getId();
     log.info("WebSocket voice stream connection closed: {} ({})", sessionId, closeStatus);
 
     // Clean up session data
@@ -270,10 +269,10 @@ public class VoiceStreamHandler implements WebSocketHandler {
       throws IOException {
     if (conversationalAI.isTextToSpeechEnabled()) {
       try {
-        long t0 = System.nanoTime();
+        var t0 = System.nanoTime();
         // Directly convert AI response to speech without reprocessing through LLM
-        byte[] responseAudio = conversationalAI.textToSpeech(aiResponse);
-        long t1 = System.nanoTime();
+        var responseAudio = conversationalAI.textToSpeech(aiResponse);
+        var t1 = System.nanoTime();
 
         if (responseAudio == null || responseAudio.length == 0) {
           log.warn("TTS did not generate audio file for session {}", sessionId);
@@ -298,7 +297,7 @@ public class VoiceStreamHandler implements WebSocketHandler {
   }
 
   private void sendTextResponse(WebSocketSession session, String text) throws IOException {
-    String responseJson =
+    var responseJson =
         String.format(
             "{\"type\":\"text_response\",\"message\":\"%s\"}", text.replace("\"", "\\\""));
     session.sendMessage(new TextMessage(responseJson));

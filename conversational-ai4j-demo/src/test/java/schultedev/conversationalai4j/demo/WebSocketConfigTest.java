@@ -30,7 +30,7 @@ class WebSocketConfigTest {
   @Test
   void constructor_WithValidHandler_ShouldInitialize() {
     // Given & When
-    WebSocketConfig config = new WebSocketConfig(mockHandler);
+    var config = new WebSocketConfig(mockHandler);
 
     // Then
     assertNotNull(config);

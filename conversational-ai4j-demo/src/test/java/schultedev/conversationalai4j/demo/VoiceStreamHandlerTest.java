@@ -14,13 +14,13 @@ import org.springframework.web.socket.*;
 /** Tests for VoiceStreamHandler WebSocket voice processing pipeline. */
 class VoiceStreamHandlerTest {
 
-  private final String testSessionId = "test-session-123";
   @Mock private WebSocketSession mockSession;
   private VoiceStreamHandler handler;
 
   @BeforeEach
   void setUp() {
     MockitoAnnotations.openMocks(this);
+    var testSessionId = "test-session-123";
     when(mockSession.getId()).thenReturn(testSessionId);
 
     handler = new VoiceStreamHandler();
@@ -51,7 +51,7 @@ class VoiceStreamHandlerTest {
   void handleMessage_WithStartRecording_ShouldStartRecording() throws Exception {
     // Given
     handler.afterConnectionEstablished(mockSession);
-    TextMessage startMessage = new TextMessage("start_recording");
+    var startMessage = new TextMessage("start_recording");
 
     // When
     handler.handleMessage(mockSession, startMessage);
@@ -76,7 +76,7 @@ class VoiceStreamHandlerTest {
   void handleMessage_WithBinaryData_WhileNotRecording_ShouldIgnore() throws Exception {
     // Given
     handler.afterConnectionEstablished(mockSession);
-    ByteBuffer audioData = ByteBuffer.wrap(new byte[] {1, 2, 3});
+    var audioData = ByteBuffer.wrap(new byte[] {1, 2, 3});
 
     // When (not recording)
     handler.handleMessage(mockSession, new BinaryMessage(audioData));
@@ -107,8 +107,8 @@ class VoiceStreamHandlerTest {
     handler.handleMessage(mockSession, new TextMessage("start_recording"));
 
     // Add some audio chunks
-    ByteBuffer audioChunk1 = ByteBuffer.wrap(createMockWavData(256));
-    ByteBuffer audioChunk2 = ByteBuffer.wrap(createMockWavData(256));
+    var audioChunk1 = ByteBuffer.wrap(createMockWavData(256));
+    var audioChunk2 = ByteBuffer.wrap(createMockWavData(256));
 
     handler.handleMessage(mockSession, new BinaryMessage(audioChunk1));
     handler.handleMessage(mockSession, new BinaryMessage(audioChunk2));
@@ -117,12 +117,12 @@ class VoiceStreamHandlerTest {
     handler.handleMessage(mockSession, new TextMessage("stop_recording"));
 
     // Then: Should send multiple status messages during processing
-    ArgumentCaptor<TextMessage> messageCaptor = ArgumentCaptor.forClass(TextMessage.class);
+    var messageCaptor = ArgumentCaptor.forClass(TextMessage.class);
     verify(mockSession, atLeast(3)).sendMessage(messageCaptor.capture());
 
     // Verify we get status messages for different processing stages
     var sentMessages = messageCaptor.getAllValues();
-    boolean foundProcessingStatus =
+    var foundProcessingStatus =
         sentMessages.stream().anyMatch(msg -> msg.getPayload().contains("processing"));
 
     assertTrue(foundProcessingStatus, "Should send processing status during audio processing");
@@ -138,11 +138,11 @@ class VoiceStreamHandlerTest {
     handler.handleMessage(mockSession, new TextMessage("stop_recording"));
 
     // Then: Should handle gracefully and send error status
-    ArgumentCaptor<TextMessage> messageCaptor = ArgumentCaptor.forClass(TextMessage.class);
+    var messageCaptor = ArgumentCaptor.forClass(TextMessage.class);
     verify(mockSession, atLeast(2)).sendMessage(messageCaptor.capture());
 
     var sentMessages = messageCaptor.getAllValues();
-    boolean foundErrorStatus =
+    var foundErrorStatus =
         sentMessages.stream()
             .anyMatch(
                 msg -> msg.getPayload().contains("error") || msg.getPayload().contains("No audio"));
@@ -170,7 +170,7 @@ class VoiceStreamHandlerTest {
     // When: Start and stop recording multiple times
     handler.handleMessage(mockSession, new TextMessage("start_recording"));
 
-    ByteBuffer audioData = ByteBuffer.wrap(createMockWavData(128));
+    var audioData = ByteBuffer.wrap(createMockWavData(128));
     handler.handleMessage(mockSession, new BinaryMessage(audioData));
 
     handler.handleMessage(mockSession, new TextMessage("stop_recording"));
@@ -191,20 +191,20 @@ class VoiceStreamHandlerTest {
     handler.handleMessage(mockSession, new TextMessage("start_recording"));
 
     // When: Send multiple large audio chunks
-    for (int i = 0; i < 10; i++) {
-      ByteBuffer largeChunk = ByteBuffer.wrap(createMockWavData(1024));
+    for (var i = 0; i < 10; i++) {
+      var largeChunk = ByteBuffer.wrap(createMockWavData(1024));
       handler.handleMessage(mockSession, new BinaryMessage(largeChunk));
     }
 
     handler.handleMessage(mockSession, new TextMessage("stop_recording"));
 
     // Then: Should process all accumulated chunks
-    ArgumentCaptor<TextMessage> messageCaptor = ArgumentCaptor.forClass(TextMessage.class);
+    var messageCaptor = ArgumentCaptor.forClass(TextMessage.class);
     verify(mockSession, atLeast(3)).sendMessage(messageCaptor.capture());
 
     // Should eventually complete processing
     var messages = messageCaptor.getAllValues();
-    boolean foundCompleteStatus =
+    var foundCompleteStatus =
         messages.stream()
             .anyMatch(
                 msg -> msg.getPayload().contains("complete") || msg.getPayload().contains("ready"));
@@ -218,7 +218,7 @@ class VoiceStreamHandlerTest {
     handler.afterConnectionEstablished(mockSession);
     handler.handleMessage(mockSession, new TextMessage("start_recording"));
 
-    ByteBuffer audioData = ByteBuffer.wrap(createMockWavData(256));
+    var audioData = ByteBuffer.wrap(createMockWavData(256));
     handler.handleMessage(mockSession, new BinaryMessage(audioData));
 
     // When: Connection closed during active recording
@@ -230,7 +230,7 @@ class VoiceStreamHandlerTest {
 
   private byte[] createMockWavData(int sizeInBytes) {
     // Create minimal valid WAV header + data
-    byte[] wavData = new byte[Math.max(44, sizeInBytes)];
+    var wavData = new byte[Math.max(44, sizeInBytes)];
 
     // WAV header
     System.arraycopy("RIFF".getBytes(), 0, wavData, 0, 4);

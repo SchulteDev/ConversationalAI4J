@@ -20,8 +20,8 @@ public class SpeechService {
 
     if (speechEnabled && SherpaOnnxNative.isNativeLibraryAvailable()) {
       // Initialize sherpa-onnx recognizers
-      String sttModelPath = System.getenv().getOrDefault("STT_MODEL_PATH", "/app/models/stt");
-      String ttsModelPath = System.getenv().getOrDefault("TTS_MODEL_PATH", "/app/models/tts");
+      var sttModelPath = System.getenv().getOrDefault("STT_MODEL_PATH", "/app/models/stt");
+      var ttsModelPath = System.getenv().getOrDefault("TTS_MODEL_PATH", "/app/models/tts");
 
       this.sttRecognizer = SherpaOnnxNative.createSttRecognizer(sttModelPath, "en-US");
       this.ttsSynthesizer = SherpaOnnxNative.createTtsSynthesizer(ttsModelPath, "en-US", "female");
@@ -48,7 +48,12 @@ public class SpeechService {
     log.info("Processing speech-to-text: {} bytes", (audioData == null ? 0 : audioData.length));
 
     // Always attempt to normalize to 16kHz mono PCM WAV using ffmpeg when available
-    byte[] normalized = convertToPcm16Wav(audioData);
+    var normalized = convertToPcm16Wav(audioData);
+
+    if (normalized == null) {
+      log.warn("Audio normalization returned null");
+      return "";
+    }
 
     if (sttRecognizer > 0) {
       // Use real sherpa-onnx transcription
@@ -70,7 +75,7 @@ public class SpeechService {
 
     // Quick sniffing for container/header
     if (input.length >= 12) {
-      boolean isWav =
+      var isWav =
           input[0] == 'R'
               && input[1] == 'I'
               && input[2] == 'F'
@@ -94,9 +99,9 @@ public class SpeechService {
       }
     }
 
-    long t0 = System.nanoTime();
+    var t0 = System.nanoTime();
     try {
-      ProcessBuilder pb =
+      var pb =
           new ProcessBuilder(
               "ffmpeg",
               "-hide_banner",
@@ -111,7 +116,7 @@ public class SpeechService {
               "-f",
               "wav",
               "pipe:1");
-      Process p = pb.start();
+      var p = pb.start();
 
       // Write input bytes to ffmpeg stdin
       try (var stdin = p.getOutputStream()) {
@@ -120,11 +125,11 @@ public class SpeechService {
       }
 
       // Read converted bytes from stdout
-      byte[] output = p.getInputStream().readAllBytes();
-      byte[] err = p.getErrorStream().readAllBytes();
+      var output = p.getInputStream().readAllBytes();
+      var err = p.getErrorStream().readAllBytes();
 
-      boolean finished = p.waitFor(10, java.util.concurrent.TimeUnit.SECONDS);
-      long dtMs = (System.nanoTime() - t0) / 1_000_000;
+      var finished = p.waitFor(10, java.util.concurrent.TimeUnit.SECONDS);
+      var dtMs = (System.nanoTime() - t0) / 1_000_000;
       if (!finished) {
         p.destroyForcibly();
         log.warn(
@@ -134,9 +139,9 @@ public class SpeechService {
         return input;
       }
 
-      int exit = p.exitValue();
+      var exit = p.exitValue();
       if (exit != 0 || output.length < 44) {
-        String errMsg = new String(err);
+        var errMsg = new String(err);
         log.warn(
             "ffmpeg conversion failed in {} ms (code {}), stderr: {}. Using original audio ({} bytes)",
             dtMs,
@@ -180,7 +185,7 @@ public class SpeechService {
       }
 
     } catch (Exception e) {
-      long dtMs = (System.nanoTime() - t0) / 1_000_000;
+      var dtMs = (System.nanoTime() - t0) / 1_000_000;
       log.warn(
           "ffmpeg conversion error after {} ms: {}. Using original audio ({} bytes)",
           dtMs,
@@ -192,7 +197,7 @@ public class SpeechService {
 
   private WavHeaderInfo parseWavHeader(byte[] wav) {
     if (wav.length < 44) throw new IllegalArgumentException("WAV too short");
-    WavHeaderInfo info = new WavHeaderInfo();
+    var info = new WavHeaderInfo();
     info.channels = ((wav[23] & 0xFF) << 8) | (wav[22] & 0xFF);
     info.sampleRate =
         ((wav[27] & 0xFF) << 24)
@@ -235,7 +240,7 @@ public class SpeechService {
 
   private byte[] generateMockAudio(String text) {
     // Minimal WAV: 44-byte header + 1 second of silence
-    byte[] wavData = new byte[44 + 16000 * 2];
+    var wavData = new byte[44 + 16000 * 2];
 
     // WAV header for 16kHz, 16-bit, mono
     System.arraycopy("RIFF".getBytes(), 0, wavData, 0, 4);
