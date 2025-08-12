@@ -174,7 +174,7 @@ public class ConversationalAI {
    */
   /**
    * Convert speech to text only (no chat processing).
-   * 
+   *
    * @param audioInput Raw audio data in WAV format (16kHz, 16-bit, mono)
    * @return Transcribed text, or error message if transcription failed
    * @throws UnsupportedOperationException if speech-to-text is not configured
@@ -191,7 +191,7 @@ public class ConversationalAI {
     }
 
     log.info("Processing speech-to-text: {} bytes", audioInput.length);
-    
+
     try {
       var text = speechToText.transcribe(audioInput);
       log.info("Speech-to-text result: '{}'", text);
@@ -259,7 +259,7 @@ public class ConversationalAI {
 
   /**
    * Convert text directly to speech without LLM processing.
-   * 
+   *
    * @param text The text to convert to speech
    * @return Audio data in WAV format, or empty array if processing failed
    * @throws UnsupportedOperationException if text-to-speech is not configured

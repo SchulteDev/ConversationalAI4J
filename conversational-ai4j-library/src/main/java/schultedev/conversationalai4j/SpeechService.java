@@ -2,12 +2,10 @@ package schultedev.conversationalai4j;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 /**
- * Speech service that integrates with sherpa-onnx for real speech processing.
- * Uses real STT/TTS when available, falls back to mock on unsupported platforms.
+ * Speech service that integrates with sherpa-onnx for real speech processing. Uses real STT/TTS
+ * when available, falls back to mock on unsupported platforms.
  */
 public class SpeechService {
 
@@ -28,8 +26,10 @@ public class SpeechService {
       this.sttRecognizer = SherpaOnnxNative.createSttRecognizer(sttModelPath, "en-US");
       this.ttsSynthesizer = SherpaOnnxNative.createTtsSynthesizer(ttsModelPath, "en-US", "female");
 
-      log.info("sherpa-onnx recognizers initialized - STT: {}, TTS: {}",
-               sttRecognizer > 0, ttsSynthesizer > 0);
+      log.info(
+          "sherpa-onnx recognizers initialized - STT: {}, TTS: {}",
+          sttRecognizer > 0,
+          ttsSynthesizer > 0);
     } else {
       this.sttRecognizer = 0L;
       this.ttsSynthesizer = 0L;
@@ -62,21 +62,32 @@ public class SpeechService {
   }
 
   /**
-   * Convert arbitrary audio container (e.g., WebM/Opus from browser) to 16kHz mono PCM WAV.
-   * Falls back to original bytes if conversion fails. Requires ffmpeg in PATH (provided in Docker).
+   * Convert arbitrary audio container (e.g., WebM/Opus from browser) to 16kHz mono PCM WAV. Falls
+   * back to original bytes if conversion fails. Requires ffmpeg in PATH (provided in Docker).
    */
   private byte[] convertToPcm16Wav(byte[] input) {
     if (input == null || input.length == 0) return input;
 
     // Quick sniffing for container/header
     if (input.length >= 12) {
-      boolean isWav = input[0] == 'R' && input[1] == 'I' && input[2] == 'F' && input[3] == 'F' &&
-                      input[8] == 'W' && input[9] == 'A' && input[10] == 'V' && input[11] == 'E';
+      boolean isWav =
+          input[0] == 'R'
+              && input[1] == 'I'
+              && input[2] == 'F'
+              && input[3] == 'F'
+              && input[8] == 'W'
+              && input[9] == 'A'
+              && input[10] == 'V'
+              && input[11] == 'E';
       log.debug("Input header: {} ({} bytes)", (isWav ? "WAV/RIFF" : "unknown"), input.length);
       if (isWav) {
         try {
           var hdr = parseWavHeader(input);
-          log.debug("Input WAV header: sr={} Hz, ch={}, bits={}", hdr.sampleRate, hdr.channels, hdr.bitsPerSample);
+          log.debug(
+              "Input WAV header: sr={} Hz, ch={}, bits={}",
+              hdr.sampleRate,
+              hdr.channels,
+              hdr.bitsPerSample);
         } catch (Exception ex) {
           log.debug("Failed to parse input WAV header: {}", ex.getMessage());
         }
@@ -85,14 +96,21 @@ public class SpeechService {
 
     long t0 = System.nanoTime();
     try {
-      ProcessBuilder pb = new ProcessBuilder(
-          "ffmpeg", "-hide_banner", "-loglevel", "error",
-          "-i", "pipe:0",
-          "-ar", "16000",
-          "-ac", "1",
-          "-f", "wav",
-          "pipe:1"
-      );
+      ProcessBuilder pb =
+          new ProcessBuilder(
+              "ffmpeg",
+              "-hide_banner",
+              "-loglevel",
+              "error",
+              "-i",
+              "pipe:0",
+              "-ar",
+              "16000",
+              "-ac",
+              "1",
+              "-f",
+              "wav",
+              "pipe:1");
       Process p = pb.start();
 
       // Write input bytes to ffmpeg stdin
@@ -109,25 +127,51 @@ public class SpeechService {
       long dtMs = (System.nanoTime() - t0) / 1_000_000;
       if (!finished) {
         p.destroyForcibly();
-        log.warn("ffmpeg conversion timed out after {} ms; using original audio ({} bytes)", dtMs, input.length);
+        log.warn(
+            "ffmpeg conversion timed out after {} ms; using original audio ({} bytes)",
+            dtMs,
+            input.length);
         return input;
       }
 
       int exit = p.exitValue();
       if (exit != 0 || output.length < 44) {
         String errMsg = new String(err);
-        log.warn("ffmpeg conversion failed in {} ms (code {}), stderr: {}. Using original audio ({} bytes)", dtMs, exit, errMsg, input.length);
+        log.warn(
+            "ffmpeg conversion failed in {} ms (code {}), stderr: {}. Using original audio ({} bytes)",
+            dtMs,
+            exit,
+            errMsg,
+            input.length);
         return input;
       }
 
       // Verify WAV header
-      if (output[0] == 'R' && output[1] == 'I' && output[2] == 'F' && output[3] == 'F'
-          && output[8] == 'W' && output[9] == 'A' && output[10] == 'V' && output[11] == 'E') {
+      if (output[0] == 'R'
+          && output[1] == 'I'
+          && output[2] == 'F'
+          && output[3] == 'F'
+          && output[8] == 'W'
+          && output[9] == 'A'
+          && output[10] == 'V'
+          && output[11] == 'E') {
         try {
           var hdr = parseWavHeader(output);
-          log.debug("Audio normalized via ffmpeg ({} ms): {} -> {} bytes, sr={} Hz, ch={}, bits={} ", dtMs, input.length, output.length, hdr.sampleRate, hdr.channels, hdr.bitsPerSample);
+          log.debug(
+              "Audio normalized via ffmpeg ({} ms): {} -> {} bytes, sr={} Hz, ch={}, bits={} ",
+              dtMs,
+              input.length,
+              output.length,
+              hdr.sampleRate,
+              hdr.channels,
+              hdr.bitsPerSample);
         } catch (Exception ex) {
-          log.debug("Audio normalized via ffmpeg ({} ms): {} -> {} bytes (header parse failed: {})", dtMs, input.length, output.length, ex.getMessage());
+          log.debug(
+              "Audio normalized via ffmpeg ({} ms): {} -> {} bytes (header parse failed: {})",
+              dtMs,
+              input.length,
+              output.length,
+              ex.getMessage());
         }
         return output;
       } else {
@@ -137,22 +181,24 @@ public class SpeechService {
 
     } catch (Exception e) {
       long dtMs = (System.nanoTime() - t0) / 1_000_000;
-      log.warn("ffmpeg conversion error after {} ms: {}. Using original audio ({} bytes)", dtMs, e.getMessage(), input.length);
+      log.warn(
+          "ffmpeg conversion error after {} ms: {}. Using original audio ({} bytes)",
+          dtMs,
+          e.getMessage(),
+          input.length);
       return input;
     }
-  }
-
-  private static class WavHeaderInfo {
-    int sampleRate;
-    int channels;
-    int bitsPerSample;
   }
 
   private WavHeaderInfo parseWavHeader(byte[] wav) {
     if (wav.length < 44) throw new IllegalArgumentException("WAV too short");
     WavHeaderInfo info = new WavHeaderInfo();
     info.channels = ((wav[23] & 0xFF) << 8) | (wav[22] & 0xFF);
-    info.sampleRate = ((wav[27] & 0xFF) << 24) | ((wav[26] & 0xFF) << 16) | ((wav[25] & 0xFF) << 8) | (wav[24] & 0xFF);
+    info.sampleRate =
+        ((wav[27] & 0xFF) << 24)
+            | ((wav[26] & 0xFF) << 16)
+            | ((wav[25] & 0xFF) << 8)
+            | (wav[24] & 0xFF);
     info.bitsPerSample = ((wav[35] & 0xFF) << 8) | (wav[34] & 0xFF);
     return info;
   }
@@ -219,5 +265,11 @@ public class SpeechService {
   private void writeInt16LE(byte[] data, int offset, short value) {
     data[offset] = (byte) (value & 0xFF);
     data[offset + 1] = (byte) ((value >> 8) & 0xFF);
+  }
+
+  private static class WavHeaderInfo {
+    int sampleRate;
+    int channels;
+    int bitsPerSample;
   }
 }

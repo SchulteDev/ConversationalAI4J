@@ -6,8 +6,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Speech-to-Text service for privacy-first local processing.
- * Simple, clean interface that uses external speech tools.
+ * Speech-to-Text service for privacy-first local processing. Simple, clean interface that uses
+ * external speech tools.
  */
 public class SpeechToText {
 
@@ -46,30 +46,22 @@ public class SpeechToText {
     return speechService.speechToText(audioData);
   }
 
-  /**
-   * Checks if the speech-to-text service is ready.
-   */
+  /** Checks if the speech-to-text service is ready. */
   public boolean isReady() {
     return speechService.isAvailable();
   }
 
-  /**
-   * Gets the language code.
-   */
+  /** Gets the language code. */
   public String getLanguage() {
     return language;
   }
 
-  /**
-   * Gets the model path.
-   */
+  /** Gets the model path. */
   public Path getModelPath() {
     return Path.of(modelPath);
   }
 
-  /**
-   * No cleanup needed in this simple implementation.
-   */
+  /** No cleanup needed in this simple implementation. */
   public void close() {
     log.debug("SpeechToText closed");
   }

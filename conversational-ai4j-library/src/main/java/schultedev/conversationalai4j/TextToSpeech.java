@@ -6,8 +6,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Text-to-Speech service for privacy-first local processing.
- * Simple, clean interface that uses external speech tools.
+ * Text-to-Speech service for privacy-first local processing. Simple, clean interface that uses
+ * external speech tools.
  */
 public class TextToSpeech {
 
@@ -50,44 +50,34 @@ public class TextToSpeech {
   }
 
   /**
-   * Synthesizes speech with speed parameter (for API compatibility).
-   * Currently speed parameter is ignored, but method is kept for backward compatibility.
+   * Synthesizes speech with speed parameter (for API compatibility). Currently speed parameter is
+   * ignored, but method is kept for backward compatibility.
    */
   public byte[] synthesize(String text, double speed, double pitch) {
     return synthesize(text);
   }
 
-  /**
-   * Checks if the text-to-speech service is ready.
-   */
+  /** Checks if the text-to-speech service is ready. */
   public boolean isReady() {
     return speechService.isAvailable();
   }
 
-  /**
-   * Gets the language code.
-   */
+  /** Gets the language code. */
   public String getLanguage() {
     return language;
   }
 
-  /**
-   * Gets the voice identifier.
-   */
+  /** Gets the voice identifier. */
   public String getVoice() {
     return voice;
   }
 
-  /**
-   * Gets the model path.
-   */
+  /** Gets the model path. */
   public Path getModelPath() {
     return Path.of(modelPath);
   }
 
-  /**
-   * No cleanup needed in this simple implementation.
-   */
+  /** No cleanup needed in this simple implementation. */
   public void close() {
     log.debug("TextToSpeech closed");
   }
