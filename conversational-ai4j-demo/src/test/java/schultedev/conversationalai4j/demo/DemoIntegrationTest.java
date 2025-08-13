@@ -84,10 +84,11 @@ class DemoIntegrationTest {
     assertTrue(
         content.contains(testMessage), "Response should contain the test message in some form");
 
-    // Verify the message is preserved in the form
-    assertTrue(
+    // Verify the conversation history shows the message (new behavior)
+    // The input field should be empty for better UX
+    assertFalse(
         content.contains("value=\"" + testMessage + "\""),
-        "Input field should preserve the submitted message");
+        "Input field should be cleared for better UX");
   }
 
   @Test

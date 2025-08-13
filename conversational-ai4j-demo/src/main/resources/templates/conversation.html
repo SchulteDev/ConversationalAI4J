@@ -6,64 +6,100 @@
   <link rel="stylesheet" th:href="@{/css/conversation.css}"/>
 </head>
 <body>
-<div class="container">
-  <h1 th:text="${welcomeText}">ConversationalAI4J Demo</h1>
-
-  <!-- Real-time Voice Chat Section -->
-  <div class="voice-controls">
-    <h3>🎤 Voice Chat</h3>
-    <p>Hold to talk</p>
-
-    <div class="status hidden" id="status"></div>
-
-    <button class="btn btn-voice" disabled id="voice-btn">
-      🎤
-    </button>
-
-    <div class="audio-player">
-      <audio controls id="ai-response" style="display: none;">
-        Your browser does not support the audio element.
-      </audio>
-    </div>
-
-    <div class="response" id="transcription" style="display: none; background-color: #f0f8ff;">
-      <strong>You said:</strong><br/>
-      <span id="transcription-content"></span>
-    </div>
-
-    <div class="response" id="text-response" style="display: none;">
-      <strong>AI Response:</strong><br/>
-      <span id="text-response-content"></span>
-    </div>
-
-    <div>
-      <button class="btn" id="connect-btn" onclick="connectVoiceStream()">Connect</button>
-      <button class="btn" id="disconnect-btn" onclick="disconnectVoiceStream()"
-              style="display: none;">Disconnect
-      </button>
+  <!-- Notification Overlay -->
+  <div class="notification-overlay hidden" id="notification-overlay">
+    <div class="notification" id="notification">
+      <span id="notification-text">Status message</span>
     </div>
   </div>
 
-  <div class="divider">OR</div>
-
-  <!-- Text Chat Section -->
-  <form action="/send" method="post">
-    <div class="form-group">
-      <label for="message">Your Message:</label>
-      <input id="message" name="message" required
-             th:value="${message}" type="text"/>
+  <div class="chat-container">
+    <!-- Header -->
+    <div class="chat-header">
+      <h1 th:text="${welcomeText}">ConversationalAI4J Demo</h1>
     </div>
 
-    <button class="btn" type="submit">Send Message</button>
-  </form>
+    <!-- Chat Area -->
+    <div class="chat-area" id="chat-area">
+      <!-- Welcome Message (only show if no conversation history) -->
+      <div class="message-group ai-message" th:if="${#lists.isEmpty(conversationHistory)}">
+        <div class="message-bubble ai">
+          <div class="message-content">
+            Welcome! I'm your AI assistant. You can type a message or use voice chat by clicking the microphone button.
+          </div>
+        </div>
+      </div>
 
-  <div class="response" th:if="${response}">
-    <strong>Response:</strong><br/>
-    <span th:text="${response}"></span>
+      <!-- Conversation History -->
+      <div class="message-group" th:each="msg : ${conversationHistory}" th:classappend="${msg.isUser} ? 'user-message' : 'ai-message'">
+        <div class="message-bubble" th:classappend="${msg.isUser} ? 'user' : 'ai'" th:attr="data-has-audio=${msg.hasAudio}">
+          <div class="message-content" th:text="${msg.text}">Message</div>
+          <div class="message-audio-controls" th:if="${!msg.isUser && msg.hasAudio}">
+            <button class="audio-play-btn" th:attr="data-text=${msg.text}" title="Play audio">
+              <svg viewBox="0 0 24 24" width="16" height="16">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+            </button>
+            <audio class="message-audio-player" style="display: none;"></audio>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- Typing Indicator -->
+      <div class="message-group ai-message hidden" id="typing-indicator">
+        <div class="message-bubble ai typing">
+          <div class="typing-animation">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input Area -->
+    <div class="input-area">
+      <div class="input-row">
+        <form action="/send" method="post" id="message-form" class="message-form">
+          <div class="input-container">
+            <input type="text" 
+                   id="message-input" 
+                   name="message" 
+                   placeholder="Type a message..." 
+                   autocomplete="off"/>
+            <button type="submit" class="send-button" id="send-button">
+              <svg viewBox="0 0 24 24" width="20" height="20">
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+              </svg>
+            </button>
+          </div>
+        </form>
+        <button type="button" 
+                class="voice-toggle-prominent" 
+                id="voice-toggle"
+                title="🎤 Click to start voice recording">
+          <svg class="mic-icon" viewBox="0 0 24 24" width="28" height="28">
+            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+            <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5"/>
+            <path d="M12 19v4M8 23h8"/>
+          </svg>
+        </button>
+      </div>
+    </div>
   </div>
-</div>
 
-<script th:src="@{/js/voice-chat.js}"></script>
+  <!-- Hidden Audio Player for AI Responses -->
+  <audio id="ai-audio-player" style="display: none;">
+    Your browser does not support the audio element.
+  </audio>
 
+  <!-- Hidden data for JavaScript TTS integration -->
+  <script th:if="${lastResponse}" th:inline="javascript">
+    window.lastResponse = /*[[${lastResponse}]]*/ '';
+    window.hasTTSCapability = /*[[${conversationHistory.size() > 0 && conversationHistory[conversationHistory.size()-1].hasAudio}]]*/ false;
+  </script>
+
+  <script th:src="@{/js/voice-chat.js}"></script>
 </body>
 </html>

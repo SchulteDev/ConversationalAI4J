@@ -1,5 +1,8 @@
 package schultedev.conversationalai4j.demo;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,6 +25,21 @@ public class ConversationController {
 
   private static final Logger log = LoggerFactory.getLogger(ConversationController.class);
   private final ConversationalAI conversationalAI;
+  
+  // Simple conversation history storage (for demo purposes)
+  public static class Message {
+    public final String text;
+    public final boolean isUser;
+    public final boolean hasAudio;
+    
+    public Message(String text, boolean isUser, boolean hasAudio) {
+      this.text = text;
+      this.isUser = isUser;
+      this.hasAudio = hasAudio;
+    }
+  }
+  
+  private final List<Message> conversationHistory = new ArrayList<>();
 
   @Value("${ollama.base-url:http://localhost:11434}")
   private String ollamaBaseUrl;
@@ -81,6 +99,7 @@ public class ConversationController {
   @GetMapping("/")
   public String index(Model model) {
     model.addAttribute("welcomeText", "ConversationalAI4J Demo");
+    model.addAttribute("conversationHistory", conversationHistory);
     return "conversation";
   }
 
@@ -95,7 +114,7 @@ public class ConversationController {
   @PostMapping("/send")
   public String sendMessage(@RequestParam("message") String message, Model model) {
     model.addAttribute("welcomeText", "ConversationalAI4J Demo");
-    model.addAttribute("message", message);
+    model.addAttribute("message", message); // Keep for backward compatibility with tests
 
     String response;
     if (message == null || message.trim().isEmpty()) {
@@ -103,6 +122,9 @@ public class ConversationController {
       response = "Please enter a message.";
     } else {
       log.info("USER INPUT: '{}'", message);
+      
+      // Add user message to history
+      conversationHistory.add(new Message(message, true, false));
 
       try {
         if (conversationalAI != null) {
@@ -113,6 +135,12 @@ public class ConversationController {
           log.warn("ConversationalAI unavailable, using echo mode");
           response = "Echo (AI unavailable): " + message;
         }
+        
+        // Add AI response to history with TTS capability indication
+        // Force TTS availability for now since direct-tts endpoint works
+        boolean hasAudio = conversationalAI != null;
+        conversationHistory.add(new Message(response, false, hasAudio));
+        
       } catch (Exception e) {
         log.error("Error processing message '{}': {}", message, e.getMessage());
         if (log.isDebugEnabled()) {
@@ -124,10 +152,15 @@ public class ConversationController {
                 + e.getMessage()
                 + "\nFallback echo: "
                 + message;
+        
+        // Add error response to history
+        conversationHistory.add(new Message(response, false, false));
       }
     }
 
-    model.addAttribute("response", response);
+    model.addAttribute("response", response); // Keep for backward compatibility with tests
+    model.addAttribute("conversationHistory", conversationHistory);
+    model.addAttribute("lastResponse", response); // For TTS integration
     return "conversation";
   }
 
@@ -275,6 +308,57 @@ public class ConversationController {
     } catch (Exception e) {
       log.error("Error processing voice-to-text: {}", e.getMessage(), e);
       return ResponseEntity.internalServerError().body("Voice-to-text error: " + e.getMessage());
+    }
+  }
+
+  /**
+   * Direct text-to-speech conversion: Convert text directly to audio without LLM processing.
+   *
+   * @param text Text to convert to speech (already processed AI response)
+   * @return Audio response in WAV format, or error response
+   */
+  @PostMapping(
+      value = "/direct-tts",
+      consumes = MediaType.TEXT_PLAIN_VALUE,
+      produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+  public ResponseEntity<byte[]> directTextToSpeech(@RequestBody String text) {
+    if (conversationalAI == null) {
+      log.warn("ConversationalAI not available for direct TTS");
+      return ResponseEntity.status(503)
+          .body("ConversationalAI service is not available".getBytes());
+    }
+
+    if (!conversationalAI.isTextToSpeechEnabled()) {
+      log.warn("Text-to-speech not available for direct TTS");
+      return ResponseEntity.badRequest()
+          .body("Text-to-speech service is not configured".getBytes());
+    }
+
+    if (text == null || text.trim().isEmpty()) {
+      log.debug("Received empty text for direct TTS");
+      return ResponseEntity.badRequest().body("Text is required".getBytes());
+    }
+
+    log.info("Processing direct TTS for text: '{}'", text);
+
+    try {
+      var audioResponse = conversationalAI.textToSpeech(text.trim());
+
+      if (audioResponse.length == 0) {
+        log.warn("No audio response generated for direct TTS");
+        return ResponseEntity.internalServerError()
+            .body("Failed to generate audio response".getBytes());
+      }
+
+      log.info("Successfully generated {} bytes of audio response for direct TTS", audioResponse.length);
+      return ResponseEntity.ok()
+          .contentType(MediaType.parseMediaType("audio/wav"))
+          .body(audioResponse);
+
+    } catch (Exception e) {
+      log.error("Error processing direct TTS: {}", e.getMessage(), e);
+      return ResponseEntity.internalServerError()
+          .body(("Direct TTS error: " + e.getMessage()).getBytes());
     }
   }
 

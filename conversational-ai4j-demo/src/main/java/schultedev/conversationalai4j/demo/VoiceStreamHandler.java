@@ -116,38 +116,52 @@ public class VoiceStreamHandler implements WebSocketHandler {
   private void handleBinaryMessage(WebSocketSession session, BinaryMessage message) {
     var sessionId = session.getId();
 
-    if (recordingStates.get(sessionId)) {
-      var chunks = audioBuffers.get(sessionId);
-      
-      // Memory protection - prevent excessive memory usage
-      if (chunks.size() >= MAX_AUDIO_CHUNKS_PER_SESSION) {
-        log.warn("Session {} exceeded maximum audio chunks limit ({}), dropping chunk", 
-                 sessionId, MAX_AUDIO_CHUNKS_PER_SESSION);
-        return;
-      }
-      
-      var currentSize = chunks.stream().mapToInt(ByteBuffer::remaining).sum();
-      var incomingSize = message.getPayload().remaining();
-      
-      if (currentSize + incomingSize > MAX_AUDIO_BYTES_PER_SESSION) {
-        log.warn("Session {} exceeded maximum audio size limit ({}MB), dropping chunk", 
-                 sessionId, MAX_AUDIO_BYTES_PER_SESSION / (1024 * 1024));
-        return;
-      }
-      
-      chunks.add(message.getPayload());
-      log.debug(
-          "Received audio chunk of {} bytes from session {} (total: {} chunks, {} bytes)",
-          incomingSize, sessionId, chunks.size(), currentSize + incomingSize);
+    if (!recordingStates.getOrDefault(sessionId, false)) {
+      log.warn("Received audio data from session {} but recording is not active", sessionId);
+      return;
     }
+
+    var chunks = audioBuffers.get(sessionId);
+    if (chunks == null) {
+      log.warn("No audio buffer found for session {}", sessionId);
+      return;
+    }
+    
+    // Memory protection - prevent excessive memory usage
+    if (chunks.size() >= MAX_AUDIO_CHUNKS_PER_SESSION) {
+      log.warn("Session {} exceeded maximum audio chunks limit ({}), dropping chunk", 
+               sessionId, MAX_AUDIO_CHUNKS_PER_SESSION);
+      return;
+    }
+    
+    var currentSize = chunks.stream().mapToInt(ByteBuffer::remaining).sum();
+    var incomingSize = message.getPayload().remaining();
+    
+    if (currentSize + incomingSize > MAX_AUDIO_BYTES_PER_SESSION) {
+      log.warn("Session {} exceeded maximum audio size limit ({}MB), dropping chunk", 
+               sessionId, MAX_AUDIO_BYTES_PER_SESSION / (1024 * 1024));
+      return;
+    }
+    
+    chunks.add(message.getPayload());
+    log.debug(
+        "Received audio chunk of {} bytes from session {} (total: {} chunks, {} bytes)",
+        incomingSize, sessionId, chunks.size(), currentSize + incomingSize);
   }
 
   private void processAccumulatedAudio(WebSocketSession session) throws IOException {
     var sessionId = session.getId();
     var chunks = audioBuffers.get(sessionId);
 
-    if (chunks.isEmpty()) {
+    if (chunks == null || chunks.isEmpty()) {
+      log.warn("No audio chunks available for session {}", sessionId);
       sendStatus(session, "error", "No audio data received");
+      return;
+    }
+    
+    // Check if session is still open
+    if (!session.isOpen()) {
+      log.warn("Session {} is closed, cannot process audio", sessionId);
       return;
     }
 
@@ -213,35 +227,57 @@ public class VoiceStreamHandler implements WebSocketHandler {
       log.info("VOICE STT RESULT for session {}: '{}'", sessionId, transcribedText);
 
       // Send transcribed text to user interface
-      var transcriptJson =
-          String.format(
-              "{\"type\":\"transcription\",\"text\":\"%s\"}",
-              transcribedText.replace("\"", "\\\""));
-      session.sendMessage(new TextMessage(transcriptJson));
+      if (session.isOpen()) {
+        var transcriptJson =
+            String.format(
+                "{\"type\":\"transcription\",\"text\":\"%s\"}",
+                transcribedText.replace("\"", "\\\""));
+        session.sendMessage(new TextMessage(transcriptJson));
+      } else {
+        log.warn("Session {} closed before sending transcription", sessionId);
+        return; // Exit early if session is closed
+      }
 
       // Step 2: LLM Processing
-      sendStatus(session, "llm_processing", "AI is thinking...");
-      log.info("VOICE USER INPUT for session {}: '{}'", sessionId, transcribedText);
-      var t2 = System.nanoTime();
-      var aiResponse = conversationalAI.chat(transcribedText);
-      var t3 = System.nanoTime();
-      log.info("LLM completed for session {} in {} ms", sessionId, ((t3 - t2) / 1_000_000));
+      if (session.isOpen()) {
+        sendStatus(session, "llm_processing", "AI is thinking...");
+        log.info("VOICE USER INPUT for session {}: '{}'", sessionId, transcribedText);
+        var t2 = System.nanoTime();
+        var aiResponse = conversationalAI.chat(transcribedText);
+        var t3 = System.nanoTime();
+        log.info("LLM completed for session {} in {} ms", sessionId, ((t3 - t2) / 1_000_000));
 
-      if (aiResponse == null || aiResponse.trim().isEmpty()) {
-        log.warn("LLM returned empty response for session {}", sessionId);
-        sendStatus(session, "error", "AI failed to generate response");
+        if (aiResponse == null || aiResponse.trim().isEmpty()) {
+          log.warn("LLM returned empty response for session {}", sessionId);
+          if (session.isOpen()) {
+            sendStatus(session, "error", "AI failed to generate response");
+          }
+          return;
+        }
+
+        log.info("VOICE AI RESPONSE for session {}: '{}'", sessionId, aiResponse);
+
+        // Step 3: Text-to-Speech
+        if (session.isOpen()) {
+          sendStatus(session, "tts_processing", "Converting to speech...");
+          sendAIResponse(session, aiResponse, sessionId);
+        } else {
+          log.warn("Session {} closed before sending AI response", sessionId);
+        }
+      } else {
+        log.warn("Session {} closed before LLM processing", sessionId);
         return;
       }
 
-      log.info("VOICE AI RESPONSE for session {}: '{}'", sessionId, aiResponse);
-
-      // Step 3: Text-to-Speech
-      sendStatus(session, "tts_processing", "Converting to speech...");
-      sendAIResponse(session, aiResponse, sessionId);
-
     } catch (Exception e) {
       log.error("Error processing voice stream for session {}: {}", sessionId, e.getMessage(), e);
-      sendStatus(session, "error", "Processing error: " + e.getMessage());
+      if (session.isOpen()) {
+        try {
+          sendStatus(session, "error", "Processing error: " + e.getMessage());
+        } catch (Exception ex) {
+          log.error("Failed to send error status to session {}: {}", sessionId, ex.getMessage());
+        }
+      }
     } finally {
       // Clear buffers
       chunks.clear();
@@ -330,6 +366,10 @@ public class VoiceStreamHandler implements WebSocketHandler {
           return;
         }
 
+        // Send text first so it's always visible
+        sendTextResponse(session, aiResponse);
+        
+        // Then send audio
         session.sendMessage(new BinaryMessage(responseAudio));
         sendStatus(session, "complete", "Speech ready");
         log.info(
