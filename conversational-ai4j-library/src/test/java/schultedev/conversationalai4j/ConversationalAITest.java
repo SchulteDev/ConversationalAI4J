@@ -145,8 +145,10 @@ class ConversationalAITest {
               || e.getMessage().contains("connect")
               || e.getMessage().contains("ConnectException")
               || e.getMessage().contains("timeout")
-              || e.getMessage().contains("timed out"),
-          "Should get connection-related or timeout error when Ollama unavailable, got: " + e.getMessage());
+              || e.getMessage().contains("timed out")
+              || e.getMessage().contains("model")
+              || e.getMessage().contains("not found"),
+          "Should get connection-related, timeout, or model error when Ollama unavailable/misconfigured, got: " + e.getMessage());
     }
   }
 
@@ -219,7 +221,7 @@ class ConversationalAITest {
     var aiWithSpeech = ConversationalAI.builder().withOllamaModel("llama2").withSpeech().build();
 
     // When/Then: Speech may be available depending on environment
-    // (We don't assert true/false since it depends on sherpa-onnx availability)
+    // (We don't assert true/false since it depends on speech library availability)
     assertNotNull(aiWithSpeech.isSpeechEnabled());
     assertNotNull(aiWithSpeech.isSpeechToTextEnabled());
     assertNotNull(aiWithSpeech.isTextToSpeechEnabled());

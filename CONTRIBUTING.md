@@ -59,7 +59,7 @@ Voice features require Linux containers:
 
 - **Development**: Text-only mode on Windows/macOS
 - **Testing**: Use Docker for full voice pipeline
-- **Models**: sherpa-onnx STT/TTS downloaded during Docker build
+- **Models**: Whisper.cpp and Piper models downloaded during Docker build
 
 ## Pull Request Process
 

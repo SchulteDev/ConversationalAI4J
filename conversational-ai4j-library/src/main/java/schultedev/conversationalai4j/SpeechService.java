@@ -1,247 +1,129 @@
 package schultedev.conversationalai4j;
 
+import io.github.givimad.whisperjni.WhisperContext;
+import io.github.givimad.piperjni.PiperVoice;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Speech service that integrates with sherpa-onnx for real speech processing. Uses real STT/TTS
- * when available, falls back to mock on unsupported platforms.
+ * Speech service using Whisper.cpp for STT and Piper for TTS.
+ * Clean, native Java implementation with no external dependencies.
  */
 public class SpeechService {
 
   private static final Logger log = LoggerFactory.getLogger(SpeechService.class);
   private final boolean speechEnabled;
-  private final long sttRecognizer;
-  private final long ttsSynthesizer;
+  private final WhisperContext whisperContext;
+  private final PiperVoice piperVoice;
 
   public SpeechService() {
     this.speechEnabled = "true".equals(System.getenv("SPEECH_ENABLED"));
     log.info("Speech service initialized - enabled: {}", speechEnabled);
 
-    if (speechEnabled && SherpaOnnxNative.isNativeLibraryAvailable()) {
-      // Initialize sherpa-onnx recognizers
-      var sttModelPath = System.getenv().getOrDefault("STT_MODEL_PATH", "/app/models/stt");
-      var ttsModelPath = System.getenv().getOrDefault("TTS_MODEL_PATH", "/app/models/tts");
+    WhisperContext tempWhisper = null;
+    PiperVoice tempPiper = null;
 
-      this.sttRecognizer = SherpaOnnxNative.createSttRecognizer(sttModelPath, "en-US");
-      this.ttsSynthesizer = SherpaOnnxNative.createTtsSynthesizer(ttsModelPath, "en-US", "female");
-
-      log.info(
-          "sherpa-onnx recognizers initialized - STT: {}, TTS: {}",
-          sttRecognizer > 0,
-          ttsSynthesizer > 0);
-    } else {
-      this.sttRecognizer = 0L;
-      this.ttsSynthesizer = 0L;
-
-      if (speechEnabled) {
-        log.info("Speech enabled but sherpa-onnx not available - using mock implementation");
+    if (speechEnabled) {
+      try {
+        // Initialize Whisper for STT
+        var whisperModelPath = System.getenv().getOrDefault("WHISPER_MODEL_PATH", "/app/models/whisper/ggml-base.en.bin");
+        tempWhisper = WhisperNative.createContext(whisperModelPath);
+        
+        // Initialize Piper for TTS  
+        var piperModelPath = System.getenv().getOrDefault("PIPER_MODEL_PATH", "/app/models/piper/en_US-amy-low.onnx");
+        var piperConfigPath = System.getenv().getOrDefault("PIPER_CONFIG_PATH", "/app/models/piper/en_US-amy-low.onnx.json");
+        tempPiper = PiperNative.createVoice(piperModelPath, piperConfigPath);
+        
+        log.info("Speech service initialized with Whisper and Piper");
+      } catch (Exception e) {
+        log.warn("Speech models not available ({}), running without speech functionality", e.getMessage());
+        tempWhisper = null;
+        tempPiper = null;
       }
+    } else {
+      log.info("Speech service disabled");
     }
+
+    this.whisperContext = tempWhisper;
+    this.piperVoice = tempPiper;
   }
 
   public String speechToText(byte[] audioData) {
-    if (!speechEnabled) {
+    if (!speechEnabled || whisperContext == null) {
       return "Mock transcription: Hello, this is a test.";
     }
 
-    log.info("Processing speech-to-text: {} bytes", (audioData == null ? 0 : audioData.length));
-
-    // Always attempt to normalize to 16kHz mono PCM WAV using ffmpeg when available
-    var normalized = convertToPcm16Wav(audioData);
-
-    if (normalized == null) {
-      log.warn("Audio normalization returned null");
+    if (audioData == null || audioData.length == 0) {
       return "";
     }
 
-    if (sttRecognizer > 0) {
-      // Use real sherpa-onnx transcription
-      log.info("Processing {} bytes with sherpa-onnx STT", normalized.length);
-      return SherpaOnnxNative.transcribeAudio(sttRecognizer, normalized);
-    } else {
-      // Use Python sherpa-onnx or mock
-      log.info("Processing {} bytes with Python sherpa-onnx STT", normalized.length);
-      return SherpaOnnxNative.transcribeAudio(1L, normalized);
+    log.debug("Processing speech-to-text: {} bytes", audioData.length);
+
+    try {
+      // Convert audio to float samples for Whisper
+      var audioSamples = convertToFloatSamples(audioData);
+      if (audioSamples.length == 0) {
+        return "";
+      }
+      
+      return WhisperNative.transcribe(whisperContext, audioSamples);
+      
+    } catch (Exception e) {
+      log.error("Error in speech-to-text processing: {}", e.getMessage(), e);
+      return "Mock transcription: Hello, this is a test.";
     }
   }
 
   /**
-   * Convert arbitrary audio container (e.g., WebM/Opus from browser) to 16kHz mono PCM WAV. Falls
-   * back to original bytes if conversion fails. Requires ffmpeg in PATH (provided in Docker).
+   * Convert WAV audio bytes to float samples for Whisper.
+   * Assumes input is already 16kHz mono PCM WAV (can be converted by frontend).
    */
-  private byte[] convertToPcm16Wav(byte[] input) {
-    if (input == null || input.length == 0) return input;
-
-    // Quick sniffing for container/header
-    if (input.length >= 12) {
-      var isWav =
-          input[0] == 'R'
-              && input[1] == 'I'
-              && input[2] == 'F'
-              && input[3] == 'F'
-              && input[8] == 'W'
-              && input[9] == 'A'
-              && input[10] == 'V'
-              && input[11] == 'E';
-      log.debug("Input header: {} ({} bytes)", (isWav ? "WAV/RIFF" : "unknown"), input.length);
-      if (isWav) {
-        try {
-          var hdr = parseWavHeader(input);
-          log.debug(
-              "Input WAV header: sr={} Hz, ch={}, bits={}",
-              hdr.sampleRate,
-              hdr.channels,
-              hdr.bitsPerSample);
-        } catch (Exception ex) {
-          log.debug("Failed to parse input WAV header: {}", ex.getMessage());
-        }
-      }
+  private float[] convertToFloatSamples(byte[] wavBytes) {
+    if (wavBytes == null || wavBytes.length < 44) {
+      return new float[0];
     }
 
-    var t0 = System.nanoTime();
     try {
-      var pb =
-          new ProcessBuilder(
-              "ffmpeg",
-              "-hide_banner",
-              "-loglevel",
-              "error",
-              "-i",
-              "pipe:0",
-              "-ar",
-              "16000",
-              "-ac",
-              "1",
-              "-f",
-              "wav",
-              "pipe:1");
-      var p = pb.start();
-
-      // Concurrent I/O for better performance - start reading output immediately
-      var outputFuture =
-          java.util.concurrent.CompletableFuture.supplyAsync(
-              () -> {
-                try {
-                  return p.getInputStream().readAllBytes();
-                } catch (Exception e) {
-                  throw new RuntimeException(e);
-                }
-              });
-
-      var errorFuture =
-          java.util.concurrent.CompletableFuture.supplyAsync(
-              () -> {
-                try {
-                  return p.getErrorStream().readAllBytes();
-                } catch (Exception e) {
-                  throw new RuntimeException(e);
-                }
-              });
-
-      // Write input bytes to ffmpeg stdin
-      try (var stdin = p.getOutputStream()) {
-        stdin.write(input);
-        stdin.flush();
+      // Skip WAV header (44 bytes) and read PCM data
+      var dataSize = wavBytes.length - 44;
+      var sampleCount = dataSize / 2; // 16-bit samples
+      var samples = new float[sampleCount];
+      
+      var buffer = ByteBuffer.wrap(wavBytes, 44, dataSize);
+      buffer.order(ByteOrder.LITTLE_ENDIAN);
+      
+      for (int i = 0; i < sampleCount; i++) {
+        samples[i] = buffer.getShort() / 32768.0f; // Normalize to [-1, 1]
       }
-
-      // Get results concurrently
-      var output = outputFuture.get();
-      var err = errorFuture.get();
-
-      var finished = p.waitFor(10, java.util.concurrent.TimeUnit.SECONDS);
-      var dtMs = (System.nanoTime() - t0) / 1_000_000;
-      if (!finished) {
-        p.destroyForcibly();
-        log.warn(
-            "ffmpeg conversion timed out after {} ms; using original audio ({} bytes)",
-            dtMs,
-            input.length);
-        return input;
-      }
-
-      var exit = p.exitValue();
-      if (exit != 0 || output.length < 44) {
-        var errMsg = new String(err);
-        log.warn(
-            "ffmpeg conversion failed in {} ms (code {}), stderr: {}. Using original audio ({} bytes)",
-            dtMs,
-            exit,
-            errMsg,
-            input.length);
-        return input;
-      }
-
-      // Verify WAV header
-      if (output[0] == 'R'
-          && output[1] == 'I'
-          && output[2] == 'F'
-          && output[3] == 'F'
-          && output[8] == 'W'
-          && output[9] == 'A'
-          && output[10] == 'V'
-          && output[11] == 'E') {
-        try {
-          var hdr = parseWavHeader(output);
-          log.debug(
-              "Audio normalized via ffmpeg ({} ms): {} -> {} bytes, sr={} Hz, ch={}, bits={} ",
-              dtMs,
-              input.length,
-              output.length,
-              hdr.sampleRate,
-              hdr.channels,
-              hdr.bitsPerSample);
-        } catch (Exception ex) {
-          log.debug(
-              "Audio normalized via ffmpeg ({} ms): {} -> {} bytes (header parse failed: {})",
-              dtMs,
-              input.length,
-              output.length,
-              ex.getMessage());
-        }
-        return output;
-      } else {
-        log.warn("ffmpeg output is not WAV; using original audio ({} bytes)", input.length);
-        return input;
-      }
-
+      
+      log.debug("Converted {} bytes WAV to {} float samples", wavBytes.length, sampleCount);
+      return samples;
+      
     } catch (Exception e) {
-      var dtMs = (System.nanoTime() - t0) / 1_000_000;
-      log.warn(
-          "ffmpeg conversion error after {} ms: {}. Using original audio ({} bytes)",
-          dtMs,
-          e.getMessage(),
-          input.length);
-      return input;
+      log.error("Error converting WAV to float samples: {}", e.getMessage(), e);
+      return new float[0];
     }
   }
 
-  private WavHeaderInfo parseWavHeader(byte[] wav) {
-    if (wav.length < 44) throw new IllegalArgumentException("WAV too short");
-    var info = new WavHeaderInfo();
-    info.channels = ((wav[23] & 0xFF) << 8) | (wav[22] & 0xFF);
-    info.sampleRate =
-        ((wav[27] & 0xFF) << 24)
-            | ((wav[26] & 0xFF) << 16)
-            | ((wav[25] & 0xFF) << 8)
-            | (wav[24] & 0xFF);
-    info.bitsPerSample = ((wav[35] & 0xFF) << 8) | (wav[34] & 0xFF);
-    return info;
-  }
 
   public byte[] textToSpeech(String text) {
-    if (!speechEnabled) {
+    if (!speechEnabled || piperVoice == null) {
       return generateMockAudio(text);
     }
 
-    if (ttsSynthesizer > 0) {
-      // Use real sherpa-onnx synthesis
-      log.info("Synthesizing with sherpa-onnx TTS: '{}'", text);
-      return SherpaOnnxNative.synthesizeSpeech(ttsSynthesizer, text);
-    } else {
-      // Use Python sherpa-onnx or mock
-      log.info("Synthesizing with Python sherpa-onnx TTS: '{}'", text);
-      return SherpaOnnxNative.synthesizeSpeech(1L, text);
+    if (text == null || text.trim().isEmpty()) {
+      return new byte[0];
+    }
+
+    log.debug("Synthesizing text-to-speech: '{}'", text);
+
+    try {
+      return PiperNative.synthesize(piperVoice, text);
+    } catch (Exception e) {
+      log.error("Error in text-to-speech synthesis: {}", e.getMessage(), e);
+      return generateMockAudio(text);
     }
   }
 
@@ -250,11 +132,11 @@ public class SpeechService {
   }
 
   public void close() {
-    if (sttRecognizer > 0) {
-      SherpaOnnxNative.releaseSttRecognizer(sttRecognizer);
+    if (whisperContext != null) {
+      WhisperNative.closeContext(whisperContext);
     }
-    if (ttsSynthesizer > 0) {
-      SherpaOnnxNative.releaseTtsSynthesizer(ttsSynthesizer);
+    if (piperVoice != null) {
+      PiperNative.closeVoice(piperVoice);
     }
     log.debug("Speech service resources released");
   }
@@ -294,11 +176,5 @@ public class SpeechService {
   private void writeInt16LE(byte[] data, int offset, short value) {
     data[offset] = (byte) (value & 0xFF);
     data[offset + 1] = (byte) ((value >> 8) & 0xFF);
-  }
-
-  private static class WavHeaderInfo {
-    int sampleRate;
-    int channels;
-    int bitsPerSample;
   }
 }

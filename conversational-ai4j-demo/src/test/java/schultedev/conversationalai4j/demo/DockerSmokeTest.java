@@ -154,7 +154,7 @@ class DockerSmokeTest {
     assertTrue(jsonResponse.contains("textToSpeech"));
 
     // In Docker environment, speech may or may not be available
-    // depending on sherpa-onnx setup - just verify the endpoint works
+    // depending on speech setup - just verify the endpoint works
     log.info("✅ Speech status test passed");
   }
 
