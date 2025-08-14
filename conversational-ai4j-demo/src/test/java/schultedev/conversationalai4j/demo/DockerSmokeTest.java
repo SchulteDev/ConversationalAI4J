@@ -93,7 +93,7 @@ class DockerSmokeTest {
     assertEquals(HttpStatus.OK, ollamaResponse.getStatusCode(), "Ollama API should be accessible");
     log.info("Ollama API response: {}", ollamaResponse.getBody());
 
-    // When: Check if Demo can communicate with Ollama (using proper form data)
+    // When: Check if Demo can communicate with Ollama (using JSON API)
     log.info("Testing Ollama integration through demo at: {}", getDemoBaseUrl());
 
     MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
@@ -104,14 +104,15 @@ class DockerSmokeTest {
     var requestEntity = new HttpEntity<>(formData, headers);
 
     var response =
-        restTemplate.postForEntity(getDemoBaseUrl() + "/send", requestEntity, String.class);
+        restTemplate.postForEntity(getDemoBaseUrl() + "/chat", requestEntity, String.class);
 
-    // Then: Should get response (either from AI or fallback)
+    // Then: Should get JSON response (either from AI or fallback)
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertNotNull(response.getBody());
 
-    // Response should contain either AI response or fallback message
+    // Response should be valid JSON containing either AI response or fallback message
     var body = response.getBody();
+    assertTrue(body.contains("\"response\""), "Should return JSON with response field");
     var hasValidResponse =
         body.contains("Hello from Docker Compose")
             || body.contains("Echo")
@@ -159,7 +160,7 @@ class DockerSmokeTest {
     // Given: Test conversation messages
     var testMessages = new String[] {"Hello Docker!", "Test message"};
 
-    // When: Send multiple messages in sequence with proper form encoding
+    // When: Send multiple messages in sequence using JSON API
     log.info(
         "Testing conversation flow with {} messages at: {}", testMessages.length, getDemoBaseUrl());
     for (var message : testMessages) {
@@ -171,15 +172,16 @@ class DockerSmokeTest {
       var requestEntity = new HttpEntity<>(formData, headers);
 
       var response =
-          restTemplate.postForEntity(getDemoBaseUrl() + "/send", requestEntity, String.class);
+          restTemplate.postForEntity(getDemoBaseUrl() + "/chat", requestEntity, String.class);
 
-      // Then: Each should get a response
+      // Then: Each should get a JSON response
       assertEquals(
           HttpStatus.OK, response.getStatusCode(), "Message '" + message + "' should get response");
       assertNotNull(response.getBody());
 
-      // Response should contain the message and some form of response
+      // Response should be valid JSON containing the message and some form of response
       var body = response.getBody();
+      assertTrue(body.contains("\"response\""), "Should return JSON with response field");
       assertTrue(body.contains(message), "Response should contain original message: " + message);
     }
     log.info("✅ Conversation flow test passed");

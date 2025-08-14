@@ -143,8 +143,10 @@ class ConversationalAITest {
           e.getMessage().contains("Connection")
               || e.getMessage().contains("refused")
               || e.getMessage().contains("connect")
-              || e.getMessage().contains("ConnectException"),
-          "Should get connection-related error when Ollama unavailable, got: " + e.getMessage());
+              || e.getMessage().contains("ConnectException")
+              || e.getMessage().contains("timeout")
+              || e.getMessage().contains("timed out"),
+          "Should get connection-related or timeout error when Ollama unavailable, got: " + e.getMessage());
     }
   }
 

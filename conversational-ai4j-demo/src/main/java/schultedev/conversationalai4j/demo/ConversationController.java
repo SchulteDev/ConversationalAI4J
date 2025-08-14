@@ -88,66 +88,6 @@ public class ConversationController {
     return "conversation";
   }
 
-  /**
-   * Processes the user's message and generates a response. Uses the ConversationalAI library if
-   * available, otherwise falls back to echo mode.
-   *
-   * @param message the user's input message
-   * @param model the model to add attributes to
-   * @return the template name
-   */
-  @PostMapping("/send")
-  public String sendMessage(@RequestParam("message") String message, Model model) {
-    model.addAttribute("welcomeText", "ConversationalAI4J Demo");
-    model.addAttribute("message", message); // Keep for backward compatibility with tests
-
-    String response;
-    if (message == null || message.trim().isEmpty()) {
-      log.info("Received empty message from user");
-      response = "Please enter a message.";
-    } else {
-      log.info("USER INPUT: '{}'", message);
-
-      // Add user message to history
-      conversationHistory.add(new Message(message, true, false));
-
-      try {
-        if (conversationalAI != null) {
-          log.info("Processing message with AI...");
-          response = conversationalAI.chat(message);
-          log.info("AI RESPONSE: '{}'", response);
-        } else {
-          log.warn("ConversationalAI unavailable, using echo mode");
-          response = "Echo (AI unavailable): " + message;
-        }
-
-        // Add AI response to history with TTS capability indication
-        // Force TTS availability for now since direct-tts endpoint works
-        var hasAudio = conversationalAI != null;
-        conversationHistory.add(new Message(response, false, hasAudio));
-
-      } catch (Exception e) {
-        log.error("Error processing message '{}': {}", message, e.getMessage());
-        if (log.isDebugEnabled()) {
-          log.debug("Message processing error details", e);
-        }
-        response =
-            "Sorry, I'm having trouble processing your request. "
-                + "Error: "
-                + e.getMessage()
-                + "\nFallback echo: "
-                + message;
-
-        // Add error response to history
-        conversationHistory.add(new Message(response, false, false));
-      }
-    }
-
-    model.addAttribute("response", response); // Keep for backward compatibility with tests
-    model.addAttribute("conversationHistory", conversationHistory);
-    model.addAttribute("lastResponse", response); // For TTS integration
-    return "conversation";
-  }
 
   /**
    * Voice-to-voice conversation endpoint: Process audio input and return audio response. Expects

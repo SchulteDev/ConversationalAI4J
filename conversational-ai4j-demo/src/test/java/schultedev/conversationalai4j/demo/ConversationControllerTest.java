@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 /** Unit tests for ConversationController functionality. */
@@ -25,57 +26,58 @@ class ConversationControllerTest {
   }
 
   @Test
-  void testSendMessage_WithValidMessage() throws Exception {
+  void testChatAPI_WithValidMessage() throws Exception {
     var testMessage = "Hello, AI!";
 
     mockMvc
-        .perform(post("/send").param("message", testMessage))
+        .perform(post("/chat")
+            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+            .param("message", testMessage))
         .andExpect(status().isOk())
-        .andExpect(view().name("conversation"))
-        .andExpect(model().attribute("welcomeText", "ConversationalAI4J Demo"))
-        .andExpect(model().attribute("message", testMessage))
-        // Response should either be AI response or fallback echo - we check for fallback since no
-        // Ollama in tests
-        .andExpect(model().attributeExists("response"));
+        .andExpect(content().contentType("application/json"))
+        .andExpect(jsonPath("$.response").exists())
+        .andExpect(jsonPath("$.hasAudio").exists());
   }
 
   @Test
-  void testSendMessage_WithEmptyMessage() throws Exception {
+  void testChatAPI_WithEmptyMessage() throws Exception {
     mockMvc
-        .perform(post("/send").param("message", ""))
-        .andExpect(status().isOk())
-        .andExpect(view().name("conversation"))
-        .andExpect(model().attribute("welcomeText", "ConversationalAI4J Demo"))
-        .andExpect(model().attribute("message", ""))
-        .andExpect(model().attribute("response", "Please enter a message."));
+        .perform(post("/chat")
+            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+            .param("message", ""))
+        .andExpect(status().isBadRequest())
+        .andExpect(content().contentType("application/json"))
+        .andExpect(jsonPath("$.error").value("Message is required"));
   }
 
   @Test
-  void testSendMessage_WithWhitespaceOnlyMessage() throws Exception {
+  void testChatAPI_WithWhitespaceOnlyMessage() throws Exception {
     mockMvc
-        .perform(post("/send").param("message", "   "))
-        .andExpect(status().isOk())
-        .andExpect(view().name("conversation"))
-        .andExpect(model().attribute("welcomeText", "ConversationalAI4J Demo"))
-        .andExpect(model().attribute("message", "   "))
-        .andExpect(model().attribute("response", "Please enter a message."));
+        .perform(post("/chat")
+            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+            .param("message", "   "))
+        .andExpect(status().isBadRequest())
+        .andExpect(content().contentType("application/json"))
+        .andExpect(jsonPath("$.error").value("Message is required"));
   }
 
   @Test
-  void testSendMessage_WhenOllamaUnavailable_ShouldFallbackToEcho() throws Exception {
+  void testChatAPI_WhenOllamaUnavailable_ShouldFallbackToEcho() throws Exception {
     // Given: Ollama is unavailable in test environment (no real connection)
     var testMessage = "Test message for unavailable AI";
 
-    // When: Send message
+    // When: Send message via chat API
     mockMvc
-        .perform(post("/send").param("message", testMessage))
+        .perform(post("/chat")
+            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+            .param("message", testMessage))
         .andExpect(status().isOk())
-        .andExpect(view().name("conversation"))
-        .andExpect(model().attribute("message", testMessage))
-        .andExpect(model().attributeExists("response"));
+        .andExpect(content().contentType("application/json"))
+        .andExpect(jsonPath("$.response").exists())
+        .andExpect(jsonPath("$.hasAudio").exists());
 
     // Note: Since ConversationalAI may be null in test environment,
-    // we should get either an AI response or echo/error response
+    // we should get either an AI response or echo/error response in JSON format
   }
 
   @Test
@@ -137,39 +139,43 @@ class ConversationControllerTest {
   }
 
   @Test
-  void testSendMessage_WithLongMessage_ShouldHandleGracefully() throws Exception {
+  void testChatAPI_WithLongMessage_ShouldHandleGracefully() throws Exception {
     // Given: Very long message
     var longMessage = "This is a very long message ".repeat(100);
 
-    // When: Send long message
+    // When: Send long message via chat API
     mockMvc
-        .perform(post("/send").param("message", longMessage))
+        .perform(post("/chat")
+            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+            .param("message", longMessage))
         .andExpect(status().isOk())
-        .andExpect(view().name("conversation"))
-        .andExpect(model().attribute("message", longMessage))
-        .andExpect(model().attributeExists("response"));
+        .andExpect(content().contentType("application/json"))
+        .andExpect(jsonPath("$.response").exists())
+        .andExpect(jsonPath("$.hasAudio").exists());
   }
 
   @Test
-  void testSendMessage_WithSpecialCharacters_ShouldHandleCorrectly() throws Exception {
+  void testChatAPI_WithSpecialCharacters_ShouldHandleCorrectly() throws Exception {
     // Given: Message with special characters
     var specialMessage = "Hello! @#$%^&*()_+ 中文 émojis 🤖";
 
-    // When: Send message with special characters
+    // When: Send message with special characters via chat API
     mockMvc
-        .perform(post("/send").param("message", specialMessage))
+        .perform(post("/chat")
+            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+            .param("message", specialMessage))
         .andExpect(status().isOk())
-        .andExpect(view().name("conversation"))
-        .andExpect(model().attribute("message", specialMessage))
-        .andExpect(model().attributeExists("response"));
+        .andExpect(content().contentType("application/json"))
+        .andExpect(jsonPath("$.response").exists())
+        .andExpect(jsonPath("$.hasAudio").exists());
   }
 
   @Test
-  void testErrorHandling_WithMalformedRequest_ShouldHandleGracefully() throws Exception {
+  void testChatAPI_WithMalformedRequest_ShouldHandleGracefully() throws Exception {
     // When: Send post request (missing message parameter)
     // Spring may return 400 for missing required parameter, which is also acceptable
     mockMvc
-        .perform(post("/send"))
+        .perform(post("/chat"))
         .andExpect(
             status().is4xxClientError()); // 400 or similar is acceptable for malformed request
   }

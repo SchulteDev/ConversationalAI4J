@@ -343,6 +343,7 @@ public class ConversationalAI {
               .baseUrl(baseUrl)
               .modelName(modelName)
               .temperature(temperature)
+              .timeout(java.time.Duration.ofSeconds(5)) // Short timeout for fast failure
               .build();
       return this;
     }
