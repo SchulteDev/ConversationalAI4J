@@ -25,7 +25,7 @@ dependencies {
 
   // Speech functionality via Whisper.cpp and Piper JNI
   implementation 'io.github.givimad:whisper-jni:1.7.1'
-  implementation 'io.github.givimad:piper-jni:1.2.0-c0670df'
+  implementation 'io.github.givimad:piper-jni:1.2.0-38917ff'
 
   // Test dependencies
   testImplementation 'org.junit.jupiter:junit-jupiter-api:5.13.4'
