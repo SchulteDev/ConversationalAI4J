@@ -154,7 +154,7 @@ class DockerSmokeTest {
     assertTrue(jsonResponse.contains("textToSpeech"));
 
     // In Docker environment, speech may or may not be available
-    // depending on sherpa-onnx setup - just verify the endpoint works
+    // depending on speech setup - just verify the endpoint works
     log.info("✅ Speech status test passed");
   }
 
@@ -186,12 +186,12 @@ class DockerSmokeTest {
       var body = response.getBody();
       assertTrue(body.contains("\"response\""), "Should return JSON with response field");
       assertTrue(
-          body.contains(message) || 
-          body.contains("Echo") || 
-          body.contains("unavailable") ||
-          body.contains("timeout") ||
-          body.contains("timed out") ||
-          body.contains("trouble processing"),
+          body.contains(message)
+              || body.contains("Echo")
+              || body.contains("unavailable")
+              || body.contains("timeout")
+              || body.contains("timed out")
+              || body.contains("trouble processing"),
           "Response should contain original message, echo, or error. Got: " + body);
     }
     log.info("✅ Conversation flow test passed");

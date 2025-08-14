@@ -41,15 +41,19 @@ export SPEECH_ENABLED=true
 // Library: Mock external dependencies
 @ExtendWith(MockitoExtension.class)
 class ConversationalAITest {
-    @Mock private OllamaLanguageModel mockModel;
-    // Test builder pattern and core functionality
+
+  @Mock
+  private OllamaLanguageModel mockModel;
+  // Test builder pattern and core functionality
 }
 
 // Demo: Spring Boot integration tests  
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 class DemoIntegrationTest {
-    @Autowired private TestRestTemplate restTemplate;
-    // Test REST endpoints and WebSocket
+
+  @Autowired
+  private TestRestTemplate restTemplate;
+  // Test REST endpoints and WebSocket
 }
 ```
 
@@ -59,7 +63,7 @@ Voice features require Linux containers:
 
 - **Development**: Text-only mode on Windows/macOS
 - **Testing**: Use Docker for full voice pipeline
-- **Models**: sherpa-onnx STT/TTS downloaded during Docker build
+- **Models**: Whisper.cpp and Piper models downloaded during Docker build
 
 ## Pull Request Process
 

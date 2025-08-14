@@ -37,6 +37,6 @@ Spring Boot web application demonstrating voice-enabled conversational AI.
 
 ## Docker Integration
 
-- **sherpa-onnx models**: Downloaded during Docker build
-- **ffmpeg**: Audio format normalization
+- **Whisper and Piper models**: Downloaded during Docker build
+- **Native JNI libraries**: Included in JAR dependencies
 - **Multi-stage build**: Optimized container size

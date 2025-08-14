@@ -12,13 +12,14 @@ conversational-ai4j/
 
 **Library**: Pure API, no infrastructure dependencies
 **Demo**: Complete working example with Docker deployment
+**Speech**: Native Java bindings eliminate inter-process overhead and Python dependencies
 
 ## Communication Flow
 
 ```
 Browser WebSocket → Demo Module → Library API → Ollama LLM
                  ↓
-              Speech Processing (sherpa-onnx)
+              Speech Processing (Whisper.cpp + Piper)
 ```
 
 ## Docker Environment
@@ -30,6 +31,6 @@ Browser WebSocket → Demo Module → Library API → Ollama LLM
 
 - **LangChain4j**: Library → Ollama communication
 - **WebSocket**: Browser → Demo real-time voice streaming
-- **sherpa-onnx**: Demo speech processing (Linux containers only)
+- **Whisper.cpp + Piper**: Speech processing with native Java bindings
 
 See module-specific ARCHITECTURE.md files for implementation details.

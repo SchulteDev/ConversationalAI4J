@@ -23,8 +23,9 @@ dependencies {
   implementation 'org.slf4j:slf4j-api:2.0.17'
   runtimeOnly 'org.slf4j:slf4j-simple:2.0.17'
 
-  // Speech functionality via sherpa-onnx JNI (Docker-based)
-  // JNI library is provided in Docker environment at runtime
+  // Speech functionality via Whisper.cpp and Piper JNI
+  implementation 'io.github.givimad:whisper-jni:1.7.1'
+  implementation 'io.github.givimad:piper-jni:1.2.0-c0670df'
 
   // Test dependencies
   testImplementation 'org.junit.jupiter:junit-jupiter-api:5.13.4'
@@ -35,9 +36,8 @@ dependencies {
   testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.13.4'
 }
 
-// Note: sherpa-onnx JNI libraries are provided in Docker environment only
-// For local development, the mock implementation is used
-// Real speech functionality is available when running in Docker container
+// Note: Whisper and Piper JNI libraries include native binaries
+// Cross-platform support: Windows, Linux, macOS (x86_64/arm64)
 
 test {
   useJUnitPlatform()

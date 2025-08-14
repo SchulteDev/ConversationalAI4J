@@ -30,9 +30,10 @@ class ConversationControllerTest {
     var testMessage = "Hello, AI!";
 
     mockMvc
-        .perform(post("/chat")
-            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-            .param("message", testMessage))
+        .perform(
+            post("/chat")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .param("message", testMessage))
         .andExpect(status().isOk())
         .andExpect(content().contentType("application/json"))
         .andExpect(jsonPath("$.response").exists())
@@ -42,9 +43,8 @@ class ConversationControllerTest {
   @Test
   void testChatAPI_WithEmptyMessage() throws Exception {
     mockMvc
-        .perform(post("/chat")
-            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-            .param("message", ""))
+        .perform(
+            post("/chat").contentType(MediaType.APPLICATION_FORM_URLENCODED).param("message", ""))
         .andExpect(status().isBadRequest())
         .andExpect(content().contentType("application/json"))
         .andExpect(jsonPath("$.error").value("Message is required"));
@@ -53,9 +53,10 @@ class ConversationControllerTest {
   @Test
   void testChatAPI_WithWhitespaceOnlyMessage() throws Exception {
     mockMvc
-        .perform(post("/chat")
-            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-            .param("message", "   "))
+        .perform(
+            post("/chat")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .param("message", "   "))
         .andExpect(status().isBadRequest())
         .andExpect(content().contentType("application/json"))
         .andExpect(jsonPath("$.error").value("Message is required"));
@@ -68,9 +69,10 @@ class ConversationControllerTest {
 
     // When: Send message via chat API
     mockMvc
-        .perform(post("/chat")
-            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-            .param("message", testMessage))
+        .perform(
+            post("/chat")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .param("message", testMessage))
         .andExpect(status().isOk())
         .andExpect(content().contentType("application/json"))
         .andExpect(jsonPath("$.response").exists())
@@ -145,9 +147,10 @@ class ConversationControllerTest {
 
     // When: Send long message via chat API
     mockMvc
-        .perform(post("/chat")
-            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-            .param("message", longMessage))
+        .perform(
+            post("/chat")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .param("message", longMessage))
         .andExpect(status().isOk())
         .andExpect(content().contentType("application/json"))
         .andExpect(jsonPath("$.response").exists())
@@ -161,9 +164,10 @@ class ConversationControllerTest {
 
     // When: Send message with special characters via chat API
     mockMvc
-        .perform(post("/chat")
-            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-            .param("message", specialMessage))
+        .perform(
+            post("/chat")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .param("message", specialMessage))
         .andExpect(status().isOk())
         .andExpect(content().contentType("application/json"))
         .andExpect(jsonPath("$.response").exists())

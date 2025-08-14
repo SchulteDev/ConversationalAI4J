@@ -88,7 +88,6 @@ public class ConversationController {
     return "conversation";
   }
 
-
   /**
    * Voice-to-voice conversation endpoint: Process audio input and return audio response. Expects
    * WAV audio data and returns WAV audio response.

@@ -152,8 +152,20 @@ class UnifiedChatInterface {
   async requestMicrophoneAccess() {
     try {
       this.audioStream = await navigator.mediaDevices.getUserMedia({
-        audio: {sampleRate: 16000, channelCount: 1}
+        audio: {
+          sampleRate: 16000,
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
       });
+      
+      // Set up AudioContext for PCM conversion
+      this.audioContext = new (window.AudioContext || window.webkitAudioContext)({
+        sampleRate: 16000
+      });
+      
       console.log('Microphone access granted');
     } catch (error) {
       throw new Error('Microphone access denied or not available');
@@ -210,8 +222,24 @@ class UnifiedChatInterface {
       this.audioStream = null;
     }
 
+    // Cleanup audio processing nodes
+    if (this.sourceNode) {
+      this.sourceNode.disconnect();
+      this.sourceNode = null;
+    }
+    if (this.processorNode) {
+      this.processorNode.disconnect();
+      this.processorNode.onaudioprocess = null;
+      this.processorNode = null;
+    }
+    if (this.audioContext && this.audioContext.state !== 'closed') {
+      this.audioContext.close();
+      this.audioContext = null;
+    }
+
     this.isConnected = false;
     this.isRecording = false;
+    this.recordedPCMData = [];
     this.updateVoiceButtonState();
   }
 
@@ -294,54 +322,61 @@ class UnifiedChatInterface {
 
   async startRecording() {
     try {
-      if (!this.audioStream || !this.socket || this.socket.readyState !== WebSocket.OPEN) {
+      if (!this.audioStream || !this.socket || this.socket.readyState !== WebSocket.OPEN || !this.audioContext) {
         throw new Error('Recording prerequisites not met');
       }
 
-      this.mediaRecorder = new MediaRecorder(this.audioStream, {
-        mimeType: 'audio/webm;codecs=opus'
-      });
-
-      this.recordedChunks = [];
-
-      this.mediaRecorder.ondataavailable = (event) => {
-        if (event.data && event.data.size > 0) {
-          this.recordedChunks.push(event.data);
+      // Set up audio processing pipeline for PCM capture
+      this.sourceNode = this.audioContext.createMediaStreamSource(this.audioStream);
+      this.recordedPCMData = [];
+      
+      // Create a ScriptProcessor for PCM extraction (fallback if AudioWorklet not available)
+      const bufferSize = 4096;
+      this.processorNode = this.audioContext.createScriptProcessor(bufferSize, 1, 1);
+      
+      this.processorNode.onaudioprocess = (event) => {
+        if (this.isRecording) {
+          const inputBuffer = event.inputBuffer;
+          const inputData = inputBuffer.getChannelData(0); // Mono channel
+          
+          // Calculate RMS level for audio monitoring
+          let sum = 0;
+          for (let i = 0; i < inputData.length; i++) {
+            sum += inputData[i] * inputData[i];
+          }
+          const rmsLevel = Math.sqrt(sum / inputData.length);
+          
+          // Apply gain if audio is too quiet (RMS < 0.01 = very quiet)
+          const gain = rmsLevel < 0.01 ? 3.0 : 1.0; // 3x gain for quiet audio
+          
+          // Convert float32 samples to int16 PCM with gain
+          const pcmData = new Int16Array(inputData.length);
+          for (let i = 0; i < inputData.length; i++) {
+            // Apply gain and clamp
+            const sample = Math.max(-1, Math.min(1, inputData[i] * gain));
+            pcmData[i] = sample * 32767;
+          }
+          
+          // Log audio levels periodically
+          if (this.recordedPCMData.length % 10 === 0) {
+            console.log(`Audio RMS level: ${rmsLevel.toFixed(4)}, Gain: ${gain}x`);
+          }
+          
+          this.recordedPCMData.push(pcmData);
         }
       };
-
-      this.mediaRecorder.onstop = () => {
-        const blob = new Blob(this.recordedChunks, {
-          type: 'audio/webm;codecs=opus'
-        });
-
-        if (blob.size > 0 && this.socket && this.socket.readyState === WebSocket.OPEN) {
-          this.socket.send(blob);
-          this.socket.send('stop_recording');
-          this.showTypingIndicator();
-        } else {
-          this.showNotification('No audio recorded or connection lost', 'error');
-        }
-
-        this.recordedChunks = [];
-      };
-
-      this.mediaRecorder.onerror = (event) => {
-        console.error('MediaRecorder error:', event.error);
-        this.showNotification('Recording error: ' + event.error.message, 'error');
-        this.isRecording = false;
-        this.updateVoiceButtonState();
-      };
-
-      this.mediaRecorder.start(1000);
+      
+      // Connect the audio graph
+      this.sourceNode.connect(this.processorNode);
+      this.processorNode.connect(this.audioContext.destination);
+      
       this.isRecording = true;
       this.updateVoiceButtonState();
 
-      setTimeout(() => {
-        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-          this.socket.send('start_recording');
-        }
-      }, 50);
+      // Start recording signal
+      if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+        this.socket.send('start_recording');
+      }
 
     } catch (error) {
       console.error('Failed to start recording:', error);
@@ -352,11 +387,83 @@ class UnifiedChatInterface {
   }
 
   stopRecording() {
-    if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
-      this.mediaRecorder.stop();
+    if (this.isRecording) {
       this.isRecording = false;
+      
+      // Disconnect audio processing nodes
+      if (this.sourceNode) {
+        this.sourceNode.disconnect();
+      }
+      if (this.processorNode) {
+        this.processorNode.disconnect();
+        this.processorNode.onaudioprocess = null;
+      }
+      
+      // Convert recorded PCM data to WAV format
+      if (this.recordedPCMData && this.recordedPCMData.length > 0) {
+        const wavBlob = this.createWAVBlob(this.recordedPCMData);
+        
+        if (wavBlob && this.socket && this.socket.readyState === WebSocket.OPEN) {
+          this.socket.send(wavBlob);
+          this.socket.send('stop_recording');
+          this.showTypingIndicator();
+        } else {
+          this.showNotification('No audio recorded or connection lost', 'error');
+        }
+      }
+      
+      // Cleanup
+      this.recordedPCMData = [];
       this.updateVoiceButtonState();
     }
+  }
+
+  createWAVBlob(pcmChunks) {
+    // Calculate total sample count
+    const totalSamples = pcmChunks.reduce((sum, chunk) => sum + chunk.length, 0);
+    const sampleRate = 16000;
+    const numChannels = 1;
+    const bytesPerSample = 2;
+    const byteRate = sampleRate * numChannels * bytesPerSample;
+    const blockAlign = numChannels * bytesPerSample;
+    const dataSize = totalSamples * bytesPerSample;
+    const fileSize = 36 + dataSize;
+
+    // Create WAV header
+    const buffer = new ArrayBuffer(44 + dataSize);
+    const view = new DataView(buffer);
+
+    // WAV Header
+    const writeString = (offset, string) => {
+      for (let i = 0; i < string.length; i++) {
+        view.setUint8(offset + i, string.charCodeAt(i));
+      }
+    };
+
+    writeString(0, 'RIFF');
+    view.setUint32(4, fileSize, true);
+    writeString(8, 'WAVE');
+    writeString(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, numChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, byteRate, true);
+    view.setUint16(32, blockAlign, true);
+    view.setUint16(34, 16, true);
+    writeString(36, 'data');
+    view.setUint32(40, dataSize, true);
+
+    // Copy PCM data
+    let offset = 44;
+    for (const chunk of pcmChunks) {
+      for (let i = 0; i < chunk.length; i++) {
+        view.setInt16(offset, chunk[i], true);
+        offset += 2;
+      }
+    }
+
+    return new Blob([buffer], { type: 'audio/wav' });
   }
 
   updateVoiceButtonState() {
@@ -486,8 +593,11 @@ class UnifiedChatInterface {
       this.audioPlayer.src = audioUrl;
 
       try {
-        // Simple approach - just play when ready
-        this.audioPlayer.oncanplay = async () => {
+        // Stop any other audio first to prevent doubling
+        this.stopAllAudio();
+        
+        // Wait for full buffering to prevent audio cutoff
+        this.audioPlayer.oncanplaythrough = async () => {
           try {
             await this.audioPlayer.play();
             console.log('Auto-playing TTS audio');
@@ -526,8 +636,8 @@ class UnifiedChatInterface {
       return;
     }
 
-    // Stop any other playing audio
-    this.stopAllAudio();
+    // Stop any other playing audio (but not this button)
+    this.stopAllAudioExcept(button);
 
     try {
       button.classList.add('loading');
@@ -553,12 +663,13 @@ class UnifiedChatInterface {
       button.classList.remove('loading');
       button.classList.add('playing');
 
-      // Simple playback approach
-      audioPlayer.oncanplay = async () => {
+      // Use full buffering to prevent cutoff
+      audioPlayer.oncanplaythrough = async () => {
         try {
           await audioPlayer.play();
         } catch (err) {
           console.error('Audio playback failed:', err);
+          button.classList.remove('playing');
         }
       };
       audioPlayer.load();
@@ -604,6 +715,27 @@ class UnifiedChatInterface {
         audioPlayer.currentTime = 0;
       }
       button.classList.remove('playing');
+    });
+  }
+
+  stopAllAudioExcept(exceptButton) {
+    // Stop main audio player
+    if (this.audioPlayer) {
+      this.audioPlayer.pause();
+      this.audioPlayer.currentTime = 0;
+    }
+
+    // Stop all message audio players except the specified button
+    const audioButtons = this.chatArea.querySelectorAll('.audio-play-btn.playing');
+    audioButtons.forEach(button => {
+      if (button !== exceptButton) {
+        const audioPlayer = button.parentElement.querySelector('.message-audio-player');
+        if (audioPlayer) {
+          audioPlayer.pause();
+          audioPlayer.currentTime = 0;
+        }
+        button.classList.remove('playing');
+      }
     });
   }
 

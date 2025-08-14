@@ -171,7 +171,7 @@ public class SpeechConfig {
       }
 
       // Use standard model paths (Linux systems)
-      var modelsDir = Paths.get(System.getProperty("user.home"), ".sherpa-onnx", "models");
+      var modelsDir = Paths.get(System.getProperty("user.home"), ".conversational-ai4j", "models");
 
       if (sttModelPath == null) {
         // Default STT model path
