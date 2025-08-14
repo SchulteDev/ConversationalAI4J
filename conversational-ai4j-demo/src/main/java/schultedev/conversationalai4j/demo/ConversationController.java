@@ -123,7 +123,7 @@ public class ConversationController {
 
         // Add AI response to history with TTS capability indication
         // Force TTS availability for now since direct-tts endpoint works
-        boolean hasAudio = conversationalAI != null;
+        var hasAudio = conversationalAI != null;
         conversationHistory.add(new Message(response, false, hasAudio));
 
       } catch (Exception e) {
@@ -380,11 +380,11 @@ public class ConversationController {
       }
 
       // Add AI response to history with TTS capability indication
-      boolean hasAudio = conversationalAI != null;
+      var hasAudio = conversationalAI != null;
       conversationHistory.add(new Message(response, false, hasAudio));
 
       // Return JSON response
-      String jsonResponse =
+      var jsonResponse =
           String.format(
               "{\"response\": \"%s\", \"hasAudio\": %s}",
               response.replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r"), hasAudio);
@@ -393,13 +393,13 @@ public class ConversationController {
 
     } catch (Exception e) {
       log.error("Error processing API message '{}': {}", message, e.getMessage());
-      String errorResponse =
+      var errorResponse =
           "Sorry, I'm having trouble processing your request. Error: " + e.getMessage();
 
       // Add error response to history
       conversationHistory.add(new Message(errorResponse, false, false));
 
-      String jsonError =
+      var jsonError =
           String.format(
               "{\"response\": \"%s\", \"hasAudio\": false}",
               errorResponse.replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r"));
@@ -434,7 +434,5 @@ public class ConversationController {
   }
 
   // Simple conversation history storage (for demo purposes)
-    public record Message(String text, boolean isUser, boolean hasAudio) {
-
-  }
+  public record Message(String text, boolean isUser, boolean hasAudio) {}
 }

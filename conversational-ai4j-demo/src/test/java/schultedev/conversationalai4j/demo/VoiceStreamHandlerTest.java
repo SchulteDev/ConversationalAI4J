@@ -101,7 +101,7 @@ class VoiceStreamHandlerTest {
   }
 
   @Test
-  void handleTransportError_ShouldNotThrow() throws Exception {
+  void handleTransportError_ShouldNotThrow() {
     // Given
     Exception testException = new RuntimeException("Test transport error");
 
