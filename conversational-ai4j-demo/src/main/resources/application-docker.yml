@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: ConversationalAI4J Demo
+
+server:
+  port: 8080
+
+# Ollama configuration for Docker environment
+ollama:
+  base-url: http://ollama:11434
+  model-name: llama3.2:3b
+
+# Logging configuration
+logging:
+  level:
+    root: INFO
+    schultedev.conversationalai4j: DEBUG
+    schultedev.conversationalai4j.demo: DEBUG
+    org.springframework.web.socket: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+# Actuator configuration for health checks
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
