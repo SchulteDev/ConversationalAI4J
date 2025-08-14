@@ -31,10 +31,10 @@ RUN mkdir -p /app/models/whisper /app/models/piper
 RUN cd /app/models/whisper && \
     wget -q https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en.bin
 
-# Download Piper TTS model (Amy voice)
+# Download Piper TTS model (Amy voice - medium quality)
 RUN cd /app/models/piper && \
-    wget -q https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/amy/low/en_US-amy-low.onnx && \
-    wget -q https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/amy/low/en_US-amy-low.onnx.json
+    wget -q https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/amy/medium/en_US-amy-medium.onnx && \
+    wget -q https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/amy/medium/en_US-amy-medium.onnx.json
 
 WORKDIR /app
 
@@ -44,8 +44,8 @@ COPY --from=builder /app/conversational-ai4j-demo/build/libs/demo.jar app.jar
 # Set environment variables for Whisper and Piper
 ENV SPEECH_ENABLED=true
 ENV WHISPER_MODEL_PATH=/app/models/whisper/ggml-base.en.bin
-ENV PIPER_MODEL_PATH=/app/models/piper/en_US-amy-low.onnx
-ENV PIPER_CONFIG_PATH=/app/models/piper/en_US-amy-low.onnx.json
+ENV PIPER_MODEL_PATH=/app/models/piper/en_US-amy-medium.onnx
+ENV PIPER_CONFIG_PATH=/app/models/piper/en_US-amy-medium.onnx.json
 
 # Expose port
 EXPOSE 8080
