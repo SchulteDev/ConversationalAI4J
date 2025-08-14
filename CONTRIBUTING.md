@@ -41,15 +41,19 @@ export SPEECH_ENABLED=true
 // Library: Mock external dependencies
 @ExtendWith(MockitoExtension.class)
 class ConversationalAITest {
-    @Mock private OllamaLanguageModel mockModel;
-    // Test builder pattern and core functionality
+
+  @Mock
+  private OllamaLanguageModel mockModel;
+  // Test builder pattern and core functionality
 }
 
 // Demo: Spring Boot integration tests  
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 class DemoIntegrationTest {
-    @Autowired private TestRestTemplate restTemplate;
-    // Test REST endpoints and WebSocket
+
+  @Autowired
+  private TestRestTemplate restTemplate;
+  // Test REST endpoints and WebSocket
 }
 ```
 

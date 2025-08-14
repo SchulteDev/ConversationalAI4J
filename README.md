@@ -60,13 +60,13 @@ Pipeline: Speech → Text → LLM → Speech (Whisper.cpp + Ollama + Piper)
 
 ## Configuration
 
-| Variable            | Default                                      | Purpose                    |
-|---------------------|----------------------------------------------|----------------------------|
-| `OLLAMA_BASE_URL`   | `http://localhost:11434`                   | Ollama server              |
-| `SPEECH_ENABLED`    | `false`                                     | Enable voice features      |
-| `WHISPER_MODEL_PATH`| `/app/models/whisper/ggml-base.en.bin`     | Whisper STT model path     |
-| `PIPER_MODEL_PATH`  | `/app/models/piper/en_US-amy-low.onnx`     | Piper TTS model path       |
-| `PIPER_CONFIG_PATH` | `/app/models/piper/en_US-amy-low.onnx.json`| Piper TTS config path      |
+| Variable             | Default                                     | Purpose                |
+|----------------------|---------------------------------------------|------------------------|
+| `OLLAMA_BASE_URL`    | `http://localhost:11434`                    | Ollama server          |
+| `SPEECH_ENABLED`     | `false`                                     | Enable voice features  |
+| `WHISPER_MODEL_PATH` | `/app/models/whisper/ggml-base.en.bin`      | Whisper STT model path |
+| `PIPER_MODEL_PATH`   | `/app/models/piper/en_US-amy-low.onnx`      | Piper TTS model path   |
+| `PIPER_CONFIG_PATH`  | `/app/models/piper/en_US-amy-low.onnx.json` | Piper TTS config path  |
 
 ## Troubleshooting
 

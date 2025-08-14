@@ -26,29 +26,36 @@ ConversationalAI ai = ConversationalAI.builder()
 
 #### Speech Architecture Design
 
-The speech processing system uses a **native Java bindings approach** that eliminates the complexity and performance overhead of inter-process communication:
+The speech processing system uses a **native Java bindings approach** that eliminates the complexity
+and performance overhead of inter-process communication:
 
 **Whisper.cpp Integration:**
-- **High-performance C++ engine** with JNI bindings via [whisper-jni](https://github.com/GiviMAD/whisper-jni)
+
+- **High-performance C++ engine** with JNI bindings
+  via [whisper-jni](https://github.com/GiviMAD/whisper-jni)
 - **Direct JNI calls** - no subprocess spawning or Python dependencies
 - **Self-contained deployment** - native libraries included in JAR
 - **Cross-platform support** - Windows, Linux, macOS (x86_64/arm64)
 - **Real-time transcription** with model lifecycle management in Java
 
 **Piper Integration:**
+
 - **Dedicated TTS engine** optimized for speed and local processing
-- **JNI bindings** via [piper-jni](https://github.com/GiviMAD/piper-jni) 
+- **JNI bindings** via [piper-jni](https://github.com/GiviMAD/piper-jni)
 - **Lightweight and fast** - designed specifically for real-time speech synthesis
 - **Native audio generation** - direct WAV output without external tools
 
 **Architecture Benefits:**
-- **Eliminated inter-process overhead** - no temporary files, process communication, or stderr parsing
+
+- **Eliminated inter-process overhead** - no temporary files, process communication, or stderr
+  parsing
 - **Simplified maintenance** - entire speech pipeline within Java ecosystem
 - **Better performance** - native bindings offer lower latency than subprocess calls
 - **Improved reliability** - no external Python environment or script dependencies
 - **Enhanced testability** - direct Java interfaces for mocking and unit testing
 
-This approach transforms what was previously a fragile Python subprocess system into a robust, high-performance native Java solution suitable for production voice applications.
+This approach transforms what was previously a fragile Python subprocess system into a robust,
+high-performance native Java solution suitable for production voice applications.
 
 ### Memory Management
 

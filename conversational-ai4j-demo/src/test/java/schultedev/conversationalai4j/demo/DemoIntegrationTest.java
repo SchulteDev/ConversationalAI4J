@@ -16,11 +16,13 @@ import org.springframework.util.LinkedMultiValueMap;
  * application functionality including Spring Boot server startup, Thymeleaf rendering, and user
  * interaction flows.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
-    "ollama.base-url=http://localhost:99999", // Non-existing port to force echo mode
-    "spring.main.lazy-initialization=true",
-    "server.port=0" // Use random port to avoid conflicts
-})
+@SpringBootTest(
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+    properties = {
+      "ollama.base-url=http://localhost:99999", // Non-existing port to force echo mode
+      "spring.main.lazy-initialization=true",
+      "server.port=0" // Use random port to avoid conflicts
+    })
 class DemoIntegrationTest {
 
   @LocalServerPort private int port;
@@ -84,15 +86,17 @@ class DemoIntegrationTest {
     var content = response.getBody();
     assertNotNull(content, "Response content should not be null");
 
-    // Parse JSON response - in test environment with invalid Ollama URL, we expect echo mode or timeout error
+    // Parse JSON response - in test environment with invalid Ollama URL, we expect echo mode or
+    // timeout error
     assertTrue(
-        content.contains("\"response\"") && 
-        (content.contains("Echo (AI unavailable): " + testMessage) || 
-         content.contains(testMessage) || 
-         content.contains("request timed out") ||
-         content.contains("trouble processing")), 
-        "JSON response should contain echo fallback, message, or timeout error. Actual content: " + content);
-    
+        content.contains("\"response\"")
+            && (content.contains("Echo (AI unavailable): " + testMessage)
+                || content.contains(testMessage)
+                || content.contains("request timed out")
+                || content.contains("trouble processing")),
+        "JSON response should contain echo fallback, message, or timeout error. Actual content: "
+            + content);
+
     assertTrue(content.contains("\"hasAudio\""), "JSON response should contain hasAudio field");
   }
 
@@ -109,9 +113,7 @@ class DemoIntegrationTest {
 
     var content = response.getBody();
     assertNotNull(content, "Response body should not be null");
-    assertTrue(
-        content.contains("Message is required"),
-        "Should return JSON error for empty input");
+    assertTrue(content.contains("Message is required"), "Should return JSON error for empty input");
   }
 
   @Test

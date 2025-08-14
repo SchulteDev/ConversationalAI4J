@@ -7,6 +7,10 @@ import org.junit.jupiter.api.condition.EnabledIf;
 
 class WhisperNativeTest {
 
+  static boolean isWhisperAvailable() {
+    return WhisperNative.isAvailable();
+  }
+
   @Test
   void testIsAvailable() {
     // Should not throw exception
@@ -40,9 +44,5 @@ class WhisperNativeTest {
   void testCloseNullContext() {
     // Should not throw exception
     assertDoesNotThrow(() -> WhisperNative.closeContext(null));
-  }
-
-  static boolean isWhisperAvailable() {
-    return WhisperNative.isAvailable();
   }
 }

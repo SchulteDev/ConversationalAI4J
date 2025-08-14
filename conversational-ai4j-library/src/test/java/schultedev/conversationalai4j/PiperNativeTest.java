@@ -31,11 +31,12 @@ class PiperNativeTest {
     assertDoesNotThrow(() -> PiperNative.closeVoice(null));
   }
 
-  @Test 
+  @Test
   void testBasicFunctionality() {
     // Note: Full functionality testing requires Docker environment with native libraries
     // These tests verify the code structure without calling native libraries
-    log.info("PiperNative tests - Full functionality requires Docker environment with Piper models");
+    log.info(
+        "PiperNative tests - Full functionality requires Docker environment with Piper models");
     assertTrue(true, "Basic structure tests passed");
   }
 }

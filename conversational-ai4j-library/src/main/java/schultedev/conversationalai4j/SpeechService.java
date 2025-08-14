@@ -1,15 +1,15 @@
 package schultedev.conversationalai4j;
 
-import io.github.givimad.whisperjni.WhisperContext;
 import io.github.givimad.piperjni.PiperVoice;
+import io.github.givimad.whisperjni.WhisperContext;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Speech service using Whisper.cpp for STT and Piper for TTS.
- * Clean, native Java implementation with no external dependencies.
+ * Speech service using Whisper.cpp for STT and Piper for TTS. Clean, native Java implementation
+ * with no external dependencies.
  */
 public class SpeechService {
 
@@ -28,17 +28,25 @@ public class SpeechService {
     if (speechEnabled) {
       try {
         // Initialize Whisper for STT
-        var whisperModelPath = System.getenv().getOrDefault("WHISPER_MODEL_PATH", "/app/models/whisper/ggml-base.en.bin");
+        var whisperModelPath =
+            System.getenv()
+                .getOrDefault("WHISPER_MODEL_PATH", "/app/models/whisper/ggml-base.en.bin");
         tempWhisper = WhisperNative.createContext(whisperModelPath);
-        
-        // Initialize Piper for TTS  
-        var piperModelPath = System.getenv().getOrDefault("PIPER_MODEL_PATH", "/app/models/piper/en_US-amy-low.onnx");
-        var piperConfigPath = System.getenv().getOrDefault("PIPER_CONFIG_PATH", "/app/models/piper/en_US-amy-low.onnx.json");
+
+        // Initialize Piper for TTS
+        var piperModelPath =
+            System.getenv()
+                .getOrDefault("PIPER_MODEL_PATH", "/app/models/piper/en_US-amy-low.onnx");
+        var piperConfigPath =
+            System.getenv()
+                .getOrDefault("PIPER_CONFIG_PATH", "/app/models/piper/en_US-amy-low.onnx.json");
         tempPiper = PiperNative.createVoice(piperModelPath, piperConfigPath);
-        
+
         log.info("Speech service initialized with Whisper and Piper");
       } catch (Exception e) {
-        log.warn("Speech models not available ({}), running without speech functionality", e.getMessage());
+        log.warn(
+            "Speech models not available ({}), running without speech functionality",
+            e.getMessage());
         tempWhisper = null;
         tempPiper = null;
       }
@@ -67,9 +75,9 @@ public class SpeechService {
       if (audioSamples.length == 0) {
         return "";
       }
-      
+
       return WhisperNative.transcribe(whisperContext, audioSamples);
-      
+
     } catch (Exception e) {
       log.error("Error in speech-to-text processing: {}", e.getMessage(), e);
       return "Mock transcription: Hello, this is a test.";
@@ -77,8 +85,8 @@ public class SpeechService {
   }
 
   /**
-   * Convert WAV audio bytes to float samples for Whisper.
-   * Assumes input is already 16kHz mono PCM WAV (can be converted by frontend).
+   * Convert WAV audio bytes to float samples for Whisper. Assumes input is already 16kHz mono PCM
+   * WAV (can be converted by frontend).
    */
   private float[] convertToFloatSamples(byte[] wavBytes) {
     if (wavBytes == null || wavBytes.length < 44) {
@@ -90,23 +98,22 @@ public class SpeechService {
       var dataSize = wavBytes.length - 44;
       var sampleCount = dataSize / 2; // 16-bit samples
       var samples = new float[sampleCount];
-      
+
       var buffer = ByteBuffer.wrap(wavBytes, 44, dataSize);
       buffer.order(ByteOrder.LITTLE_ENDIAN);
-      
+
       for (int i = 0; i < sampleCount; i++) {
         samples[i] = buffer.getShort() / 32768.0f; // Normalize to [-1, 1]
       }
-      
+
       log.debug("Converted {} bytes WAV to {} float samples", wavBytes.length, sampleCount);
       return samples;
-      
+
     } catch (Exception e) {
       log.error("Error converting WAV to float samples: {}", e.getMessage(), e);
       return new float[0];
     }
   }
-
 
   public byte[] textToSpeech(String text) {
     if (!speechEnabled || piperVoice == null) {

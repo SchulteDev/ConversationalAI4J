@@ -148,7 +148,8 @@ class ConversationalAITest {
               || e.getMessage().contains("timed out")
               || e.getMessage().contains("model")
               || e.getMessage().contains("not found"),
-          "Should get connection-related, timeout, or model error when Ollama unavailable/misconfigured, got: " + e.getMessage());
+          "Should get connection-related, timeout, or model error when Ollama unavailable/misconfigured, got: "
+              + e.getMessage());
     }
   }
 
