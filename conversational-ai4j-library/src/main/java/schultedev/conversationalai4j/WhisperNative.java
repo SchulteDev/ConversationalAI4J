@@ -77,7 +77,7 @@ public class WhisperNative {
       }
 
       var transcription = new StringBuilder();
-      for (int i = 0; i < segmentCount; i++) {
+      for (var i = 0; i < segmentCount; i++) {
         var text = whisper.fullGetSegmentText(context, i);
         if (text != null && !text.trim().isEmpty()) {
           transcription.append(text.trim()).append(" ");

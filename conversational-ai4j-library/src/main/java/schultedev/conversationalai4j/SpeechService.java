@@ -102,7 +102,7 @@ public class SpeechService {
       var buffer = ByteBuffer.wrap(wavBytes, 44, dataSize);
       buffer.order(ByteOrder.LITTLE_ENDIAN);
 
-      for (int i = 0; i < sampleCount; i++) {
+      for (var i = 0; i < sampleCount; i++) {
         samples[i] = buffer.getShort() / 32768.0f; // Normalize to [-1, 1]
       }
 

@@ -96,7 +96,7 @@ public class PiperNative {
       // Audio data
       var buffer = ByteBuffer.allocate(samples.length * 2);
       buffer.order(ByteOrder.LITTLE_ENDIAN);
-      for (short sample : samples) {
+      for (var sample : samples) {
         buffer.putShort(sample);
       }
       outputStream.write(buffer.array());
