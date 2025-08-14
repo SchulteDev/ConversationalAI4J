@@ -14,7 +14,7 @@ class UnifiedChatInterface {
     this.isRecording = false;
     this.recordedChunks = [];
     this.currentAudioUrl = null;
-    
+
     this.initializeElements();
     this.setupEventListeners();
     this.setupAudioControls();
@@ -40,7 +40,7 @@ class UnifiedChatInterface {
       e.preventDefault();
       this.handleTextMessage();
     });
-    
+
     // Enter key in input
     this.messageInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
@@ -48,13 +48,13 @@ class UnifiedChatInterface {
         this.handleTextMessage();
       }
     });
-    
+
     // Voice toggle button
     this.voiceToggle.addEventListener('click', (e) => {
       e.preventDefault();
       this.handleVoiceToggle();
     });
-    
+
     // Prevent context menu on voice button
     this.voiceToggle.addEventListener('contextmenu', (e) => e.preventDefault());
   }
@@ -72,11 +72,13 @@ class UnifiedChatInterface {
   // UNIFIED MESSAGE HANDLING - Both text and voice use this flow
   async handleTextMessage() {
     const message = this.messageInput.value.trim();
-    if (!message) return;
+    if (!message) {
+      return;
+    }
 
     // Clear input immediately
     this.messageInput.value = '';
-    
+
     // Show user message immediately
     this.displayUserMessage(message);
     this.showTypingIndicator();
@@ -97,7 +99,7 @@ class UnifiedChatInterface {
 
       // Parse JSON response
       const data = await response.json();
-      
+
       if (data.error) {
         throw new Error(data.error);
       }
@@ -106,7 +108,7 @@ class UnifiedChatInterface {
 
       // Display AI response immediately
       this.displayAIMessage(aiResponse);
-      
+
       // Start async TTS generation and auto-play
       this.generateAndPlayTTS(aiResponse);
 
@@ -126,8 +128,9 @@ class UnifiedChatInterface {
         this.isVoiceMode = true;
         this.voiceToggle.classList.add('active');
         this.messageInput.placeholder = "Recording... Click again to stop and send.";
-        this.showNotification('Recording started! Click microphone again to stop and send.', 'success');
-        
+        this.showNotification('Recording started! Click microphone again to stop and send.',
+          'success');
+
         setTimeout(async () => {
           await this.startRecording();
         }, 200);
@@ -149,7 +152,7 @@ class UnifiedChatInterface {
   async requestMicrophoneAccess() {
     try {
       this.audioStream = await navigator.mediaDevices.getUserMedia({
-        audio: { sampleRate: 16000, channelCount: 1 }
+        audio: {sampleRate: 16000, channelCount: 1}
       });
       console.log('Microphone access granted');
     } catch (error) {
@@ -160,11 +163,11 @@ class UnifiedChatInterface {
   async connectWebSocket() {
     return new Promise((resolve, reject) => {
       this.socket = new WebSocket(`ws://${window.location.host}/voice-stream`);
-      
+
       this.socket.onopen = () => {
         console.log('WebSocket connected');
         this.isConnected = true;
-        
+
         setTimeout(() => {
           if (this.socket && this.socket.readyState === WebSocket.OPEN) {
             this.socket.send('check_status');
@@ -176,7 +179,7 @@ class UnifiedChatInterface {
       };
 
       this.socket.onmessage = (event) => this.handleWebSocketMessage(event);
-      
+
       this.socket.onerror = (error) => {
         console.error('WebSocket error:', error);
         reject(new Error('Connection failed'));
@@ -187,7 +190,7 @@ class UnifiedChatInterface {
         this.isConnected = false;
         this.isRecording = false;
         this.updateVoiceButtonState();
-        
+
         if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
           this.mediaRecorder.stop();
           this.showNotification('Connection lost during recording', 'error');
@@ -201,12 +204,12 @@ class UnifiedChatInterface {
       this.socket.close();
       this.socket = null;
     }
-    
+
     if (this.audioStream) {
       this.audioStream.getTracks().forEach(track => track.stop());
       this.audioStream = null;
     }
-    
+
     this.isConnected = false;
     this.isRecording = false;
     this.updateVoiceButtonState();
@@ -228,7 +231,7 @@ class UnifiedChatInterface {
 
   handleControlMessage(message) {
     console.log('Control message:', message);
-    
+
     switch (message.type) {
       case 'status':
         const statusType = message.status === 'error' ? 'error' :
@@ -236,7 +239,7 @@ class UnifiedChatInterface {
         if (statusType) {
           this.showNotification(message.message, statusType);
         }
-        
+
         if (message.status === 'processing') {
           this.showTypingIndicator();
         } else if (message.status === 'complete') {
@@ -246,12 +249,12 @@ class UnifiedChatInterface {
           this.finishVoiceMode();
         }
         break;
-        
+
       case 'transcription':
         // Voice input transcribed - show as user message
         this.displayUserMessage(message.text, true);
         break;
-        
+
       case 'text_response':
         // AI response from voice input - show immediately and generate TTS
         this.displayAIMessage(message.message);
@@ -259,7 +262,7 @@ class UnifiedChatInterface {
         break;
     }
   }
-  
+
   finishVoiceMode() {
     setTimeout(() => {
       this.disconnectWebSocket();
@@ -271,14 +274,14 @@ class UnifiedChatInterface {
 
   async handleAudioResponse(audioBlob) {
     console.log('Received audio response:', audioBlob.size, 'bytes');
-    
+
     try {
       const audioUrl = URL.createObjectURL(audioBlob);
       this.audioPlayer.src = audioUrl;
-      
+
       await this.audioPlayer.play();
       this.showNotification('Playing AI response', 'success');
-      
+
       this.audioPlayer.onended = () => {
         URL.revokeObjectURL(audioUrl);
         this.hideTypingIndicator();
@@ -298,9 +301,9 @@ class UnifiedChatInterface {
       this.mediaRecorder = new MediaRecorder(this.audioStream, {
         mimeType: 'audio/webm;codecs=opus'
       });
-      
+
       this.recordedChunks = [];
-      
+
       this.mediaRecorder.ondataavailable = (event) => {
         if (event.data && event.data.size > 0) {
           this.recordedChunks.push(event.data);
@@ -311,7 +314,7 @@ class UnifiedChatInterface {
         const blob = new Blob(this.recordedChunks, {
           type: 'audio/webm;codecs=opus'
         });
-        
+
         if (blob.size > 0 && this.socket && this.socket.readyState === WebSocket.OPEN) {
           this.socket.send(blob);
           this.socket.send('stop_recording');
@@ -319,7 +322,7 @@ class UnifiedChatInterface {
         } else {
           this.showNotification('No audio recorded or connection lost', 'error');
         }
-        
+
         this.recordedChunks = [];
       };
 
@@ -333,13 +336,13 @@ class UnifiedChatInterface {
       this.mediaRecorder.start(1000);
       this.isRecording = true;
       this.updateVoiceButtonState();
-      
+
       setTimeout(() => {
         if (this.socket && this.socket.readyState === WebSocket.OPEN) {
           this.socket.send('start_recording');
         }
       }, 50);
-      
+
     } catch (error) {
       console.error('Failed to start recording:', error);
       this.showNotification('Recording failed: ' + error.message, 'error');
@@ -382,29 +385,29 @@ class UnifiedChatInterface {
     // Force right alignment with inline styles
     messageGroup.style.alignItems = 'flex-end';
     messageGroup.style.justifyContent = 'flex-end';
-    
+
     const messageBubble = document.createElement('div');
     messageBubble.className = 'message-bubble user processing';
     // Force right positioning
     messageBubble.style.marginLeft = 'auto';
     messageBubble.style.marginRight = '0';
-    
+
     const messageContent = document.createElement('div');
     messageContent.className = 'message-content';
     messageContent.innerHTML = '🎤 Converting speech to text...';
-    
+
     const progressBar = document.createElement('div');
     progressBar.className = 'voice-progress-bar';
     progressBar.innerHTML = '<div class="voice-progress-fill"></div>';
-    
+
     messageBubble.appendChild(messageContent);
     messageBubble.appendChild(progressBar);
     messageGroup.appendChild(messageBubble);
-    
+
     // Insert before typing indicator
     this.chatArea.insertBefore(messageGroup, this.typingIndicator);
     this.scrollToBottom();
-    
+
     return messageGroup;
   }
 
@@ -418,44 +421,44 @@ class UnifiedChatInterface {
   addMessageToChat(text, sender, withAudioButton = false) {
     const messageGroup = document.createElement('div');
     messageGroup.className = `message-group ${sender}-message`;
-    
+
     const messageBubble = document.createElement('div');
     messageBubble.className = `message-bubble ${sender}`;
     if (withAudioButton) {
       messageBubble.setAttribute('data-has-audio', 'true');
     }
-    
+
     const messageContent = document.createElement('div');
     messageContent.className = 'message-content';
     messageContent.textContent = text;
-    
+
     messageBubble.appendChild(messageContent);
 
     // Add audio controls for AI messages
     if (sender === 'ai' && withAudioButton) {
       const audioControls = document.createElement('div');
       audioControls.className = 'message-audio-controls';
-      
+
       const playButton = document.createElement('button');
       playButton.className = 'audio-play-btn';
       playButton.setAttribute('data-text', text);
       playButton.setAttribute('title', 'Play audio');
       playButton.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16"><path d="M8 5v14l11-7z"/></svg>';
-      
+
       const audioPlayer = document.createElement('audio');
       audioPlayer.className = 'message-audio-player';
       audioPlayer.style.display = 'none';
-      
+
       audioControls.appendChild(playButton);
       audioControls.appendChild(audioPlayer);
       messageBubble.appendChild(audioControls);
     }
-    
+
     messageGroup.appendChild(messageBubble);
-    
+
     // Insert before typing indicator
     this.chatArea.insertBefore(messageGroup, this.typingIndicator);
-    
+
     return messageGroup;
   }
 
@@ -463,7 +466,7 @@ class UnifiedChatInterface {
   async generateAndPlayTTS(text) {
     try {
       console.log('Generating TTS for:', text);
-      
+
       const response = await fetch('/direct-tts', {
         method: 'POST',
         headers: {
@@ -478,10 +481,10 @@ class UnifiedChatInterface {
 
       const audioData = await response.blob();
       const audioUrl = URL.createObjectURL(audioData);
-      
+
       // Auto-play the generated audio - simple approach
       this.audioPlayer.src = audioUrl;
-      
+
       try {
         // Simple approach - just play when ready
         this.audioPlayer.oncanplay = async () => {
@@ -496,16 +499,16 @@ class UnifiedChatInterface {
       } catch (error) {
         console.log('Audio setup failed:', error);
       }
-      
+
       // Clean up URL when audio ends
       this.audioPlayer.onended = () => {
         URL.revokeObjectURL(audioUrl);
       };
-      
+
       this.audioPlayer.onerror = () => {
         URL.revokeObjectURL(audioUrl);
       };
-      
+
     } catch (error) {
       console.error('TTS generation failed:', error);
       // Don't show error notification for TTS failures to avoid cluttering UX
@@ -515,7 +518,7 @@ class UnifiedChatInterface {
   async handleAudioButtonClick(button) {
     const text = button.getAttribute('data-text');
     const audioPlayer = button.parentElement.querySelector('.message-audio-player');
-    
+
     if (button.classList.contains('playing')) {
       // Pause current audio
       audioPlayer.pause();
@@ -525,10 +528,10 @@ class UnifiedChatInterface {
 
     // Stop any other playing audio
     this.stopAllAudio();
-    
+
     try {
       button.classList.add('loading');
-      
+
       const response = await fetch('/direct-tts', {
         method: 'POST',
         headers: {
@@ -544,12 +547,12 @@ class UnifiedChatInterface {
       const audioData = await response.blob();
       const audioUrl = URL.createObjectURL(audioData);
       audioPlayer.src = audioUrl;
-      
+
       const audioLength = button.parentElement.querySelector('.audio-length');
-      
+
       button.classList.remove('loading');
       button.classList.add('playing');
-      
+
       // Simple playback approach
       audioPlayer.oncanplay = async () => {
         try {
@@ -559,7 +562,7 @@ class UnifiedChatInterface {
         }
       };
       audioPlayer.load();
-      
+
       // Update audio length when metadata loads
       audioPlayer.onloadedmetadata = () => {
         if (audioLength && !audioLength.textContent) {
@@ -568,17 +571,17 @@ class UnifiedChatInterface {
           audioLength.style.display = 'inline';
         }
       };
-      
+
       audioPlayer.onended = () => {
         button.classList.remove('playing');
         URL.revokeObjectURL(audioUrl);
       };
-      
+
       audioPlayer.onerror = () => {
         button.classList.remove('playing', 'loading');
         URL.revokeObjectURL(audioUrl);
       };
-      
+
     } catch (error) {
       button.classList.remove('loading');
       console.error('Audio generation failed:', error);
@@ -591,7 +594,7 @@ class UnifiedChatInterface {
       this.audioPlayer.pause();
       this.audioPlayer.currentTime = 0;
     }
-    
+
     // Stop all message audio players
     const audioButtons = this.chatArea.querySelectorAll('.audio-play-btn.playing');
     audioButtons.forEach(button => {
@@ -617,7 +620,7 @@ class UnifiedChatInterface {
     this.notificationText.textContent = message;
     this.notification.className = `notification ${type}`;
     this.notificationOverlay.classList.remove('hidden');
-    
+
     setTimeout(() => {
       this.notificationOverlay.classList.add('hidden');
     }, type === 'error' ? 5000 : 3000);
@@ -631,11 +634,11 @@ class UnifiedChatInterface {
 }
 
 // Initialize the unified chat interface when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
   const chatInterface = new UnifiedChatInterface();
-  
+
   // Make it available globally for debugging
   window.chatInterface = chatInterface;
-  
+
   console.log('Unified chat interface initialized');
 });

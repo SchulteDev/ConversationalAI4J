@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 
 class SherpaOnnxNativeTest {
 
-
   @AfterEach
   void tearDown() {
     // Reset static state for clean tests

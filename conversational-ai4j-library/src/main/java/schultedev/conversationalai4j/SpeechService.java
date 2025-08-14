@@ -119,21 +119,25 @@ public class SpeechService {
       var p = pb.start();
 
       // Concurrent I/O for better performance - start reading output immediately
-      var outputFuture = java.util.concurrent.CompletableFuture.supplyAsync(() -> {
-        try {
-          return p.getInputStream().readAllBytes();
-        } catch (Exception e) {
-          throw new RuntimeException(e);
-        }
-      });
-      
-      var errorFuture = java.util.concurrent.CompletableFuture.supplyAsync(() -> {
-        try {
-          return p.getErrorStream().readAllBytes();
-        } catch (Exception e) {
-          throw new RuntimeException(e);
-        }
-      });
+      var outputFuture =
+          java.util.concurrent.CompletableFuture.supplyAsync(
+              () -> {
+                try {
+                  return p.getInputStream().readAllBytes();
+                } catch (Exception e) {
+                  throw new RuntimeException(e);
+                }
+              });
+
+      var errorFuture =
+          java.util.concurrent.CompletableFuture.supplyAsync(
+              () -> {
+                try {
+                  return p.getErrorStream().readAllBytes();
+                } catch (Exception e) {
+                  throw new RuntimeException(e);
+                }
+              });
 
       // Write input bytes to ffmpeg stdin
       try (var stdin = p.getOutputStream()) {

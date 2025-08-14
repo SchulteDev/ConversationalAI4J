@@ -1,13 +1,12 @@
 package schultedev.conversationalai4j.demo;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -22,7 +21,7 @@ import schultedev.conversationalai4j.ConversationalAI;
 public class VoiceStreamHandler implements WebSocketHandler {
 
   private static final Logger log = LoggerFactory.getLogger(VoiceStreamHandler.class);
-  
+
   // Performance and memory optimization constants
   private static final int MAX_AUDIO_CHUNKS_PER_SESSION = 1000; // Prevent memory issues
   private static final int MAX_AUDIO_BYTES_PER_SESSION = 10 * 1024 * 1024; // 10MB limit
@@ -96,18 +95,21 @@ public class VoiceStreamHandler implements WebSocketHandler {
         sendStatus(session, "processing", "Processing voice...");
         log.info("Stopped recording for session {}, processing audio", sessionId);
         // Process audio asynchronously to avoid blocking WebSocket thread
-        CompletableFuture.runAsync(() -> {
-          try {
-            processAccumulatedAudio(session);
-          } catch (IOException e) {
-            log.error("Failed to process audio for session {}: {}", sessionId, e.getMessage(), e);
-            try {
-              sendStatus(session, "error", "Processing failed: " + e.getMessage());
-            } catch (IOException ex) {
-              log.error("Failed to send error status", ex);
-            }
-          }
-        }, voiceProcessingExecutor);
+        CompletableFuture.runAsync(
+            () -> {
+              try {
+                processAccumulatedAudio(session);
+              } catch (IOException e) {
+                log.error(
+                    "Failed to process audio for session {}: {}", sessionId, e.getMessage(), e);
+                try {
+                  sendStatus(session, "error", "Processing failed: " + e.getMessage());
+                } catch (IOException ex) {
+                  log.error("Failed to send error status", ex);
+                }
+              }
+            },
+            voiceProcessingExecutor);
       }
       case "check_status" -> sendSpeechStatus(session);
     }
@@ -126,27 +128,34 @@ public class VoiceStreamHandler implements WebSocketHandler {
       log.warn("No audio buffer found for session {}", sessionId);
       return;
     }
-    
+
     // Memory protection - prevent excessive memory usage
     if (chunks.size() >= MAX_AUDIO_CHUNKS_PER_SESSION) {
-      log.warn("Session {} exceeded maximum audio chunks limit ({}), dropping chunk", 
-               sessionId, MAX_AUDIO_CHUNKS_PER_SESSION);
+      log.warn(
+          "Session {} exceeded maximum audio chunks limit ({}), dropping chunk",
+          sessionId,
+          MAX_AUDIO_CHUNKS_PER_SESSION);
       return;
     }
-    
+
     var currentSize = chunks.stream().mapToInt(ByteBuffer::remaining).sum();
     var incomingSize = message.getPayload().remaining();
-    
+
     if (currentSize + incomingSize > MAX_AUDIO_BYTES_PER_SESSION) {
-      log.warn("Session {} exceeded maximum audio size limit ({}MB), dropping chunk", 
-               sessionId, MAX_AUDIO_BYTES_PER_SESSION / (1024 * 1024));
+      log.warn(
+          "Session {} exceeded maximum audio size limit ({}MB), dropping chunk",
+          sessionId,
+          MAX_AUDIO_BYTES_PER_SESSION / (1024 * 1024));
       return;
     }
-    
+
     chunks.add(message.getPayload());
     log.debug(
         "Received audio chunk of {} bytes from session {} (total: {} chunks, {} bytes)",
-        incomingSize, sessionId, chunks.size(), currentSize + incomingSize);
+        incomingSize,
+        sessionId,
+        chunks.size(),
+        currentSize + incomingSize);
   }
 
   private void processAccumulatedAudio(WebSocketSession session) throws IOException {
@@ -158,7 +167,7 @@ public class VoiceStreamHandler implements WebSocketHandler {
       sendStatus(session, "error", "No audio data received");
       return;
     }
-    
+
     // Check if session is still open
     if (!session.isOpen()) {
       log.warn("Session {} is closed, cannot process audio", sessionId);
@@ -181,7 +190,7 @@ public class VoiceStreamHandler implements WebSocketHandler {
       var totalBytes = chunks.stream().mapToInt(ByteBuffer::remaining).sum();
       var audioData = new byte[totalBytes];
       var position = 0;
-      
+
       // Direct copy into pre-allocated array - much more efficient
       for (var chunk : chunks) {
         var chunkSize = chunk.remaining();
@@ -266,7 +275,6 @@ public class VoiceStreamHandler implements WebSocketHandler {
         }
       } else {
         log.warn("Session {} closed before LLM processing", sessionId);
-        return;
       }
 
     } catch (Exception e) {
@@ -368,7 +376,7 @@ public class VoiceStreamHandler implements WebSocketHandler {
 
         // Send text first so it's always visible
         sendTextResponse(session, aiResponse);
-        
+
         // Then send audio
         session.sendMessage(new BinaryMessage(responseAudio));
         sendStatus(session, "complete", "Speech ready");

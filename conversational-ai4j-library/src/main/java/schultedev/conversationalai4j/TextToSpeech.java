@@ -50,9 +50,9 @@ public class TextToSpeech {
   }
 
   /**
-   * Synthesizes speech with speed and pitch parameters (for API compatibility). Currently speed and 
+   * Synthesizes speech with speed and pitch parameters (for API compatibility). Currently speed and
    * pitch parameters are ignored, but method is kept for backward compatibility.
-   * 
+   *
    * @param text the text to synthesize
    * @param speed the speed multiplier (currently ignored)
    * @param pitch the pitch adjustment (currently ignored)

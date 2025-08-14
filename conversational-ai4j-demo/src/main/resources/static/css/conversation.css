@@ -525,37 +525,37 @@ body {
     height: 100vh;
     border-radius: 0;
   }
-  
+
   .chat-header {
     padding: 15px 20px;
   }
-  
+
   .chat-header h1 {
     font-size: 20px;
   }
-  
+
   .chat-area {
     padding: 15px 20px;
   }
-  
+
   .input-area {
     padding: 15px 20px;
   }
-  
+
   .input-row {
     gap: 12px;
   }
-  
+
   .voice-toggle-prominent {
     width: 60px;
     height: 60px;
   }
-  
+
   .message-bubble {
     max-width: 85%;
     font-size: 14px;
   }
-  
+
   .notification {
     margin: 0 20px;
   }
@@ -565,30 +565,30 @@ body {
   .chat-header h1 {
     font-size: 18px;
   }
-  
+
   .input-row {
     gap: 8px;
   }
-  
+
   .input-container {
     padding: 6px;
   }
-  
+
   #message-input {
     padding: 10px 12px;
     font-size: 14px;
   }
-  
+
   .send-button {
     width: 40px;
     height: 40px;
   }
-  
+
   .voice-toggle-prominent {
     width: 56px;
     height: 56px;
   }
-  
+
   .voice-toggle-prominent .mic-icon {
     width: 24px;
     height: 24px;

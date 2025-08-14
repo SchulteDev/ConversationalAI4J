@@ -2,7 +2,6 @@ package schultedev.conversationalai4j.demo;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,20 +24,6 @@ public class ConversationController {
 
   private static final Logger log = LoggerFactory.getLogger(ConversationController.class);
   private final ConversationalAI conversationalAI;
-  
-  // Simple conversation history storage (for demo purposes)
-  public static class Message {
-    public final String text;
-    public final boolean isUser;
-    public final boolean hasAudio;
-    
-    public Message(String text, boolean isUser, boolean hasAudio) {
-      this.text = text;
-      this.isUser = isUser;
-      this.hasAudio = hasAudio;
-    }
-  }
-  
   private final List<Message> conversationHistory = new ArrayList<>();
 
   @Value("${ollama.base-url:http://localhost:11434}")
@@ -122,7 +107,7 @@ public class ConversationController {
       response = "Please enter a message.";
     } else {
       log.info("USER INPUT: '{}'", message);
-      
+
       // Add user message to history
       conversationHistory.add(new Message(message, true, false));
 
@@ -135,12 +120,12 @@ public class ConversationController {
           log.warn("ConversationalAI unavailable, using echo mode");
           response = "Echo (AI unavailable): " + message;
         }
-        
+
         // Add AI response to history with TTS capability indication
         // Force TTS availability for now since direct-tts endpoint works
         boolean hasAudio = conversationalAI != null;
         conversationHistory.add(new Message(response, false, hasAudio));
-        
+
       } catch (Exception e) {
         log.error("Error processing message '{}': {}", message, e.getMessage());
         if (log.isDebugEnabled()) {
@@ -152,7 +137,7 @@ public class ConversationController {
                 + e.getMessage()
                 + "\nFallback echo: "
                 + message;
-        
+
         // Add error response to history
         conversationHistory.add(new Message(response, false, false));
       }
@@ -350,7 +335,8 @@ public class ConversationController {
             .body("Failed to generate audio response".getBytes());
       }
 
-      log.info("Successfully generated {} bytes of audio response for direct TTS", audioResponse.length);
+      log.info(
+          "Successfully generated {} bytes of audio response for direct TTS", audioResponse.length);
       return ResponseEntity.ok()
           .contentType(MediaType.parseMediaType("audio/wav"))
           .body(audioResponse);
@@ -365,20 +351,20 @@ public class ConversationController {
   /**
    * Chat API endpoint for AJAX requests - returns JSON response.
    *
-   * @param message the user's input message  
+   * @param message the user's input message
    * @return JSON response with AI message
    */
-  @PostMapping(value = "/chat", 
-               consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
-               produces = MediaType.APPLICATION_JSON_VALUE)
+  @PostMapping(
+      value = "/chat",
+      consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
+      produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<String> chatAPI(@RequestParam("message") String message) {
     if (message == null || message.trim().isEmpty()) {
-      return ResponseEntity.badRequest()
-          .body("{\"error\": \"Message is required\"}");
+      return ResponseEntity.badRequest().body("{\"error\": \"Message is required\"}");
     }
 
     log.info("API USER INPUT: '{}'", message);
-    
+
     // Add user message to history
     conversationHistory.add(new Message(message, true, false));
 
@@ -392,32 +378,32 @@ public class ConversationController {
         log.warn("ConversationalAI unavailable, using echo mode");
         response = "Echo (AI unavailable): " + message;
       }
-      
-      // Add AI response to history with TTS capability indication  
+
+      // Add AI response to history with TTS capability indication
       boolean hasAudio = conversationalAI != null;
       conversationHistory.add(new Message(response, false, hasAudio));
-      
+
       // Return JSON response
-      String jsonResponse = String.format(
-          "{\"response\": \"%s\", \"hasAudio\": %s}",
-          response.replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r"),
-          hasAudio
-      );
-      
+      String jsonResponse =
+          String.format(
+              "{\"response\": \"%s\", \"hasAudio\": %s}",
+              response.replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r"), hasAudio);
+
       return ResponseEntity.ok(jsonResponse);
-      
+
     } catch (Exception e) {
       log.error("Error processing API message '{}': {}", message, e.getMessage());
-      String errorResponse = "Sorry, I'm having trouble processing your request. Error: " + e.getMessage();
-      
+      String errorResponse =
+          "Sorry, I'm having trouble processing your request. Error: " + e.getMessage();
+
       // Add error response to history
       conversationHistory.add(new Message(errorResponse, false, false));
-      
-      String jsonError = String.format(
-          "{\"response\": \"%s\", \"hasAudio\": false}",
-          errorResponse.replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r")
-      );
-      
+
+      String jsonError =
+          String.format(
+              "{\"response\": \"%s\", \"hasAudio\": false}",
+              errorResponse.replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r"));
+
       return ResponseEntity.ok(jsonError);
     }
   }
@@ -445,5 +431,10 @@ public class ConversationController {
 
     log.debug("Speech status: {}", status);
     return ResponseEntity.ok(status);
+  }
+
+  // Simple conversation history storage (for demo purposes)
+    public record Message(String text, boolean isUser, boolean hasAudio) {
+
   }
 }
