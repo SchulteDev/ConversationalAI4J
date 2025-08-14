@@ -10,6 +10,18 @@
 A Java library for voice-enabled conversational AI. Speak to an LLM through your browser and get
 intelligent spoken responses.
 
+## Status
+
+[![Project Status](https://img.shields.io/badge/Project%20Status-Alpha-red.svg)](https://github.com/SchulteDev/ConversationalAI4J)
+
+This project is in early alpha stage. Features are functional but may contain bugs and APIs may
+change.
+
+This project was vibe coded, serving as a PoC for
+[PhoneBlock -> "Enhance PhoneBlock-AB with Local AI for Intelligent Scam Call Conversations"](https://github.com/haumacher/phoneblock/issues/187)
+
+[![Project Status](https://img.shields.io/badge/Project%20Status-Alpha-red.svg)](https://github.com/SchulteDev/ConversationalAI4J)
+
 ## Quick Start
 
 ```bash
