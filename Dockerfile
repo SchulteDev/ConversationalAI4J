@@ -1,44 +1,69 @@
 # ConversationalAI4J with Whisper.cpp + Piper TTS
+FROM gradle:9.0-jdk21 AS deps-cache
+
+WORKDIR /app
+
+# Copy only dependency files first for better caching
+COPY build.gradle settings.gradle gradle.properties ./
+COPY gradle/ gradle/
+COPY conversational-ai4j-library/build.gradle conversational-ai4j-library/
+COPY conversational-ai4j-demo/build.gradle conversational-ai4j-demo/
+
+# Download dependencies only - creates cached layer
+RUN gradle :demo:dependencies --no-daemon || true
+
+# Build stage - separate from deps to optimize rebuilds
 FROM gradle:9.0-jdk21 AS builder
 
 WORKDIR /app
 
-# Copy Gradle configuration
+# Copy cached dependencies
+COPY --from=deps-cache /root/.gradle /root/.gradle
+
+# Copy Gradle configuration  
 COPY build.gradle settings.gradle gradle.properties ./
 COPY gradle/ gradle/
+COPY conversational-ai4j-library/build.gradle conversational-ai4j-library/
+COPY conversational-ai4j-demo/build.gradle conversational-ai4j-demo/
 
-# Copy source code
-COPY conversational-ai4j-library/ conversational-ai4j-library/
-COPY conversational-ai4j-demo/ conversational-ai4j-demo/
+# Copy source code last (most frequently changed)
+COPY conversational-ai4j-library/src/ conversational-ai4j-library/src/
+COPY conversational-ai4j-demo/src/ conversational-ai4j-demo/src/
 
-# Build the application
+# Build the application (dependencies already cached)
 RUN gradle :demo:bootJar --no-daemon
 
-# Runtime stage with speech support
-FROM openjdk:21-jdk-slim
+# Runtime stage with speech support  
+FROM openjdk:21-jdk-slim AS runtime-base
 
-# Install basic dependencies and native library requirements
+# Install system dependencies (cached layer)
 RUN apt-get update && apt-get install -y \
     curl \
     wget \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Create models directory and download Whisper and Piper models
+# Create models directory
 RUN mkdir -p /app/models/whisper /app/models/piper
 
-# Download Whisper base.en model (smaller, English-only)
+WORKDIR /app
+
+# Download models in separate layers for better caching
+FROM runtime-base AS models
+
+# Download Whisper model (cached unless model changes)
 RUN cd /app/models/whisper && \
     wget -q https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en.bin
 
-# Download Piper TTS model (Amy voice - medium quality)
+# Download Piper model (cached unless model changes)  
 RUN cd /app/models/piper && \
     wget -q https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/amy/medium/en_US-amy-medium.onnx && \
     wget -q https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/amy/medium/en_US-amy-medium.onnx.json
 
-WORKDIR /app
+# Final runtime stage
+FROM models AS runtime
 
-# Copy the built JAR
+# Copy the built JAR (only rebuilds when code changes)
 COPY --from=builder /app/conversational-ai4j-demo/build/libs/demo.jar app.jar
 
 # Set environment variables for Whisper and Piper
