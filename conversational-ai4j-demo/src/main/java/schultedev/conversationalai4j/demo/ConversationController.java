@@ -363,6 +363,66 @@ public class ConversationController {
   }
 
   /**
+   * Chat API endpoint for AJAX requests - returns JSON response.
+   *
+   * @param message the user's input message  
+   * @return JSON response with AI message
+   */
+  @PostMapping(value = "/chat", 
+               consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
+               produces = MediaType.APPLICATION_JSON_VALUE)
+  public ResponseEntity<String> chatAPI(@RequestParam("message") String message) {
+    if (message == null || message.trim().isEmpty()) {
+      return ResponseEntity.badRequest()
+          .body("{\"error\": \"Message is required\"}");
+    }
+
+    log.info("API USER INPUT: '{}'", message);
+    
+    // Add user message to history
+    conversationHistory.add(new Message(message, true, false));
+
+    try {
+      String response;
+      if (conversationalAI != null) {
+        log.info("Processing message with AI...");
+        response = conversationalAI.chat(message);
+        log.info("API AI RESPONSE: '{}'", response);
+      } else {
+        log.warn("ConversationalAI unavailable, using echo mode");
+        response = "Echo (AI unavailable): " + message;
+      }
+      
+      // Add AI response to history with TTS capability indication  
+      boolean hasAudio = conversationalAI != null;
+      conversationHistory.add(new Message(response, false, hasAudio));
+      
+      // Return JSON response
+      String jsonResponse = String.format(
+          "{\"response\": \"%s\", \"hasAudio\": %s}",
+          response.replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r"),
+          hasAudio
+      );
+      
+      return ResponseEntity.ok(jsonResponse);
+      
+    } catch (Exception e) {
+      log.error("Error processing API message '{}': {}", message, e.getMessage());
+      String errorResponse = "Sorry, I'm having trouble processing your request. Error: " + e.getMessage();
+      
+      // Add error response to history
+      conversationHistory.add(new Message(errorResponse, false, false));
+      
+      String jsonError = String.format(
+          "{\"response\": \"%s\", \"hasAudio\": false}",
+          errorResponse.replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r")
+      );
+      
+      return ResponseEntity.ok(jsonError);
+    }
+  }
+
+  /**
    * Check speech service status endpoint.
    *
    * @return Status information about available speech services

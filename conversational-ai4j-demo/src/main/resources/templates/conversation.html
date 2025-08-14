@@ -61,20 +61,20 @@
     <!-- Input Area -->
     <div class="input-area">
       <div class="input-row">
-        <form action="/send" method="post" id="message-form" class="message-form">
+        <div class="message-form" id="message-form">
           <div class="input-container">
             <input type="text" 
                    id="message-input" 
                    name="message" 
                    placeholder="Type a message..." 
                    autocomplete="off"/>
-            <button type="submit" class="send-button" id="send-button">
+            <button type="button" class="send-button" id="send-button">
               <svg viewBox="0 0 24 24" width="20" height="20">
                 <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
               </svg>
             </button>
           </div>
-        </form>
+        </div>
         <button type="button" 
                 class="voice-toggle-prominent" 
                 id="voice-toggle"
