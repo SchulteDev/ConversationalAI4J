@@ -192,7 +192,7 @@ public class VoiceStreamHandler implements WebSocketHandler {
 
     // Log chunk diagnostics
     var chunkCount = chunks.size();
-    var firstSize = chunks.isEmpty() ? 0 : chunks.get(0).length;
+    var firstSize = chunks.isEmpty() ? 0 : chunks.getFirst().length;
     var lastSize = chunks.isEmpty() ? 0 : chunks.get(chunkCount - 1).length;
     log.debug(
         "Session {} has {} audio chunks; first={} bytes, last={} bytes",
@@ -213,7 +213,9 @@ public class VoiceStreamHandler implements WebSocketHandler {
 
       log.info(
           "Processing {} bytes of combined audio for session {} (format: {})",
-          combinedAudio.length, sessionId, format);
+          combinedAudio.length,
+          sessionId,
+          format);
 
       if (conversationalAI == null) {
         sendStatus(session, "error", "AI service not available");
@@ -348,20 +350,6 @@ public class VoiceStreamHandler implements WebSocketHandler {
     audioChunks.remove(sessionId);
     recordingStates.remove(sessionId);
     sessionFormats.remove(sessionId);
-  }
-
-  // Cleanup method for when handler is destroyed
-  public void cleanup() {
-    log.info("Shutting down voice processing executor");
-    voiceProcessingExecutor.shutdown();
-    try {
-      if (!voiceProcessingExecutor.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS)) {
-        voiceProcessingExecutor.shutdownNow();
-      }
-    } catch (InterruptedException e) {
-      voiceProcessingExecutor.shutdownNow();
-      Thread.currentThread().interrupt();
-    }
   }
 
   @Override

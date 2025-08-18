@@ -45,26 +45,6 @@ public class SpeechConfig {
     return new Builder().withLanguage(language).withVoice(voice).withAutoDownload(true).build();
   }
 
-  /**
-   * Creates custom speech configuration with specific model paths.
-   *
-   * @param sttModelPath Path to speech-to-text model
-   * @param ttsModelPath Path to text-to-speech model
-   * @return SpeechConfig with custom model paths
-   */
-  public static SpeechConfig custom(Path sttModelPath, Path ttsModelPath) {
-    return new Builder().withSttModel(sttModelPath).withTtsModel(ttsModelPath).build();
-  }
-
-  /**
-   * Creates disabled speech configuration (text-only mode).
-   *
-   * @return Disabled SpeechConfig
-   */
-  public static SpeechConfig disabled() {
-    return new Builder().withEnabled(false).build();
-  }
-
   // Getters
   public String getLanguage() {
     return language;

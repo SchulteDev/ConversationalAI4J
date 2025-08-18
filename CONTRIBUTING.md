@@ -80,7 +80,7 @@ Voice features work cross-platform with proper setup:
 **Voice not working in Docker**: Check `docker-compose logs -f demo` for STT/TTS errors
 **Ollama connection fails**: Wait for model download on first Docker run  
 **Tests fail**: Verify Java 21 and clean build with `./gradlew clean build`
-**WebM/Opus audio issues**: Use latest Docker build - FFmpeg decoding is now integrated
+**WebM/Opus audio issues**: Use latest Docker build — FFmpeg decoding is now integrated
 **Spring Boot restarts twice**: Fixed - DevTools removed from production build
 **"you you you" transcriptions**: Fixed - eliminated double audio preprocessing
 

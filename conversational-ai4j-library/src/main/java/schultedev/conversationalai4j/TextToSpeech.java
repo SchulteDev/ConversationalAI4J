@@ -68,21 +68,6 @@ public class TextToSpeech {
     return speechService.isAvailable();
   }
 
-  /** Gets the language code. */
-  public String getLanguage() {
-    return language;
-  }
-
-  /** Gets the voice identifier. */
-  public String getVoice() {
-    return voice;
-  }
-
-  /** Gets the model path. */
-  public Path getModelPath() {
-    return Path.of(modelPath);
-  }
-
   /** No cleanup needed in this simple implementation. */
   public void close() {
     log.debug("TextToSpeech closed");

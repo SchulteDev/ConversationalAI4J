@@ -153,15 +153,14 @@ class SimplifiedVoiceInterface {
 
     // Create MediaRecorder - force compatible format
     let options = {};
-    
-    
+
     // Try to use the best available format, server will handle decoding
     if (MediaRecorder.isTypeSupported('audio/wav')) {
       options.mimeType = 'audio/wav';
     } else if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
       options.mimeType = 'audio/webm;codecs=opus';
     }
-    
+
     // Set audio quality
     if (options.mimeType) {
       options.audioBitsPerSecond = 128000;
@@ -191,8 +190,6 @@ class SimplifiedVoiceInterface {
     this.showNotification('Recording started! Click microphone again to stop and send.', 'success');
   }
 
-
-
   stopVoiceRecording() {
     if (this.mediaRecorder && this.isRecording) {
       this.mediaRecorder.stop();
@@ -201,7 +198,6 @@ class SimplifiedVoiceInterface {
       this.showNotification('Processing your voice message...', 'info');
     }
   }
-
 
   async processRecordedAudio() {
     if (this.recordedBlobs.length === 0) {
@@ -212,10 +208,9 @@ class SimplifiedVoiceInterface {
 
     try {
       // Combine all recorded blobs into single blob
-      const audioBlob = new Blob(this.recordedBlobs, { 
-        type: this.recordedBlobs[0].type 
+      const audioBlob = new Blob(this.recordedBlobs, {
+        type: this.recordedBlobs[0].type
       });
-
 
       // Send audio blob to server via WebSocket
       if (this.socket && this.socket.readyState === WebSocket.OPEN) {
@@ -311,7 +306,8 @@ class SimplifiedVoiceInterface {
           this.hideTypingIndicator();
           this.finishVoiceMode();
           // Show a user-friendly error message
-          this.displayAIMessage('Sorry, I had trouble processing your voice input. Please try again or check your microphone settings.');
+          this.displayAIMessage(
+            'Sorry, I had trouble processing your voice input. Please try again or check your microphone settings.');
         }
         break;
 
@@ -442,7 +438,7 @@ class SimplifiedVoiceInterface {
 
       try {
         this.stopAllAudio();
-        
+
         this.audioPlayer.oncanplaythrough = async () => {
           try {
             await this.audioPlayer.play();

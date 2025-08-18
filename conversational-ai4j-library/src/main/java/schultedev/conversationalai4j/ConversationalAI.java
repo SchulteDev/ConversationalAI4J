@@ -176,11 +176,10 @@ public class ConversationalAI {
    * Convert speech to text only (no chat processing).
    *
    * @param audioInput Raw audio data in WAV format (16kHz, 16-bit, mono)
-   * @return Transcribed text, or error message if transcription failed
    * @throws UnsupportedOperationException if speech-to-text is not configured
    * @throws IllegalArgumentException if audio input is null or empty
    */
-  public String speechToText(byte[] audioInput) {
+  public void speechToText(byte[] audioInput) {
     if (speechToText == null) {
       throw new UnsupportedOperationException(
           "Speech-to-text service is not configured. Use withSpeech() in builder.");
@@ -195,10 +194,8 @@ public class ConversationalAI {
     try {
       var text = speechToText.transcribe(audioInput);
       log.info("Speech-to-text result: '{}'", text);
-      return text;
     } catch (Exception e) {
       log.error("Speech-to-text failed: {}", e.getMessage(), e);
-      return "Speech recognition error: " + e.getMessage();
     }
   }
 
@@ -233,54 +230,6 @@ public class ConversationalAI {
       log.error("Speech-to-text failed: {}", e.getMessage(), e);
       return "Speech recognition error: " + e.getMessage();
     }
-  }
-
-  /**
-   * Process multiple audio chunks for transcription.
-   * Useful for streaming audio scenarios.
-   *
-   * @param audioChunks List of audio data chunks
-   * @return Transcribed text from combined audio
-   * @throws UnsupportedOperationException if speech-to-text is not configured
-   * @throws IllegalArgumentException if audio chunks are null or empty
-   */
-  public String speechToTextFromChunks(java.util.List<byte[]> audioChunks) {
-    if (speechToText == null) {
-      throw new UnsupportedOperationException(
-          "Speech-to-text service is not configured. Use withSpeech() in builder.");
-    }
-
-    if (audioChunks == null || audioChunks.isEmpty()) {
-      throw new IllegalArgumentException("Audio chunks cannot be null or empty");
-    }
-
-    log.info("Processing {} audio chunks for transcription", audioChunks.size());
-
-    try {
-      var speechService = new SpeechService();
-      var text = speechService.speechToTextFromChunks(audioChunks);
-      log.info("Speech-to-text result from chunks: '{}'", text);
-      return text;
-    } catch (Exception e) {
-      log.error("Speech-to-text from chunks failed: {}", e.getMessage(), e);
-      return "Speech recognition error: " + e.getMessage();
-    }
-  }
-
-  /**
-   * Preprocess audio data for better recognition quality.
-   *
-   * @param audioInput Raw audio data
-   * @param format Audio format specification
-   * @return Preprocessed audio data
-   */
-  public byte[] preprocessAudio(byte[] audioInput, AudioFormat format) {
-    if (audioInput == null || audioInput.length == 0) {
-      return audioInput;
-    }
-
-    log.debug("Preprocessing {} bytes of audio", audioInput.length);
-    return AudioProcessor.preprocess(audioInput, format);
   }
 
   public String chatWithTextResponse(byte[] audioInput) {
@@ -441,12 +390,6 @@ public class ConversationalAI {
       return this;
     }
 
-    /** Configure conversation memory */
-    public Builder withMemory(MessageWindowChatMemory memory) {
-      this.memory = memory;
-      return this;
-    }
-
     /** Set system prompt */
     public Builder withSystemPrompt(String systemPrompt) {
       this.systemPrompt = systemPrompt;
@@ -465,18 +408,6 @@ public class ConversationalAI {
     /** Enable speech capabilities with default English configuration */
     public Builder withSpeech() {
       this.speechConfig = SpeechConfig.defaults();
-      return this;
-    }
-
-    /** Enable speech capabilities with specific language and voice */
-    public Builder withSpeech(String language, String voice) {
-      this.speechConfig = SpeechConfig.of(language, voice);
-      return this;
-    }
-
-    /** Enable speech capabilities with custom configuration */
-    public Builder withSpeech(SpeechConfig speechConfig) {
-      this.speechConfig = speechConfig;
       return this;
     }
 

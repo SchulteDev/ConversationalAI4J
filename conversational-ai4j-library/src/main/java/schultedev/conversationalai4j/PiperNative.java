@@ -131,9 +131,4 @@ public class PiperNative {
       }
     }
   }
-
-  /** Check if Piper library is available. */
-  public static boolean isAvailable() {
-    return initialize();
-  }
 }

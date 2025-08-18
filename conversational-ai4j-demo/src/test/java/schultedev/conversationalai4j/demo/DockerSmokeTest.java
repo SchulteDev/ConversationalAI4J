@@ -80,6 +80,7 @@ class DockerSmokeTest {
 
     // Then: Should respond successfully
     assertEquals(HttpStatus.OK, response.getStatusCode());
+
     assertNotNull(response.getBody());
     assertTrue(response.getBody().contains("ConversationalAI4J Demo"));
     log.info("✅ Application startup test passed");

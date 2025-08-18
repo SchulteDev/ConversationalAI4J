@@ -2,8 +2,6 @@ package schultedev.conversationalai4j;
 
 import io.github.givimad.piperjni.PiperVoice;
 import io.github.givimad.whisperjni.WhisperContext;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,7 +71,7 @@ public class SpeechService {
       // Detect audio format
       var format = AudioFormat.detect(audioData);
       log.debug("Detected audio format: {}", format);
-      
+
       // Convert audio to float samples for Whisper (audio already preprocessed in AudioProcessor)
       var audioSamples = AudioProcessor.convertToFloatSamples(audioData, format);
       if (audioSamples.length == 0) {
@@ -88,9 +86,7 @@ public class SpeechService {
     }
   }
 
-  /**
-   * Enhanced speech-to-text with explicit format specification.
-   */
+  /** Enhanced speech-to-text with explicit format specification. */
   public String speechToText(byte[] audioData, AudioFormat format) {
     if (!speechEnabled || whisperContext == null) {
       return "Mock transcription: Hello, this is a test.";
@@ -118,19 +114,19 @@ public class SpeechService {
   }
 
   /**
-   * Process multiple audio chunks into a single transcription.
-   * Useful for streaming audio where chunks arrive separately.
+   * Process multiple audio chunks into a single transcription. Useful for streaming audio where
+   * chunks arrive separately.
    */
   public String speechToTextFromChunks(java.util.List<byte[]> audioChunks) {
     if (audioChunks == null || audioChunks.isEmpty()) {
       return "";
     }
-    
+
     log.debug("Processing {} audio chunks for transcription", audioChunks.size());
-    
+
     // Combine all chunks into single audio buffer
     var combinedAudio = AudioProcessor.combineAudioChunks(audioChunks);
-    
+
     return speechToText(combinedAudio);
   }
 
