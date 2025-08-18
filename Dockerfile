@@ -26,12 +26,15 @@ COPY gradle/ gradle/
 COPY conversational-ai4j-library/build.gradle conversational-ai4j-library/
 COPY conversational-ai4j-demo/build.gradle conversational-ai4j-demo/
 
+# Add build argument to invalidate cache when source changes
+ARG BUILD_TIME=unknown
+
 # Copy source code last (most frequently changed)
 COPY conversational-ai4j-library/src/ conversational-ai4j-library/src/
 COPY conversational-ai4j-demo/src/ conversational-ai4j-demo/src/
 
 # Build the application (dependencies already cached)
-RUN gradle :demo:bootJar --no-daemon
+RUN echo "Building at ${BUILD_TIME}" && gradle :demo:bootJar --no-daemon
 
 # Runtime stage with speech support  
 FROM openjdk:21-jdk-slim AS runtime-base

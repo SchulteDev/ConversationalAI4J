@@ -1,7 +1,7 @@
 # ConversationalAI4J
 
 [![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.java.net/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.0-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.4-brightgreen.svg)](https://spring.io/projects/spring-boot)
 [![Gradle](https://img.shields.io/badge/Gradle-9.0-blue.svg)](https://gradle.org/)
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-pink.svg)](https://conventionalcommits.org)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=SchulteDev_ConversationalAI4J&metric=alert_status&token=d82a94ffeaa4b434396b27080eab2189e4b032e8)](https://sonarcloud.io/summary/new_code?id=SchulteDev_ConversationalAI4J)
@@ -52,11 +52,15 @@ byte[] audioResponse = voiceAI.voiceChat(audioBytes);
 
 ## Voice Demo
 
-1. Click "Connect Voice Stream"
-2. Hold microphone button and speak
-3. AI responds with synthesized speech
+1. Click microphone button to start recording
+2. Speak your message
+3. Click microphone again to stop and send
+4. AI responds with both text and synthesized speech
 
-Pipeline: Speech → Text → LLM → Speech (Whisper.cpp + Ollama + Piper)
+Pipeline: Browser Audio → FFmpeg Decoding → Whisper.cpp → Ollama → Piper TTS
+
+**Browser Compatibility**: Works with modern browsers (Chrome, Firefox, Safari) using MediaRecorder
+API. Supports WebM/Opus and WAV formats with server-side FFmpeg decoding.
 
 ## Configuration
 
@@ -68,10 +72,5 @@ Pipeline: Speech → Text → LLM → Speech (Whisper.cpp + Ollama + Piper)
 | `PIPER_MODEL_PATH`   | `/app/models/piper/en_US-amy-low.onnx`      | Piper TTS model path   |
 | `PIPER_CONFIG_PATH`  | `/app/models/piper/en_US-amy-low.onnx.json` | Piper TTS config path  |
 
-## Troubleshooting
-
-**Docker voice issues**: Check logs with `docker-compose logs -f demo`
-**Ollama not responding**: Wait for model download on first run
-**No microphone**: Grant browser permissions for localhost
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and [ARCHITECTURE.md](ARCHITECTURE.md)
+for technical details.

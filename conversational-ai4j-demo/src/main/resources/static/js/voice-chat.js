@@ -154,37 +154,12 @@ class SimplifiedVoiceInterface {
     // Create MediaRecorder - force compatible format
     let options = {};
     
-    // Debug: Log all supported formats
-    const testFormats = [
-      'audio/wav',
-      'audio/webm;codecs=pcm', 
-      'audio/webm;codecs=opus',
-      'audio/webm',
-      'audio/mp4',
-      'audio/ogg'
-    ];
-    
-    console.log('Browser MediaRecorder format support:');
-    testFormats.forEach(format => {
-      console.log(`  ${format}: ${MediaRecorder.isTypeSupported(format)}`);
-    });
     
     // Try to use the best available format, server will handle decoding
     if (MediaRecorder.isTypeSupported('audio/wav')) {
       options.mimeType = 'audio/wav';
-      console.log('Selected: WAV format');
-      this.useWebAudioFallback = false;
-    } else if (MediaRecorder.isTypeSupported('audio/webm;codecs=pcm')) {
-      options.mimeType = 'audio/webm;codecs=pcm';
-      console.log('Selected: WebM/PCM format');
-      this.useWebAudioFallback = false;
     } else if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
       options.mimeType = 'audio/webm;codecs=opus';
-      console.log('Selected: WebM/Opus format (server will decode)');
-      this.useWebAudioFallback = false;
-    } else {
-      console.warn('No supported audio formats found, using defaults');
-      this.useWebAudioFallback = false;
     }
     
     // Set audio quality
@@ -192,142 +167,41 @@ class SimplifiedVoiceInterface {
       options.audioBitsPerSecond = 128000;
     }
 
-    if (this.useWebAudioFallback) {
-      await this.startWebAudioRecording();
-    } else {
-      this.mediaRecorder = new MediaRecorder(this.audioStream, options);
-      this.recordedBlobs = [];
+    this.mediaRecorder = new MediaRecorder(this.audioStream, options);
+    this.recordedBlobs = [];
 
-      // Handle recorded data
-      this.mediaRecorder.ondataavailable = (event) => {
-        if (event.data && event.data.size > 0) {
-          this.recordedBlobs.push(event.data);
-        }
-      };
+    // Handle recorded data
+    this.mediaRecorder.ondataavailable = (event) => {
+      if (event.data && event.data.size > 0) {
+        this.recordedBlobs.push(event.data);
+      }
+    };
 
-      // Handle recording stop
-      this.mediaRecorder.onstop = () => {
-        this.processRecordedAudio();
-      };
+    // Handle recording stop
+    this.mediaRecorder.onstop = () => {
+      this.processRecordedAudio();
+    };
 
-      // Start recording
-      this.mediaRecorder.start(1000); // Collect data every second
-      this.isRecording = true;
-      this.isVoiceMode = true;
-      this.voiceToggle.classList.add('active', 'recording');
-      this.messageInput.placeholder = "Recording... Click again to stop and send.";
-      this.showNotification('Recording started! Click microphone again to stop and send.', 'success');
-
-      console.log('Voice recording started with MediaRecorder');
-    }
+    // Start recording
+    this.mediaRecorder.start(1000); // Collect data every second
+    this.isRecording = true;
+    this.isVoiceMode = true;
+    this.voiceToggle.classList.add('active', 'recording');
+    this.messageInput.placeholder = "Recording... Click again to stop and send.";
+    this.showNotification('Recording started! Click microphone again to stop and send.', 'success');
   }
 
-  async startWebAudioRecording() {
-    try {
-      // Create AudioContext with 16kHz sample rate for compatibility
-      this.audioContext = new (window.AudioContext || window.webkitAudioContext)({
-        sampleRate: 16000
-      });
-      
-      this.source = this.audioContext.createMediaStreamSource(this.audioStream);
-      this.audioChunks = [];
-      
-      // Use ScriptProcessorNode (deprecated but widely supported)
-      // AudioWorkletNode would be better but requires HTTPS
-      this.processor = this.audioContext.createScriptProcessor(4096, 1, 1);
-      
-      this.processor.onaudioprocess = (event) => {
-        if (this.isRecording) {
-          const inputBuffer = event.inputBuffer;
-          const samples = inputBuffer.getChannelData(0); // Float32Array
-          
-          // Convert Float32 samples to Int16 PCM
-          const pcmData = this.convertFloat32ToInt16PCM(samples);
-          this.audioChunks.push(pcmData);
-          
-          // Send chunk immediately for real-time processing
-          if (this.socket && this.socket.readyState === WebSocket.OPEN && this.audioChunks.length === 1) {
-            this.socket.send('start_recording');
-          }
-          if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-            this.socket.send(pcmData);
-          }
-        }
-      };
-      
-      this.source.connect(this.processor);
-      this.processor.connect(this.audioContext.destination);
-      
-      // Start recording
-      this.isRecording = true;
-      this.isVoiceMode = true;
-      this.voiceToggle.classList.add('active', 'recording');
-      this.messageInput.placeholder = "Recording with Web Audio API... Click again to stop and send.";
-      this.showNotification('Recording started with Web Audio API! Click microphone again to stop and send.', 'success');
-      
-      console.log('Voice recording started with Web Audio API');
-      
-    } catch (error) {
-      console.error('Web Audio API setup failed:', error);
-      this.showNotification('Failed to start Web Audio recording: ' + error.message, 'error');
-      throw error;
-    }
-  }
 
-  convertFloat32ToInt16PCM(float32Array) {
-    const buffer = new ArrayBuffer(float32Array.length * 2);
-    const view = new DataView(buffer);
-    
-    for (let i = 0; i < float32Array.length; i++) {
-      // Clamp to [-1, 1] and convert to 16-bit signed integer
-      const sample = Math.max(-1, Math.min(1, float32Array[i]));
-      const int16 = sample * 0x7FFF;
-      view.setInt16(i * 2, int16, true); // little-endian
-    }
-    
-    return buffer;
-  }
 
   stopVoiceRecording() {
-    if (this.useWebAudioFallback) {
-      this.stopWebAudioRecording();
-    } else if (this.mediaRecorder && this.isRecording) {
+    if (this.mediaRecorder && this.isRecording) {
       this.mediaRecorder.stop();
       this.isRecording = false;
       this.messageInput.placeholder = "Processing voice...";
       this.showNotification('Processing your voice message...', 'info');
-      console.log('Voice recording stopped');
     }
   }
 
-  stopWebAudioRecording() {
-    if (this.isRecording) {
-      this.isRecording = false;
-      
-      // Send stop signal
-      if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-        this.socket.send('stop_recording');
-      }
-      
-      // Cleanup Web Audio API components
-      if (this.processor) {
-        this.processor.disconnect();
-        this.processor = null;
-      }
-      if (this.source) {
-        this.source.disconnect();
-        this.source = null;
-      }
-      if (this.audioContext && this.audioContext.state !== 'closed') {
-        this.audioContext.close();
-        this.audioContext = null;
-      }
-      
-      this.messageInput.placeholder = "Processing voice...";
-      this.showNotification('Processing your voice message...', 'info');
-      console.log('Web Audio recording stopped, sent', this.audioChunks.length, 'chunks');
-    }
-  }
 
   async processRecordedAudio() {
     if (this.recordedBlobs.length === 0) {
@@ -342,7 +216,6 @@ class SimplifiedVoiceInterface {
         type: this.recordedBlobs[0].type 
       });
 
-      console.log(`Sending ${audioBlob.size} bytes of ${audioBlob.type} audio to server`);
 
       // Send audio blob to server via WebSocket
       if (this.socket && this.socket.readyState === WebSocket.OPEN) {
@@ -366,7 +239,6 @@ class SimplifiedVoiceInterface {
       this.socket = new WebSocket(`ws://${window.location.host}/voice-stream`);
 
       this.socket.onopen = () => {
-        console.log('WebSocket connected');
         this.isConnected = true;
         resolve();
       };
@@ -379,7 +251,6 @@ class SimplifiedVoiceInterface {
       };
 
       this.socket.onclose = (event) => {
-        console.log('WebSocket closed:', event.code, event.reason);
         this.isConnected = false;
         this.isRecording = false;
         this.updateVoiceButtonState();
@@ -417,13 +288,11 @@ class SimplifiedVoiceInterface {
         const message = JSON.parse(event.data);
         this.handleControlMessage(message);
       } catch (e) {
-        console.log('WebSocket text message:', event.data);
       }
     }
   }
 
   handleControlMessage(message) {
-    console.log('Control message:', message);
 
     switch (message.type) {
       case 'status':
@@ -469,7 +338,6 @@ class SimplifiedVoiceInterface {
   }
 
   async handleAudioResponse(audioBlob) {
-    console.log('Received audio response:', audioBlob.size, 'bytes');
 
     try {
       const audioUrl = URL.createObjectURL(audioBlob);
@@ -553,7 +421,6 @@ class SimplifiedVoiceInterface {
   // TTS GENERATION AND PLAYBACK - Same as before
   async generateAndPlayTTS(text) {
     try {
-      console.log('Generating TTS for:', text);
 
       const response = await fetch('/direct-tts', {
         method: 'POST',
@@ -579,14 +446,11 @@ class SimplifiedVoiceInterface {
         this.audioPlayer.oncanplaythrough = async () => {
           try {
             await this.audioPlayer.play();
-            console.log('Auto-playing TTS audio');
           } catch (playError) {
-            console.log('Auto-play blocked, audio available via button');
           }
         };
         this.audioPlayer.load();
       } catch (error) {
-        console.log('Audio setup failed:', error);
       }
 
       // Clean up URL when audio ends
@@ -732,5 +596,4 @@ document.addEventListener('DOMContentLoaded', function () {
   // Make it available globally for debugging
   window.voiceInterface = voiceInterface;
 
-  console.log('Simplified voice interface initialized - audio processing moved to server');
 });

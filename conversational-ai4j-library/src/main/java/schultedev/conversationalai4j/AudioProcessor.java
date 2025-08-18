@@ -108,7 +108,7 @@ public class AudioProcessor {
       case WEBM_OPUS:
         // For WebM/Opus, we'll convert the first chunk to see if it's actually WAV data
         // Many browsers send WebM header but the actual data might be in different format
-        log.info("Processing WebM/Opus data - attempting smart conversion");
+        log.debug("Processing WebM/Opus data");
         return convertWebMToFloatSamples(audioData);
       case RAW_PCM:
         return convertRawPcmToFloatSamples(audioData);
@@ -189,7 +189,7 @@ public class AudioProcessor {
     }
     
     // Real WebM/Opus requires external decoding using FFmpeg
-    log.info("WebM/Opus audio detected - attempting FFmpeg decoding to PCM");
+    log.debug("Using FFmpeg to decode WebM/Opus audio");
     return decodeWebMOpusWithFFmpeg(webmBytes);
   }
   
@@ -199,16 +199,6 @@ public class AudioProcessor {
         && audioBytes[2] == 'F' && audioBytes[3] == 'F'
         && audioBytes[8] == 'W' && audioBytes[9] == 'A'
         && audioBytes[10] == 'V' && audioBytes[11] == 'E';
-  }
-  
-  private static double calculateRMS(float[] samples) {
-    if (samples.length == 0) return 0.0;
-    
-    double sumSquares = 0;
-    for (float sample : samples) {
-      sumSquares += sample * sample;
-    }
-    return Math.sqrt(sumSquares / samples.length);
   }
   
   /**
@@ -296,38 +286,6 @@ public class AudioProcessor {
         log.warn("Failed to clean up temporary files: {}", e.getMessage());
       }
     }
-  }
-  
-  private static float[] generateLowLevelAudioPattern(int dataLength) {
-    // Generate a low-level audio pattern that indicates "no speech" to Whisper
-    // Base sample count on typical 16kHz rate
-    int sampleCount = Math.max(16000, dataLength / 4); // At least 1 second of audio
-    float[] samples = new float[sampleCount];
-    
-    // Generate very low level white noise that signals "no speech content"
-    java.util.Random random = new java.util.Random();
-    for (int i = 0; i < sampleCount; i++) {
-      samples[i] = (random.nextFloat() - 0.5f) * 0.001f; // Very quiet noise
-    }
-    
-    log.debug("Generated {} low-level audio samples as WebM fallback", sampleCount);
-    return samples;
-  }
-  
-  private static float[] generateNoisePattern(int dataLength) {
-    // Generate a low-level noise pattern that won't trigger Whisper hallucinations
-    // Base sample count on typical 16kHz rate
-    int sampleCount = Math.max(16000, dataLength / 4); // At least 1 second of audio
-    float[] samples = new float[sampleCount];
-    
-    // Generate very low level white noise
-    java.util.Random random = new java.util.Random();
-    for (int i = 0; i < sampleCount; i++) {
-      samples[i] = (random.nextFloat() - 0.5f) * 0.001f; // Very quiet noise
-    }
-    
-    log.debug("Generated {} noise samples for WebM data", sampleCount);
-    return samples;
   }
   
   private static byte[] convertFloatSamplesToWav(float[] samples, AudioFormat format) {
@@ -418,10 +376,6 @@ public class AudioProcessor {
     }
     
     return samples;
-  }
-  
-  private static float[] generateSilentSamples(int sampleCount) {
-    return new float[sampleCount]; // All zeros = silence
   }
   
   private static void writeInt32LE(byte[] data, int offset, int value) {

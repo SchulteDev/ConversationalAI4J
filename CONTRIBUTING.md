@@ -59,11 +59,13 @@ class DemoIntegrationTest {
 
 ## Speech Development
 
-Voice features require Linux containers:
+Voice features work cross-platform with proper setup:
 
-- **Development**: Text-only mode on Windows/macOS
-- **Testing**: Use Docker for full voice pipeline
+- **Development**: Full voice features available in Docker on all platforms
+- **Browser Testing**: Modern browsers (Chrome, Firefox, Safari) with MediaRecorder API
+- **Audio Formats**: WebM/Opus and WAV automatically handled by FFmpeg server-side
 - **Models**: Whisper.cpp and Piper models downloaded during Docker build
+- **FFmpeg**: Included in Docker container for WebM/Opus decoding
 
 ## Pull Request Process
 
@@ -76,5 +78,18 @@ Voice features require Linux containers:
 ## Project-Specific Issues
 
 **Voice not working in Docker**: Check `docker-compose logs -f demo` for STT/TTS errors
-**Ollama connection fails**: Wait for model download on first Docker run
+**Ollama connection fails**: Wait for model download on first Docker run  
 **Tests fail**: Verify Java 21 and clean build with `./gradlew clean build`
+**WebM/Opus audio issues**: Use latest Docker build - FFmpeg decoding is now integrated
+**Spring Boot restarts twice**: Fixed - DevTools removed from production build
+**"you you you" transcriptions**: Fixed - eliminated double audio preprocessing
+
+## Docker Build Tips
+
+```bash
+# Force fresh build with source changes
+docker build --build-arg BUILD_TIME=$(date +%s) -t conversational-ai4j .
+
+# Or use docker-compose
+docker-compose up --build
+```
