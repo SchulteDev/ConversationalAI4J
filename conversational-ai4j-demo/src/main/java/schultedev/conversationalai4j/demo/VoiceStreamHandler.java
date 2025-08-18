@@ -9,6 +9,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.*;
 import schultedev.conversationalai4j.AudioFormat;
@@ -71,7 +72,7 @@ public class VoiceStreamHandler implements WebSocketHandler {
   }
 
   @Override
-  public void handleMessage(WebSocketSession session, WebSocketMessage<?> message)
+  public void handleMessage(@NonNull WebSocketSession session, @NonNull WebSocketMessage<?> message)
       throws Exception {
     if (message instanceof TextMessage textMessage) {
       handleTextMessage(session, textMessage);
@@ -333,7 +334,7 @@ public class VoiceStreamHandler implements WebSocketHandler {
   }
 
   @Override
-  public void handleTransportError(WebSocketSession session, Throwable exception) {
+  public void handleTransportError(@NonNull WebSocketSession session, @NonNull Throwable exception) {
     log.error(
         "WebSocket transport error for session {}: {}",
         session.getId(),
@@ -342,7 +343,7 @@ public class VoiceStreamHandler implements WebSocketHandler {
   }
 
   @Override
-  public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) {
+  public void afterConnectionClosed(@NonNull WebSocketSession session, @NonNull CloseStatus closeStatus) {
     var sessionId = session.getId();
     log.info("WebSocket voice stream connection closed: {} ({})", sessionId, closeStatus);
 

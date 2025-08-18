@@ -54,9 +54,9 @@ public class AudioProcessor {
     try {
       var samples = convertToFloatSamples(audioData, format);
 
-      // Apply preprocessing
-      samples = applyGainControl(samples);
-      samples = normalizeAudio(samples);
+      // Apply preprocessing (methods modify in-place but return for chaining)
+      applyGainControl(samples);
+      normalizeAudio(samples);
 
       return convertFromFloatSamples(samples, format);
 
