@@ -1,16 +1,18 @@
 package schultedev.conversationalai4j.demo;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.*;
+import schultedev.conversationalai4j.AudioFormat;
+import schultedev.conversationalai4j.AudioProcessor;
 import schultedev.conversationalai4j.ConversationalAI;
 
 /**
@@ -27,9 +29,9 @@ public class VoiceStreamHandler implements WebSocketHandler {
   private static final int MAX_AUDIO_BYTES_PER_SESSION = 10 * 1024 * 1024; // 10MB limit
 
   private final ConversationalAI conversationalAI;
-  private final ConcurrentHashMap<String, CopyOnWriteArrayList<ByteBuffer>> audioBuffers =
-      new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<String, List<byte[]>> audioChunks = new ConcurrentHashMap<>();
   private final ConcurrentHashMap<String, Boolean> recordingStates = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<String, AudioFormat> sessionFormats = new ConcurrentHashMap<>();
   // Thread pool for async voice processing to avoid blocking WebSocket threads
   private final ExecutorService voiceProcessingExecutor = Executors.newFixedThreadPool(4);
 
@@ -60,8 +62,9 @@ public class VoiceStreamHandler implements WebSocketHandler {
   @Override
   public void afterConnectionEstablished(WebSocketSession session) throws Exception {
     log.info("WebSocket voice stream connection established: {}", session.getId());
-    audioBuffers.put(session.getId(), new CopyOnWriteArrayList<>());
+    audioChunks.put(session.getId(), new ArrayList<>());
     recordingStates.put(session.getId(), false);
+    sessionFormats.put(session.getId(), AudioFormat.wav16kMono()); // Default format
 
     // Send initial status
     sendStatus(session, "connected", "Voice stream ready");
@@ -86,7 +89,7 @@ public class VoiceStreamHandler implements WebSocketHandler {
     switch (payload) {
       case "start_recording" -> {
         recordingStates.put(sessionId, true);
-        audioBuffers.get(sessionId).clear();
+        audioChunks.get(sessionId).clear();
         sendStatus(session, "recording", "Recording started");
         log.info("Started recording for session {}", sessionId);
       }
@@ -123,11 +126,16 @@ public class VoiceStreamHandler implements WebSocketHandler {
       return;
     }
 
-    var chunks = audioBuffers.get(sessionId);
+    var chunks = audioChunks.get(sessionId);
     if (chunks == null) {
-      log.warn("No audio buffer found for session {}", sessionId);
+      log.warn("No audio chunk list found for session {}", sessionId);
       return;
     }
+
+    // Convert ByteBuffer to byte array
+    var payload = message.getPayload();
+    var audioData = new byte[payload.remaining()];
+    payload.get(audioData);
 
     // Memory protection - prevent excessive memory usage
     if (chunks.size() >= MAX_AUDIO_CHUNKS_PER_SESSION) {
@@ -138,8 +146,8 @@ public class VoiceStreamHandler implements WebSocketHandler {
       return;
     }
 
-    var currentSize = chunks.stream().mapToInt(ByteBuffer::remaining).sum();
-    var incomingSize = message.getPayload().remaining();
+    var currentSize = chunks.stream().mapToInt(chunk -> chunk.length).sum();
+    var incomingSize = audioData.length;
 
     if (currentSize + incomingSize > MAX_AUDIO_BYTES_PER_SESSION) {
       log.warn(
@@ -149,8 +157,15 @@ public class VoiceStreamHandler implements WebSocketHandler {
       return;
     }
 
-    chunks.add(message.getPayload());
-    log.debug(
+    // Detect audio format on first chunk
+    if (chunks.isEmpty()) {
+      var detectedFormat = AudioFormat.detect(audioData);
+      sessionFormats.put(sessionId, detectedFormat);
+      log.info("Detected audio format for session {}: {}", sessionId, detectedFormat);
+    }
+
+    chunks.add(audioData);
+    log.trace(
         "Received audio chunk of {} bytes from session {} (total: {} chunks, {} bytes)",
         incomingSize,
         sessionId,
@@ -160,7 +175,8 @@ public class VoiceStreamHandler implements WebSocketHandler {
 
   private void processAccumulatedAudio(WebSocketSession session) throws IOException {
     var sessionId = session.getId();
-    var chunks = audioBuffers.get(sessionId);
+    var chunks = audioChunks.get(sessionId);
+    var format = sessionFormats.get(sessionId);
 
     if (chunks == null || chunks.isEmpty()) {
       log.warn("No audio chunks available for session {}", sessionId);
@@ -176,8 +192,8 @@ public class VoiceStreamHandler implements WebSocketHandler {
 
     // Log chunk diagnostics
     var chunkCount = chunks.size();
-    var firstSize = chunks.getFirst().remaining();
-    var lastSize = chunks.get(chunkCount - 1).remaining();
+    var firstSize = chunks.isEmpty() ? 0 : chunks.get(0).length;
+    var lastSize = chunks.isEmpty() ? 0 : chunks.get(chunkCount - 1).length;
     log.debug(
         "Session {} has {} audio chunks; first={} bytes, last={} bytes",
         sessionId,
@@ -186,25 +202,18 @@ public class VoiceStreamHandler implements WebSocketHandler {
         lastSize);
 
     try {
-      // Efficiently combine all audio chunks - calculate total size first
-      var totalBytes = chunks.stream().mapToInt(ByteBuffer::remaining).sum();
-      var audioData = new byte[totalBytes];
-      var position = 0;
+      // Use AudioProcessor to combine and preprocess audio chunks
+      var combinedAudio = AudioProcessor.combineAudioChunks(chunks);
 
-      // Direct copy into pre-allocated array - much more efficient
-      for (var chunk : chunks) {
-        var chunkSize = chunk.remaining();
-        chunk.get(audioData, position, chunkSize);
-        position += chunkSize;
-        chunk.rewind(); // Reset for potential reuse
+      if (combinedAudio.length == 0) {
+        log.warn("No audio data after combining chunks for session {}", sessionId);
+        sendStatus(session, "error", "No valid audio data");
+        return;
       }
+
       log.info(
-          "Processing combined audio data of {} bytes for session {}", audioData.length, sessionId);
-      log.debug(
-          "Session {} accumulated bytes sum={}, combined array size={}",
-          sessionId,
-          totalBytes,
-          audioData.length);
+          "Processing {} bytes of combined audio for session {} (format: {})",
+          combinedAudio.length, sessionId, format);
 
       if (conversationalAI == null) {
         sendStatus(session, "error", "AI service not available");
@@ -216,14 +225,14 @@ public class VoiceStreamHandler implements WebSocketHandler {
         return;
       }
 
-      // Step 1: Speech-to-Text
+      // Step 1: Speech-to-Text with format awareness
       sendStatus(session, "stt_processing", "Converting speech to text...");
       log.info(
           "Starting speech-to-text conversion for session {} with {} bytes of audio",
           sessionId,
-          audioData.length);
+          combinedAudio.length);
       var t0 = System.nanoTime();
-      var transcribedText = conversationalAI.speechToText(audioData);
+      var transcribedText = conversationalAI.speechToText(combinedAudio, format);
       var t1 = System.nanoTime();
       log.info("STT completed for session {} in {} ms", sessionId, ((t1 - t0) / 1_000_000));
 
@@ -336,8 +345,9 @@ public class VoiceStreamHandler implements WebSocketHandler {
     log.info("WebSocket voice stream connection closed: {} ({})", sessionId, closeStatus);
 
     // Clean up session data
-    audioBuffers.remove(sessionId);
+    audioChunks.remove(sessionId);
     recordingStates.remove(sessionId);
+    sessionFormats.remove(sessionId);
   }
 
   // Cleanup method for when handler is destroyed

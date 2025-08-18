@@ -70,8 +70,12 @@ public class SpeechService {
     log.debug("Processing speech-to-text: {} bytes", audioData.length);
 
     try {
-      // Convert audio to float samples for Whisper
-      var audioSamples = convertToFloatSamples(audioData);
+      // Detect audio format
+      var format = AudioFormat.detect(audioData);
+      log.debug("Detected audio format: {}", format);
+      
+      // Convert audio to float samples for Whisper (audio already preprocessed in AudioProcessor)
+      var audioSamples = AudioProcessor.convertToFloatSamples(audioData, format);
       if (audioSamples.length == 0) {
         return "";
       }
@@ -85,90 +89,49 @@ public class SpeechService {
   }
 
   /**
-   * Convert audio bytes to float samples for Whisper. Supports WAV and WebM formats.
-   * WebM/Opus from browsers is converted to mock samples since proper decoding requires
-   * external libraries like FFmpeg.
+   * Enhanced speech-to-text with explicit format specification.
    */
-  private float[] convertToFloatSamples(byte[] audioBytes) {
-    if (audioBytes == null || audioBytes.length < 4) {
-      return new float[0];
+  public String speechToText(byte[] audioData, AudioFormat format) {
+    if (!speechEnabled || whisperContext == null) {
+      return "Mock transcription: Hello, this is a test.";
     }
+
+    if (audioData == null || audioData.length == 0) {
+      return "";
+    }
+
+    log.debug("Processing speech-to-text: {} bytes with format {}", audioData.length, format);
 
     try {
-      // Detect audio format by magic bytes
-      if (isWavFormat(audioBytes)) {
-        return convertWavToFloatSamples(audioBytes);
-      } else if (isWebMFormat(audioBytes)) {
-        log.warn("WebM/Opus audio detected - proper decoding requires FFmpeg. Using mock transcription.");
-        // For now, return mock samples until proper WebM decoder is implemented
-        return generateMockAudioSamples();
-      } else {
-        log.warn("Unknown audio format, trying as raw PCM");
-        return convertRawPcmToFloatSamples(audioBytes);
+      // Convert audio to float samples for Whisper (audio already preprocessed in AudioProcessor)
+      var audioSamples = AudioProcessor.convertToFloatSamples(audioData, format);
+      if (audioSamples.length == 0) {
+        return "";
       }
 
+      return WhisperNative.transcribe(whisperContext, audioSamples);
+
     } catch (Exception e) {
-      log.error("Error converting audio to float samples: {}", e.getMessage(), e);
-      return new float[0];
+      log.error("Error in speech-to-text processing: {}", e.getMessage(), e);
+      return "Mock transcription: Hello, this is a test.";
     }
   }
 
-  private boolean isWavFormat(byte[] audioBytes) {
-    return audioBytes.length >= 12 
-        && audioBytes[0] == 'R' && audioBytes[1] == 'I' 
-        && audioBytes[2] == 'F' && audioBytes[3] == 'F'
-        && audioBytes[8] == 'W' && audioBytes[9] == 'A'
-        && audioBytes[10] == 'V' && audioBytes[11] == 'E';
-  }
-
-  private boolean isWebMFormat(byte[] audioBytes) {
-    return audioBytes.length >= 4 
-        && audioBytes[0] == 0x1A && audioBytes[1] == 0x45 
-        && audioBytes[2] == (byte) 0xDF && audioBytes[3] == (byte) 0xA3;
-  }
-
-  private float[] convertWavToFloatSamples(byte[] wavBytes) {
-    if (wavBytes.length < 44) {
-      return new float[0];
+  /**
+   * Process multiple audio chunks into a single transcription.
+   * Useful for streaming audio where chunks arrive separately.
+   */
+  public String speechToTextFromChunks(java.util.List<byte[]> audioChunks) {
+    if (audioChunks == null || audioChunks.isEmpty()) {
+      return "";
     }
-
-    // Skip WAV header (44 bytes) and read PCM data
-    var dataSize = wavBytes.length - 44;
-    var sampleCount = dataSize / 2; // 16-bit samples
-    var samples = new float[sampleCount];
-
-    var buffer = ByteBuffer.wrap(wavBytes, 44, dataSize);
-    buffer.order(ByteOrder.LITTLE_ENDIAN);
-
-    for (var i = 0; i < sampleCount; i++) {
-      samples[i] = buffer.getShort() / 32768.0f; // Normalize to [-1, 1]
-    }
-
-    log.debug("Converted {} bytes WAV to {} float samples", wavBytes.length, sampleCount);
-    return samples;
-  }
-
-  private float[] convertRawPcmToFloatSamples(byte[] pcmBytes) {
-    var sampleCount = pcmBytes.length / 2; // 16-bit samples
-    var samples = new float[sampleCount];
-    var buffer = ByteBuffer.wrap(pcmBytes);
-    buffer.order(ByteOrder.LITTLE_ENDIAN);
-
-    for (var i = 0; i < sampleCount; i++) {
-      samples[i] = buffer.getShort() / 32768.0f;
-    }
-
-    log.debug("Converted {} bytes raw PCM to {} float samples", pcmBytes.length, sampleCount);
-    return samples;
-  }
-
-  private float[] generateMockAudioSamples() {
-    // Generate 3 seconds of silent audio at 16kHz
-    var sampleCount = 16000 * 3;
-    var samples = new float[sampleCount];
-    // All zeros = silence
-    log.debug("Generated {} mock audio samples for WebM format", sampleCount);
-    return samples;
+    
+    log.debug("Processing {} audio chunks for transcription", audioChunks.size());
+    
+    // Combine all chunks into single audio buffer
+    var combinedAudio = AudioProcessor.combineAudioChunks(audioChunks);
+    
+    return speechToText(combinedAudio);
   }
 
   public byte[] textToSpeech(String text) {

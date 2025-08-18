@@ -202,6 +202,87 @@ public class ConversationalAI {
     }
   }
 
+  /**
+   * Convert speech to text with explicit format specification.
+   *
+   * @param audioInput Raw audio data
+   * @param format Audio format specification
+   * @return Transcribed text, or error message if transcription failed
+   * @throws UnsupportedOperationException if speech-to-text is not configured
+   * @throws IllegalArgumentException if audio input is null or empty
+   */
+  public String speechToText(byte[] audioInput, AudioFormat format) {
+    if (speechToText == null) {
+      throw new UnsupportedOperationException(
+          "Speech-to-text service is not configured. Use withSpeech() in builder.");
+    }
+
+    if (audioInput == null || audioInput.length == 0) {
+      throw new IllegalArgumentException("Audio input cannot be null or empty");
+    }
+
+    log.info("Processing speech-to-text: {} bytes with format {}", audioInput.length, format);
+
+    try {
+      // Use SpeechService's enhanced method
+      var speechService = new SpeechService();
+      var text = speechService.speechToText(audioInput, format);
+      log.info("Speech-to-text result: '{}'", text);
+      return text;
+    } catch (Exception e) {
+      log.error("Speech-to-text failed: {}", e.getMessage(), e);
+      return "Speech recognition error: " + e.getMessage();
+    }
+  }
+
+  /**
+   * Process multiple audio chunks for transcription.
+   * Useful for streaming audio scenarios.
+   *
+   * @param audioChunks List of audio data chunks
+   * @return Transcribed text from combined audio
+   * @throws UnsupportedOperationException if speech-to-text is not configured
+   * @throws IllegalArgumentException if audio chunks are null or empty
+   */
+  public String speechToTextFromChunks(java.util.List<byte[]> audioChunks) {
+    if (speechToText == null) {
+      throw new UnsupportedOperationException(
+          "Speech-to-text service is not configured. Use withSpeech() in builder.");
+    }
+
+    if (audioChunks == null || audioChunks.isEmpty()) {
+      throw new IllegalArgumentException("Audio chunks cannot be null or empty");
+    }
+
+    log.info("Processing {} audio chunks for transcription", audioChunks.size());
+
+    try {
+      var speechService = new SpeechService();
+      var text = speechService.speechToTextFromChunks(audioChunks);
+      log.info("Speech-to-text result from chunks: '{}'", text);
+      return text;
+    } catch (Exception e) {
+      log.error("Speech-to-text from chunks failed: {}", e.getMessage(), e);
+      return "Speech recognition error: " + e.getMessage();
+    }
+  }
+
+  /**
+   * Preprocess audio data for better recognition quality.
+   *
+   * @param audioInput Raw audio data
+   * @param format Audio format specification
+   * @return Preprocessed audio data
+   */
+  public byte[] preprocessAudio(byte[] audioInput, AudioFormat format) {
+    if (audioInput == null || audioInput.length == 0) {
+      return audioInput;
+    }
+
+    log.debug("Preprocessing {} bytes of audio", audioInput.length);
+    return AudioProcessor.preprocess(audioInput, format);
+  }
+
   public String chatWithTextResponse(byte[] audioInput) {
     if (speechToText == null) {
       throw new UnsupportedOperationException(
