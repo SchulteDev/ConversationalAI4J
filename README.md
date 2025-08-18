@@ -29,6 +29,7 @@ git clone https://github.com/SchulteDev/ConversationalAI4J.git
 cd ConversationalAI4J
 
 # Complete voice AI system
+# First start NEEDS A FEW MINUTES to download the models
 docker-compose up --build
 # → http://localhost:8080
 ```
