@@ -1,4 +1,4 @@
-package schultedev.conversationalai4j.utils;
+package schultedev.conversationalai4j;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import schultedev.conversationalai4j.ConversationalAI;
 
 /** Unit tests for ConversationUtils class. */
 @ExtendWith(MockitoExtension.class)

@@ -1,8 +1,7 @@
-package schultedev.conversationalai4j.utils;
+package schultedev.conversationalai4j;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import schultedev.conversationalai4j.ConversationalAI;
 
 /**
  * Utility methods for advanced conversation processing operations.

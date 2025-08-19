@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
+import schultedev.conversationalai4j.ConversationUtils;
 import schultedev.conversationalai4j.ConversationalAI;
 
 /**
@@ -170,9 +171,7 @@ public class ConversationController {
     log.info("Processing text-to-voice for message: '{}'", message);
 
     try {
-      var audioResponse =
-          schultedev.conversationalai4j.utils.ConversationUtils.chatWithVoiceResponse(
-              conversationalAI, message);
+      var audioResponse = ConversationUtils.chatWithVoiceResponse(conversationalAI, message);
 
       if (audioResponse.length == 0) {
         log.warn("No audio response generated for text input");
@@ -221,9 +220,7 @@ public class ConversationController {
     log.info("Processing voice-to-text with {} bytes of audio input", audioData.length);
 
     try {
-      var textResponse =
-          schultedev.conversationalai4j.utils.ConversationUtils.chatWithTextResponse(
-              conversationalAI, audioData);
+      var textResponse = ConversationUtils.chatWithTextResponse(conversationalAI, audioData);
 
       if (textResponse.trim().isEmpty()) {
         log.warn("No text response generated for audio input");

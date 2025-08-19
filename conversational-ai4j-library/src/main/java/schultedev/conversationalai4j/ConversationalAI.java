@@ -37,9 +37,8 @@ import org.slf4j.LoggerFactory;
  * }
  * }</pre>
  *
- * For advanced audio processing and mixed-modality conversations, see: {@link
- * SpeechServiceUtils} and {@link
- * schultedev.conversationalai4j.utils.ConversationUtils}
+ * For advanced audio processing and mixed-modality conversations, see: {@link SpeechServiceUtils}
+ * and {@link ConversationUtils}
  */
 public class ConversationalAI implements AutoCloseable {
 
