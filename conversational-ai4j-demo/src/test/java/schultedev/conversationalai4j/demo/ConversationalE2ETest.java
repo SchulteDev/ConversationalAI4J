@@ -18,15 +18,12 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 /**
  * End-to-end tests for ConversationalAI4J using Playwright to test the actual UI functionality.
  *
- * <p>These tests validate the complete user experience including:
- * - Text-based conversations through the web UI
- * - Voice recording and processing functionality
- * - Audio playback and TTS capabilities
- * - WebSocket real-time communication
- * - UI responsiveness and error handling
+ * <p>These tests validate the complete user experience including: - Text-based conversations
+ * through the web UI - Voice recording and processing functionality - Audio playback and TTS
+ * capabilities - WebSocket real-time communication - UI responsiveness and error handling
  *
- * <p>Uses Testcontainers to spin up the full Docker environment and Playwright to interact
- * with the actual web interface as a user would.
+ * <p>Uses Testcontainers to spin up the full Docker environment and Playwright to interact with the
+ * actual web interface as a user would.
  */
 @Testcontainers
 class ConversationalE2ETest {
@@ -65,8 +62,11 @@ class ConversationalE2ETest {
   @BeforeAll
   static void launchBrowser() {
     playwright = Playwright.create();
-    browser = playwright.chromium().launch(
-        new BrowserType.LaunchOptions().setHeadless(true)); // Set to false for debugging
+    browser =
+        playwright
+            .chromium()
+            .launch(
+                new BrowserType.LaunchOptions().setHeadless(true)); // Set to false for debugging
   }
 
   @AfterAll
@@ -81,8 +81,10 @@ class ConversationalE2ETest {
 
   @BeforeEach
   void createContextAndPage() {
-    context = browser.newContext(new Browser.NewContextOptions()
-        .setPermissions(List.of("microphone"))); // Grant microphone permissions
+    context =
+        browser.newContext(
+            new Browser.NewContextOptions()
+                .setPermissions(List.of("microphone"))); // Grant microphone permissions
     page = context.newPage();
   }
 
@@ -125,6 +127,7 @@ class ConversationalE2ETest {
 
     log.info("✅ Application UI loads correctly");
   }
+
   @Test
   void textConversation_ShouldWorkEndToEnd() {
     // Given: Navigate to the conversation page
@@ -136,7 +139,7 @@ class ConversationalE2ETest {
     page.waitForSelector("#message-input", new Page.WaitForSelectorOptions().setTimeout(10000));
 
     // When: Send a text message
-    String testMessage = "Hello from E2E test";
+    var testMessage = "Hello from E2E test";
     page.locator("#message-input").fill(testMessage);
     page.locator("#send-button").click();
 
@@ -155,8 +158,8 @@ class ConversationalE2ETest {
 
     // Check for AI response (optional - may timeout in test environment)
     try {
-      page.waitForSelector(".ai-message .message-content",
-          new Page.WaitForSelectorOptions().setTimeout(15000));
+      page.waitForSelector(
+          ".ai-message .message-content", new Page.WaitForSelectorOptions().setTimeout(15000));
       var aiMessages = page.locator(".ai-message .message-content").all();
       log.info("AI messages count: {}", aiMessages.size());
     } catch (Exception e) {
@@ -173,47 +176,52 @@ class ConversationalE2ETest {
     page.waitForSelector("#message-input");
 
     // When: Send multiple messages
-    String[] messages = {"First message", "Second message", "Third message"};
+    var messages = new String[] {"First message", "Second message", "Third message"};
 
-    for (String message : messages) {
+    for (var message : messages) {
       page.locator("#message-input").fill(message);
       page.locator("#send-button").click();
 
       // Wait for user message to appear
-      page.waitForSelector(".user-message:has-text('" + message + "')",
+      page.waitForSelector(
+          ".user-message:has-text('" + message + "')",
           new Page.WaitForSelectorOptions().setTimeout(5000));
 
       // Wait for AI response (optional, may timeout in some environments)
       try {
-        page.waitForSelector(".ai-message .message-content",
-            new Page.WaitForSelectorOptions().setTimeout(15000));
+        page.waitForSelector(
+            ".ai-message .message-content", new Page.WaitForSelectorOptions().setTimeout(15000));
       } catch (Exception e) {
         log.debug("AI response timeout for message: {}", message);
       }
     }
 
     // Then: Should maintain all messages in conversation history
-    for (String message : messages) {
-      assertTrue(page.locator(".user-message:has-text('" + message + "')").isVisible(),
+    for (var message : messages) {
+      assertTrue(
+          page.locator(".user-message:has-text('" + message + "')").isVisible(),
           "Message should be visible: " + message);
     }
 
     log.info("✅ Multiple messages maintain conversation history");
-  }  @Test
+  }
+
+  @Test
   void voiceButton_ShouldBeInteractive() {
     // Given: Navigate to conversation page
     page.navigate(getDemoBaseUrl() + "/");
     page.waitForSelector("#voice-toggle");
 
     // When: Click voice toggle button
-    Locator voiceButton = page.locator("#voice-toggle");
+    var voiceButton = page.locator("#voice-toggle");
     assertTrue(voiceButton.isVisible(), "Voice button should be visible");
     assertTrue(voiceButton.isEnabled(), "Voice button should be enabled");
 
     // Then: Button should respond to interaction
-    String initialTitle = voiceButton.getAttribute("title");
+    var initialTitle = voiceButton.getAttribute("title");
     assertNotNull(initialTitle, "Voice button should have title attribute");
-    assertTrue(initialTitle.contains("voice") || initialTitle.contains("microphone"),
+    assertTrue(
+        initialTitle.contains("voice") || initialTitle.contains("microphone"),
         "Title should indicate voice functionality");
 
     // Click the voice button (this will trigger voice recording mode)
@@ -243,7 +251,7 @@ class ConversationalE2ETest {
     page.waitForTimeout(2000);
 
     // Check if button appearance changed (class changes, style changes, etc.)
-    Locator voiceButton = page.locator("#voice-toggle");
+    var voiceButton = page.locator("#voice-toggle");
 
     // Try clicking again to stop recording (if it started)
     voiceButton.click();
@@ -259,12 +267,13 @@ class ConversationalE2ETest {
     page.waitForSelector("#message-input");
 
     // When: Type message and press Enter
-    String testMessage = "Hello via Enter key";
+    var testMessage = "Hello via Enter key";
     page.locator("#message-input").fill(testMessage);
     page.locator("#message-input").press("Enter");
 
     // Then: Message should be sent (same as clicking send button)
-    page.waitForSelector(".user-message:has-text('" + testMessage + "')",
+    page.waitForSelector(
+        ".user-message:has-text('" + testMessage + "')",
         new Page.WaitForSelectorOptions().setTimeout(5000));
     assertTrue(page.locator(".user-message:has-text('" + testMessage + "')").isVisible());
 
@@ -272,7 +281,9 @@ class ConversationalE2ETest {
     assertEquals("", page.locator("#message-input").inputValue());
 
     log.info("✅ Enter key submission works");
-  }  @Test
+  }
+
+  @Test
   void audioPlaybackElements_ShouldBePresent() {
     // Given: Navigate to conversation page
     page.navigate(getDemoBaseUrl() + "/");
@@ -284,21 +295,22 @@ class ConversationalE2ETest {
 
     // Wait for potential AI response with audio
     try {
-      page.waitForSelector(".ai-message .message-content",
-          new Page.WaitForSelectorOptions().setTimeout(30000));
+      page.waitForSelector(
+          ".ai-message .message-content", new Page.WaitForSelectorOptions().setTimeout(30000));
 
       // Check for audio player elements (may or may not be present depending on TTS availability)
-      boolean hasAudioPlayer = page.locator("#ai-audio-player").isVisible();
-      boolean hasAudioControls = page.locator(".audio-play-btn").count() > 0;
+      var hasAudioPlayer = page.locator("#ai-audio-player").isVisible();
+      var hasAudioControls = page.locator(".audio-play-btn").count() > 0;
 
-      log.info("Audio player present: {}, Audio controls present: {}",
-          hasAudioPlayer, hasAudioControls);
+      log.info(
+          "Audio player present: {}, Audio controls present: {}", hasAudioPlayer, hasAudioControls);
 
       // If audio elements are present, verify they're properly structured
       if (hasAudioControls) {
-        Locator audioButtons = page.locator(".audio-play-btn");
+        var audioButtons = page.locator(".audio-play-btn");
         assertTrue(audioButtons.first().isVisible(), "Audio play button should be visible");
-        assertNotNull(audioButtons.first().getAttribute("data-text"),
+        assertNotNull(
+            audioButtons.first().getAttribute("data-text"),
             "Audio button should have data-text attribute");
       }
 
@@ -316,11 +328,11 @@ class ConversationalE2ETest {
 
     // When: Check if speech status is accessible (this might be done via JavaScript)
     // We can simulate checking the endpoint that the UI uses
-    APIResponse response = page.request().get(getDemoBaseUrl() + "/speech-status");
+    var response = page.request().get(getDemoBaseUrl() + "/speech-status");
 
     // Then: Should respond with speech capabilities
     assertEquals(200, response.status());
-    String responseBody = response.text();
+    var responseBody = response.text();
     assertTrue(responseBody.contains("available"), "Response should contain availability info");
     assertTrue(responseBody.contains("speechToText"), "Response should contain STT info");
     assertTrue(responseBody.contains("textToSpeech"), "Response should contain TTS info");
@@ -334,17 +346,17 @@ class ConversationalE2ETest {
     page.navigate(getDemoBaseUrl() + "/");
 
     // Then: Notification overlay should be present (even if hidden)
-    assertTrue(page.locator("#notification-overlay").count() > 0,
-        "Notification overlay should exist");
-    assertTrue(page.locator("#notification").count() > 0,
-        "Notification element should exist");
-    assertTrue(page.locator("#notification-text").count() > 0,
-        "Notification text element should exist");
+    assertTrue(
+        page.locator("#notification-overlay").count() > 0, "Notification overlay should exist");
+    assertTrue(page.locator("#notification").count() > 0, "Notification element should exist");
+    assertTrue(
+        page.locator("#notification-text").count() > 0, "Notification text element should exist");
 
     // Notification should be hidden by default
-    String overlayClass = page.locator("#notification-overlay").getAttribute("class");
-    assertTrue((overlayClass != null && overlayClass.contains("hidden")) ||
-        !page.locator("#notification-overlay").isVisible(),
+    var overlayClass = page.locator("#notification-overlay").getAttribute("class");
+    assertTrue(
+        (overlayClass != null && overlayClass.contains("hidden"))
+            || !page.locator("#notification-overlay").isVisible(),
         "Notification should be hidden by default");
 
     log.info("✅ Notification system elements are present");
@@ -359,18 +371,19 @@ class ConversationalE2ETest {
     // Then: Check for basic accessibility features
 
     // Form labels and input accessibility
-    Locator messageInput = page.locator("#message-input");
+    var messageInput = page.locator("#message-input");
     assertTrue(messageInput.isVisible(), "Message input should be visible");
-    assertNotNull(messageInput.getAttribute("placeholder"),
-        "Message input should have placeholder text");
+    assertNotNull(
+        messageInput.getAttribute("placeholder"), "Message input should have placeholder text");
 
     // Button accessibility
-    Locator sendButton = page.locator("#send-button");
+    var sendButton = page.locator("#send-button");
     assertTrue(sendButton.isVisible(), "Send button should be visible");
 
-    Locator voiceButton = page.locator("#voice-toggle");
+    var voiceButton = page.locator("#voice-toggle");
     assertTrue(voiceButton.isVisible(), "Voice button should be visible");
-    assertNotNull(voiceButton.getAttribute("title"),
+    assertNotNull(
+        voiceButton.getAttribute("title"),
         "Voice button should have title attribute for accessibility");
 
     // Heading structure
@@ -381,6 +394,4 @@ class ConversationalE2ETest {
 
     log.info("✅ Basic accessibility standards check completed");
   }
-
-
 }
