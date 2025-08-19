@@ -1,5 +1,6 @@
 package schultedev.conversationalai4j;
 
+import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,7 +11,7 @@ import org.slf4j.LoggerFactory;
  * <p>Provides both low-level utilities for service implementation and high-level methods for
  * advanced audio processing workflows.
  */
-public class SpeechServiceUtils {
+class SpeechServiceUtils {
 
   private static final Logger log = LoggerFactory.getLogger(SpeechServiceUtils.class);
 
@@ -22,7 +23,7 @@ public class SpeechServiceUtils {
    * Check if speech is enabled via environment variable (fallback configuration only). For
    * programmatic configuration, use SpeechConfig.Builder directly.
    */
-  public static boolean isSpeechEnabled() {
+  static boolean isSpeechEnabled() {
     return isSpeechEnabled(System::getenv);
   }
 
@@ -31,7 +32,7 @@ public class SpeechServiceUtils {
    *
    * @param envSupplier supplier for environment variables
    */
-  static boolean isSpeechEnabled(java.util.function.Function<String, String> envSupplier) {
+  static boolean isSpeechEnabled(Function<String, String> envSupplier) {
     return "true".equals(envSupplier.apply("SPEECH_ENABLED"));
   }
 
@@ -39,12 +40,12 @@ public class SpeechServiceUtils {
    * Get Whisper model path from environment (fallback configuration only). For programmatic
    * configuration, use SpeechConfig.Builder.withSttModel().
    */
-  public static String getWhisperModelPath() {
+  static String getWhisperModelPath() {
     return getWhisperModelPath(System::getenv);
   }
 
   /** Get Whisper model path using provided environment supplier. */
-  static String getWhisperModelPath(java.util.function.Function<String, String> envSupplier) {
+  static String getWhisperModelPath(Function<String, String> envSupplier) {
     return envSupplier.apply("WHISPER_MODEL_PATH") != null
         ? envSupplier.apply("WHISPER_MODEL_PATH")
         : "/app/models/whisper/ggml-base.en.bin";
@@ -54,12 +55,12 @@ public class SpeechServiceUtils {
    * Get Piper model path from environment (fallback configuration only). For programmatic
    * configuration, use SpeechConfig.Builder.withTtsModel().
    */
-  public static String getPiperModelPath() {
+  static String getPiperModelPath() {
     return getPiperModelPath(System::getenv);
   }
 
   /** Get Piper model path using provided environment supplier. */
-  static String getPiperModelPath(java.util.function.Function<String, String> envSupplier) {
+  static String getPiperModelPath(Function<String, String> envSupplier) {
     return envSupplier.apply("PIPER_MODEL_PATH") != null
         ? envSupplier.apply("PIPER_MODEL_PATH")
         : "/app/models/piper/en_US-amy-low.onnx";
@@ -69,22 +70,22 @@ public class SpeechServiceUtils {
    * Get Piper config path from environment (fallback configuration only). For programmatic
    * configuration, use custom SpeechConfig setup.
    */
-  public static String getPiperConfigPath() {
+  static String getPiperConfigPath() {
     return getPiperConfigPath(System::getenv);
   }
 
   /** Get Piper config path using provided environment supplier. */
-  static String getPiperConfigPath(java.util.function.Function<String, String> envSupplier) {
+  static String getPiperConfigPath(Function<String, String> envSupplier) {
     return envSupplier.apply("PIPER_CONFIG_PATH") != null
         ? envSupplier.apply("PIPER_CONFIG_PATH")
         : "/app/models/piper/en_US-amy-low.onnx.json";
   }
 
-  public static String generateMockTranscription() {
+  static String generateMockTranscription() {
     return "Mock transcription: Hello, this is a test.";
   }
 
-  public static byte[] generateMockAudio(String text) {
+  static byte[] generateMockAudio(String text) {
     var wordCount = text == null || text.trim().isEmpty() ? 1 : text.split("\\s+").length;
     var durationMs = Math.max(500, wordCount * 200);
     var sampleCount = (int) (16000 * durationMs / 1000.0);
@@ -168,7 +169,7 @@ public class SpeechServiceUtils {
    * @throws UnsupportedOperationException if speech is not configured
    * @throws IllegalArgumentException if audio input is null or empty
    */
-  public static void speechToTextDebug(ConversationalAI ai, byte[] audioInput) {
+  static void speechToTextDebug(ConversationalAI ai, byte[] audioInput) {
     if (!ai.isSpeechEnabled()) {
       throw new UnsupportedOperationException(
           "Speech services are not configured. Use withSpeech() in builder.");

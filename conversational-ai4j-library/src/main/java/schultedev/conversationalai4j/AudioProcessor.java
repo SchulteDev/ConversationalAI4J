@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
  * Advanced audio processing utilities for format conversion, preprocessing, and stream handling.
  * Centralizes all audio manipulation logic.
  */
-public class AudioProcessor {
+class AudioProcessor {
 
   private static final Logger log = LoggerFactory.getLogger(AudioProcessor.class);
 
@@ -21,8 +21,7 @@ public class AudioProcessor {
   }
 
   /** Converts audio data to the target format. */
-  public static byte[] convert(
-      byte[] audioData, AudioFormat sourceFormat, AudioFormat targetFormat) {
+  static byte[] convert(byte[] audioData, AudioFormat sourceFormat, AudioFormat targetFormat) {
     if (audioData == null || audioData.length == 0) {
       return new byte[0];
     }
@@ -48,7 +47,7 @@ public class AudioProcessor {
   }
 
   /** Preprocesses audio data with gain control, noise reduction, etc. */
-  public static byte[] preprocess(byte[] audioData, AudioFormat format) {
+  static byte[] preprocess(byte[] audioData, AudioFormat format) {
     if (audioData == null || audioData.length == 0) {
       return audioData;
     }
@@ -71,7 +70,7 @@ public class AudioProcessor {
   }
 
   /** Combines multiple audio chunks into a single buffer. */
-  public static byte[] combineAudioChunks(List<byte[]> chunks) {
+  static byte[] combineAudioChunks(List<byte[]> chunks) {
     if (chunks == null || chunks.isEmpty()) {
       return new byte[0];
     }
@@ -94,7 +93,7 @@ public class AudioProcessor {
   }
 
   /** Converts audio data to normalized float samples. */
-  public static float[] convertToFloatSamples(byte[] audioData, AudioFormat format) {
+  static float[] convertToFloatSamples(byte[] audioData, AudioFormat format) {
     if (audioData == null || audioData.length == 0) {
       return new float[0];
     }
@@ -116,7 +115,7 @@ public class AudioProcessor {
   }
 
   /** Converts float samples back to audio format. */
-  public static byte[] convertFromFloatSamples(float[] samples, AudioFormat format) {
+  static byte[] convertFromFloatSamples(float[] samples, AudioFormat format) {
     if (samples == null || samples.length == 0) {
       return new byte[0];
     }

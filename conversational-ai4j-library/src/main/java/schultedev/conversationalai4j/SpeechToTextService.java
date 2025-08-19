@@ -8,13 +8,13 @@ import org.slf4j.LoggerFactory;
  * Speech-to-Text service for privacy-first local processing using Whisper.cpp. Provides simple,
  * clean interface for audio transcription with input validation.
  */
-public class SpeechToTextService {
+class SpeechToTextService {
 
   private static final Logger log = LoggerFactory.getLogger(SpeechToTextService.class);
   private final boolean enabled;
   private final WhisperContext whisperContext;
 
-  public SpeechToTextService() {
+  SpeechToTextService() {
     this.enabled = SpeechServiceUtils.isSpeechEnabled();
     log.info("SpeechToTextService initialized - enabled: {}", enabled);
 
@@ -43,7 +43,7 @@ public class SpeechToTextService {
    * @return Transcribed text, or error message if transcription failed
    * @throws IllegalArgumentException if audioData is null or empty
    */
-  public String transcribe(byte[] audioData) {
+  String transcribe(byte[] audioData) {
     if (audioData == null || audioData.length == 0) {
       throw new IllegalArgumentException("Audio data cannot be null or empty");
     }
@@ -79,7 +79,7 @@ public class SpeechToTextService {
    * @return Transcribed text, or error message if transcription failed
    * @throws IllegalArgumentException if audioData is null or empty
    */
-  public String transcribe(byte[] audioData, AudioFormat format) {
+  String transcribe(byte[] audioData, AudioFormat format) {
     if (audioData == null || audioData.length == 0) {
       throw new IllegalArgumentException("Audio data cannot be null or empty");
     }
@@ -104,7 +104,7 @@ public class SpeechToTextService {
     }
   }
 
-  public String transcribeFromChunks(java.util.List<byte[]> audioChunks) {
+  String transcribeFromChunks(java.util.List<byte[]> audioChunks) {
     if (audioChunks == null || audioChunks.isEmpty()) {
       return "";
     }
@@ -116,15 +116,15 @@ public class SpeechToTextService {
   }
 
   /** Checks if the speech-to-text service is ready. */
-  public boolean isReady() {
+  boolean isReady() {
     return enabled && whisperContext != null;
   }
 
-  public boolean isAvailable() {
+  boolean isAvailable() {
     return enabled && whisperContext != null;
   }
 
-  public void close() {
+  void close() {
     if (whisperContext != null) {
       WhisperNative.closeContext(whisperContext);
     }

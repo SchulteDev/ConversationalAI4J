@@ -6,7 +6,7 @@ import dev.langchain4j.memory.chat.MessageWindowChatMemory;
  * Utility class for creating conversation memory configurations. Provides convenient factory
  * methods for different memory strategies.
  */
-public class ConversationMemory {
+class ConversationMemory {
 
   private ConversationMemory() {
     // Utility class
@@ -18,7 +18,7 @@ public class ConversationMemory {
    * @param maxMessages Maximum number of messages to keep
    * @return MessageWindowChatMemory configured with the specified window size
    */
-  public static MessageWindowChatMemory sliding(int maxMessages) {
+  static MessageWindowChatMemory sliding(int maxMessages) {
     if (maxMessages <= 0) {
       throw new IllegalArgumentException("maxMessages must be positive");
     }
@@ -30,7 +30,7 @@ public class ConversationMemory {
    *
    * @return MessageWindowChatMemory with default configuration
    */
-  public static MessageWindowChatMemory defaultMemory() {
+  static MessageWindowChatMemory defaultMemory() {
     return sliding(10);
   }
 }

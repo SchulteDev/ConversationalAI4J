@@ -4,21 +4,21 @@ package schultedev.conversationalai4j;
  * Audio format specification for processing various audio types. Supports format detection and
  * conversion parameters.
  */
-public record AudioFormat(Type type, int sampleRate, int channels, int bitsPerSample) {
+record AudioFormat(Type type, int sampleRate, int channels, int bitsPerSample) {
 
-  public static AudioFormat wav16kMono() {
+  static AudioFormat wav16kMono() {
     return new AudioFormat(Type.WAV, 16000, 1, 16);
   }
 
-  public static AudioFormat webmOpus() {
+  static AudioFormat webmOpus() {
     return new AudioFormat(Type.WEBM_OPUS, 48000, 1, 16);
   }
 
-  public static AudioFormat rawPcm16kMono() {
+  static AudioFormat rawPcm16kMono() {
     return new AudioFormat(Type.RAW_PCM, 16000, 1, 16);
   }
 
-  public static AudioFormat detect(byte[] audioData) {
+  static AudioFormat detect(byte[] audioData) {
     if (audioData == null || audioData.length < 4) {
       return new AudioFormat(Type.UNKNOWN, 16000, 1, 16);
     }
@@ -56,7 +56,7 @@ public record AudioFormat(Type type, int sampleRate, int channels, int bitsPerSa
         type, sampleRate, channels, bitsPerSample);
   }
 
-  public enum Type {
+  enum Type {
     WAV,
     WEBM_OPUS,
     RAW_PCM,

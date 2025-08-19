@@ -8,13 +8,13 @@ import org.slf4j.LoggerFactory;
  * Text-to-Speech service for privacy-first local processing using Piper. Provides simple, clean
  * interface for speech synthesis with input validation.
  */
-public class TextToSpeechService {
+class TextToSpeechService {
 
   private static final Logger log = LoggerFactory.getLogger(TextToSpeechService.class);
   private final boolean enabled;
   private final PiperVoice piperVoice;
 
-  public TextToSpeechService() {
+  TextToSpeechService() {
     this.enabled = SpeechServiceUtils.isSpeechEnabled();
     log.info("TextToSpeechService initialized - enabled: {}", enabled);
 
@@ -44,7 +44,7 @@ public class TextToSpeechService {
    * @return Audio data in WAV format
    * @throws IllegalArgumentException if text is null or empty
    */
-  public byte[] synthesize(String text) {
+  byte[] synthesize(String text) {
     if (text == null || text.trim().isEmpty()) {
       throw new IllegalArgumentException("Text cannot be null or empty");
     }
@@ -73,21 +73,20 @@ public class TextToSpeechService {
    * @return the synthesized audio as WAV bytes
    * @throws IllegalArgumentException if text is null or empty
    */
-  @SuppressWarnings("unused")
-  public byte[] synthesize(String text, double speed, double pitch) {
+  byte[] synthesize(String text, double speed, double pitch) {
     return synthesize(text);
   }
 
   /** Checks if the text-to-speech service is ready. */
-  public boolean isReady() {
+  boolean isReady() {
     return enabled && piperVoice != null;
   }
 
-  public boolean isAvailable() {
+  boolean isAvailable() {
     return enabled && piperVoice != null;
   }
 
-  public void close() {
+  void close() {
     if (piperVoice != null) {
       PiperNative.closeVoice(piperVoice);
     }
