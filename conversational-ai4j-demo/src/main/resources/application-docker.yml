@@ -5,10 +5,9 @@ spring:
 server:
   port: 8080
 
-# Ollama configuration for Docker environment
-ollama:
-  base-url: http://ollama:11434
-  model-name: llama3.2:3b
+# Docker-specific overrides only
+app:
+  ollama-base-url: http://ollama:11434  # Use Docker service name instead of localhost
 
 # Simple logging - no duplicates
 logging:

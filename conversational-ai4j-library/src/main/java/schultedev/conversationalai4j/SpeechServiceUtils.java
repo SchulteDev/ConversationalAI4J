@@ -18,22 +18,66 @@ public class SpeechServiceUtils {
     // Utility class - prevent instantiation
   }
 
+  /**
+   * Check if speech is enabled via environment variable (fallback configuration only). For
+   * programmatic configuration, use SpeechConfig.Builder directly.
+   */
   public static boolean isSpeechEnabled() {
-    return "true".equals(System.getenv("SPEECH_ENABLED"));
+    return isSpeechEnabled(System::getenv);
   }
 
+  /**
+   * Check if speech is enabled using provided environment supplier.
+   *
+   * @param envSupplier supplier for environment variables
+   */
+  static boolean isSpeechEnabled(java.util.function.Function<String, String> envSupplier) {
+    return "true".equals(envSupplier.apply("SPEECH_ENABLED"));
+  }
+
+  /**
+   * Get Whisper model path from environment (fallback configuration only). For programmatic
+   * configuration, use SpeechConfig.Builder.withSttModel().
+   */
   public static String getWhisperModelPath() {
-    return System.getenv()
-        .getOrDefault("WHISPER_MODEL_PATH", "/app/models/whisper/ggml-base.en.bin");
+    return getWhisperModelPath(System::getenv);
   }
 
+  /** Get Whisper model path using provided environment supplier. */
+  static String getWhisperModelPath(java.util.function.Function<String, String> envSupplier) {
+    return envSupplier.apply("WHISPER_MODEL_PATH") != null
+        ? envSupplier.apply("WHISPER_MODEL_PATH")
+        : "/app/models/whisper/ggml-base.en.bin";
+  }
+
+  /**
+   * Get Piper model path from environment (fallback configuration only). For programmatic
+   * configuration, use SpeechConfig.Builder.withTtsModel().
+   */
   public static String getPiperModelPath() {
-    return System.getenv().getOrDefault("PIPER_MODEL_PATH", "/app/models/piper/en_US-amy-low.onnx");
+    return getPiperModelPath(System::getenv);
   }
 
+  /** Get Piper model path using provided environment supplier. */
+  static String getPiperModelPath(java.util.function.Function<String, String> envSupplier) {
+    return envSupplier.apply("PIPER_MODEL_PATH") != null
+        ? envSupplier.apply("PIPER_MODEL_PATH")
+        : "/app/models/piper/en_US-amy-low.onnx";
+  }
+
+  /**
+   * Get Piper config path from environment (fallback configuration only). For programmatic
+   * configuration, use custom SpeechConfig setup.
+   */
   public static String getPiperConfigPath() {
-    return System.getenv()
-        .getOrDefault("PIPER_CONFIG_PATH", "/app/models/piper/en_US-amy-low.onnx.json");
+    return getPiperConfigPath(System::getenv);
+  }
+
+  /** Get Piper config path using provided environment supplier. */
+  static String getPiperConfigPath(java.util.function.Function<String, String> envSupplier) {
+    return envSupplier.apply("PIPER_CONFIG_PATH") != null
+        ? envSupplier.apply("PIPER_CONFIG_PATH")
+        : "/app/models/piper/en_US-amy-low.onnx.json";
   }
 
   public static String generateMockTranscription() {

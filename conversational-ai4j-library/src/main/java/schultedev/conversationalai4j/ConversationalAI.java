@@ -277,6 +277,12 @@ public class ConversationalAI implements AutoCloseable {
       return this;
     }
 
+    /** Enable speech capabilities with custom configuration */
+    public Builder withSpeech(SpeechConfig speechConfig) {
+      this.speechConfig = speechConfig;
+      return this;
+    }
+
     /** Build the ConversationalAI instance */
     public ConversationalAI build() {
       // Validate model configuration

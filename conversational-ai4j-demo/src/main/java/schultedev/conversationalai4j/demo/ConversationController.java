@@ -1,10 +1,10 @@
 package schultedev.conversationalai4j.demo;
 
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import schultedev.conversationalai4j.ConversationUtils;
 import schultedev.conversationalai4j.ConversationalAI;
+import schultedev.conversationalai4j.SpeechConfig;
 
 /**
  * Spring MVC Controller for handling conversation interactions in the demo application. Provides a
@@ -27,50 +28,64 @@ public class ConversationController {
   private final ConversationalAI conversationalAI;
   private final List<Message> conversationHistory = new ArrayList<>();
 
-  @Value("${ollama.base-url:http://localhost:11434}")
-  private String ollamaBaseUrl;
-
-  @Value("${ollama.model-name:llama3.2:3b}")
-  private String ollamaModelName;
+  private final AppConfig appConfig;
 
   /**
-   * Constructor that initializes the ConversationalAI instance with configurable Ollama settings.
-   * Supports both local development and Docker containerized environments.
+   * Constructor that initializes the ConversationalAI instance with Spring-managed configuration.
+   * Uses dependency injection for clean separation of concerns.
    */
-  public ConversationController() {
+  public ConversationController(AppConfig appConfig) {
+    this.appConfig = appConfig;
     ConversationalAI tempAI;
     try {
-      // Use Spring-injected values after construction
-      var modelName =
-          System.getProperty(
-              "ollama.model-name",
-              System.getenv().getOrDefault("OLLAMA_MODEL_NAME", "llama3.2:3b"));
-      var baseUrl =
-          System.getProperty(
-              "ollama.base-url",
-              System.getenv().getOrDefault("OLLAMA_BASE_URL", "http://localhost:11434"));
+      var modelName = appConfig.getOllamaModelName();
+      var baseUrl = appConfig.getOllamaBaseUrl();
 
+      log.info(
+          "AppConfig loaded - Ollama: {}, Speech enabled: {}, App prompt: '{}'",
+          baseUrl,
+          appConfig.isSpeechEnabled(),
+          appConfig.getSystemPrompt());
       log.info("Initializing ConversationalAI with Ollama model '{}' at '{}'", modelName, baseUrl);
 
-      tempAI =
+      // Build speech configuration programmatically if enabled
+      SpeechConfig speechConfig = null;
+      if (appConfig.isSpeechEnabled()) {
+        var builder =
+            new SpeechConfig.Builder().withLanguage("en-US").withVoice("female").withEnabled(true);
+
+        // Configure STT model if specified
+        if (appConfig.getSpeechSttModelPath() != null) {
+          builder.withSttModel(Paths.get(appConfig.getSpeechSttModelPath()));
+        }
+
+        // Configure TTS model if specified
+        if (appConfig.getSpeechTtsModelPath() != null) {
+          builder.withTtsModel(Paths.get(appConfig.getSpeechTtsModelPath()));
+        }
+
+        speechConfig = builder.build();
+      }
+
+      var aiBuilder =
           ConversationalAI.builder()
               .withOllamaModel(modelName, baseUrl)
               .withMemory() // Use default memory
-              .withSystemPrompt(
-                  "You are a helpful AI assistant in a demo application. "
-                      + "Keep responses concise and friendly.")
-              .withTemperature(0.7)
-              .withSpeech() // Enable speech capabilities with defaults
-              .build();
+              .withSystemPrompt(appConfig.getSystemPrompt())
+              .withTemperature(appConfig.getTemperature());
+
+      if (speechConfig != null) {
+        aiBuilder.withSpeech(speechConfig);
+      }
+
+      tempAI = aiBuilder.build();
 
       log.info("ConversationalAI successfully initialized with Ollama model");
     } catch (Exception e) {
+      log.error("Failed to initialize ConversationalAI with Ollama - Full error details:", e);
       log.warn(
           "Failed to initialize ConversationalAI with Ollama: {}. Falling back to echo mode",
           e.getMessage());
-      if (log.isDebugEnabled()) {
-        log.debug("ConversationalAI initialization error details", e);
-      }
       tempAI = null;
     }
     this.conversationalAI = tempAI;

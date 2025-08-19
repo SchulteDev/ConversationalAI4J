@@ -16,6 +16,10 @@ public class AudioProcessor {
 
   private static final Logger log = LoggerFactory.getLogger(AudioProcessor.class);
 
+  private AudioProcessor() {
+    // Utility class - prevent instantiation
+  }
+
   /** Converts audio data to the target format. */
   public static byte[] convert(
       byte[] audioData, AudioFormat sourceFormat, AudioFormat targetFormat) {

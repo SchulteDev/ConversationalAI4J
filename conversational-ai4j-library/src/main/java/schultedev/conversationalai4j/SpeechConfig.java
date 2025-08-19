@@ -135,12 +135,25 @@ public class SpeechConfig {
     }
 
     private void resolveDefaultModelPaths() {
-      // Check for Docker environment with pre-configured models
-      var dockerSttPath = System.getenv("STT_MODEL_PATH");
-      var dockerTtsPath = System.getenv("TTS_MODEL_PATH");
+      resolveDefaultModelPaths(System::getenv, System::getProperty);
+    }
+
+    /**
+     * Resolves default model paths using provided environment and property suppliers. This method
+     * allows for testing with mocked environment variables and system properties.
+     *
+     * @param envSupplier supplier for environment variables
+     * @param propertySupplier supplier for system properties
+     */
+    void resolveDefaultModelPaths(
+        java.util.function.Function<String, String> envSupplier,
+        java.util.function.Function<String, String> propertySupplier) {
+      // Check for Docker environment with pre-configured models (fallback only)
+      var dockerSttPath = envSupplier.apply("STT_MODEL_PATH");
+      var dockerTtsPath = envSupplier.apply("TTS_MODEL_PATH");
 
       if (dockerSttPath != null && dockerTtsPath != null) {
-        // Use Docker environment paths
+        // Use Docker environment paths as fallback
         if (sttModelPath == null) {
           sttModelPath = Paths.get(dockerSttPath);
         }
@@ -150,8 +163,13 @@ public class SpeechConfig {
         return;
       }
 
-      // Use standard model paths (Linux systems)
-      var modelsDir = Paths.get(System.getProperty("user.home"), ".conversational-ai4j", "models");
+      // Use standard model paths (using system property as fallback)
+      var userHome = propertySupplier.apply("user.home");
+      var modelsDir =
+          Paths.get(
+              userHome != null ? userHome : System.getProperty("user.home"),
+              ".conversational-ai4j",
+              "models");
 
       if (sttModelPath == null) {
         // Default STT model path
