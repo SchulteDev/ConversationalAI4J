@@ -10,14 +10,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** Clean wrapper for Piper JNI for text-to-speech functionality. */
-public class PiperNative {
+class PiperNative {
 
   private static final Logger log = LoggerFactory.getLogger(PiperNative.class);
   private static boolean libraryLoaded = false;
   private static PiperJNI piper;
 
+  private PiperNative() {
+    // Utility class - prevent instantiation
+  }
+
   /** Initialize Piper library and load native components. */
-  public static synchronized boolean initialize() {
+  static synchronized boolean initialize() {
     if (libraryLoaded) {
       return true;
     }
@@ -35,7 +39,7 @@ public class PiperNative {
   }
 
   /** Creates a Piper voice for synthesis. */
-  public static PiperVoice createVoice(String modelPath, String configPath) {
+  static PiperVoice createVoice(String modelPath, String configPath) {
     if (!initialize()) {
       throw new RuntimeException("Piper library not initialized");
     }
@@ -51,7 +55,7 @@ public class PiperNative {
   }
 
   /** Synthesizes text to audio using Piper. */
-  public static byte[] synthesize(PiperVoice voice, String text) {
+  static byte[] synthesize(PiperVoice voice, String text) {
     if (!libraryLoaded || piper == null || voice == null) {
       return new byte[0];
     }

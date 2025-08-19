@@ -5,8 +5,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Speech-to-Text service for privacy-first local processing using Whisper.cpp.
- * Provides simple, clean interface for audio transcription with input validation.
+ * Speech-to-Text service for privacy-first local processing using Whisper.cpp. Provides simple,
+ * clean interface for audio transcription with input validation.
  */
 public class SpeechToTextService {
 
@@ -26,9 +26,7 @@ public class SpeechToTextService {
         tempContext = WhisperNative.createContext(whisperModelPath);
         log.info("Whisper STT service initialized successfully");
       } catch (Exception e) {
-        log.warn(
-            "Whisper model not available ({}), STT will use mock responses",
-            e.getMessage());
+        log.warn("Whisper model not available ({}), STT will use mock responses", e.getMessage());
         tempContext = null;
       }
     } else {
@@ -77,7 +75,7 @@ public class SpeechToTextService {
    * Enhanced transcription with explicit audio format specification.
    *
    * @param audioData Raw audio data
-   * @param format Audio format specification  
+   * @param format Audio format specification
    * @return Transcribed text, or error message if transcription failed
    * @throws IllegalArgumentException if audioData is null or empty
    */

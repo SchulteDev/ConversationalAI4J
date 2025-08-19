@@ -5,8 +5,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Text-to-Speech service for privacy-first local processing using Piper.
- * Provides simple, clean interface for speech synthesis with input validation.
+ * Text-to-Speech service for privacy-first local processing using Piper. Provides simple, clean
+ * interface for speech synthesis with input validation.
  */
 public class TextToSpeechService {
 
@@ -27,9 +27,7 @@ public class TextToSpeechService {
         tempVoice = PiperNative.createVoice(piperModelPath, piperConfigPath);
         log.info("Piper TTS service initialized successfully");
       } catch (Exception e) {
-        log.warn(
-            "Piper model not available ({}), TTS will use mock audio",
-            e.getMessage());
+        log.warn("Piper model not available ({}), TTS will use mock audio", e.getMessage());
         tempVoice = null;
       }
     } else {
@@ -66,8 +64,8 @@ public class TextToSpeechService {
   }
 
   /**
-   * Synthesizes speech with speed and pitch parameters (for API compatibility). 
-   * Currently speed and pitch parameters are ignored, but method is kept for API consistency.
+   * Synthesizes speech with speed and pitch parameters (for API compatibility). Currently speed and
+   * pitch parameters are ignored, but method is kept for API consistency.
    *
    * @param text the text to synthesize
    * @param speed the speed multiplier (currently ignored)

@@ -4,11 +4,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Shared utilities for speech services including configuration, mocking, audio processing, 
- * and advanced operations.
- * 
- * Provides both low-level utilities for service implementation and high-level methods 
- * for advanced audio processing workflows.
+ * Shared utilities for speech services including configuration, mocking, audio processing, and
+ * advanced operations.
+ *
+ * <p>Provides both low-level utilities for service implementation and high-level methods for
+ * advanced audio processing workflows.
  */
 public class SpeechServiceUtils {
 
@@ -28,8 +28,7 @@ public class SpeechServiceUtils {
   }
 
   public static String getPiperModelPath() {
-    return System.getenv()
-        .getOrDefault("PIPER_MODEL_PATH", "/app/models/piper/en_US-amy-low.onnx");
+    return System.getenv().getOrDefault("PIPER_MODEL_PATH", "/app/models/piper/en_US-amy-low.onnx");
   }
 
   public static String getPiperConfigPath() {
@@ -40,6 +39,7 @@ public class SpeechServiceUtils {
   public static String generateMockTranscription() {
     return "Mock transcription: Hello, this is a test.";
   }
+
   public static byte[] generateMockAudio(String text) {
     var wordCount = text == null || text.trim().isEmpty() ? 1 : text.split("\\s+").length;
     var durationMs = Math.max(500, wordCount * 200);

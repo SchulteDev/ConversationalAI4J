@@ -9,20 +9,24 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** Clean wrapper for Whisper.cpp JNI for speech-to-text functionality. */
-public class WhisperNative {
+class WhisperNative {
 
   private static final Logger log = LoggerFactory.getLogger(WhisperNative.class);
   private static boolean libraryLoaded = false;
   private static WhisperJNI whisper;
 
+  private WhisperNative() {
+    // Utility class - prevent instantiation
+  }
+
   /** Initialize Whisper library and load native components. */
-  public static synchronized boolean initialize() {
+  static synchronized boolean initialize() {
     if (libraryLoaded) {
       return true;
     }
 
     try {
-      WhisperJNI.loadLibrary(System.out::println);
+      WhisperJNI.loadLibrary(log::debug);
       whisper = new WhisperJNI();
       libraryLoaded = true;
       log.info("Whisper.cpp JNI library loaded successfully");
@@ -34,7 +38,7 @@ public class WhisperNative {
   }
 
   /** Creates a Whisper context for transcription. */
-  public static WhisperContext createContext(String modelPath) {
+  static WhisperContext createContext(String modelPath) {
     if (!initialize()) {
       throw new RuntimeException("Whisper library not initialized");
     }
@@ -50,7 +54,7 @@ public class WhisperNative {
   }
 
   /** Transcribes audio using Whisper. */
-  public static String transcribe(WhisperContext context, float[] audioSamples) {
+  static String transcribe(WhisperContext context, float[] audioSamples) {
     if (!libraryLoaded || whisper == null || context == null) {
       return "";
     }
@@ -95,7 +99,7 @@ public class WhisperNative {
   }
 
   /** Closes and releases a Whisper context. */
-  public static void closeContext(WhisperContext context) {
+  static void closeContext(WhisperContext context) {
     if (context != null && whisper != null) {
       try {
         context.close();
@@ -107,7 +111,7 @@ public class WhisperNative {
   }
 
   /** Check if Whisper library is available. */
-  public static boolean isAvailable() {
+  static boolean isAvailable() {
     return initialize();
   }
 }
