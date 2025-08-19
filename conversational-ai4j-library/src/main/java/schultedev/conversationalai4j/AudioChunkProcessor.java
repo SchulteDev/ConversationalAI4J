@@ -21,64 +21,6 @@ public class AudioChunkProcessor {
   // Thread pool for async voice processing to avoid blocking caller threads
   private final ExecutorService voiceProcessingExecutor = Executors.newFixedThreadPool(4);
 
-  /** Result of audio processing containing both text and audio responses. */
-  public static class ProcessingResult {
-    private final String transcribedText;
-    private final String aiResponse;
-    private final byte[] responseAudio;
-    private final boolean success;
-    private final String errorMessage;
-
-    private ProcessingResult(
-        String transcribedText,
-        String aiResponse,
-        byte[] responseAudio,
-        boolean success,
-        String errorMessage) {
-      this.transcribedText = transcribedText;
-      this.aiResponse = aiResponse;
-      this.responseAudio = responseAudio;
-      this.success = success;
-      this.errorMessage = errorMessage;
-    }
-
-    public static ProcessingResult success(
-        String transcribedText, String aiResponse, byte[] responseAudio) {
-      return new ProcessingResult(transcribedText, aiResponse, responseAudio, true, null);
-    }
-
-    public static ProcessingResult error(String errorMessage) {
-      return new ProcessingResult(null, null, null, false, errorMessage);
-    }
-
-    public String getTranscribedText() {
-      return transcribedText;
-    }
-
-    public String getAiResponse() {
-      return aiResponse;
-    }
-
-    public byte[] getResponseAudio() {
-      return responseAudio;
-    }
-
-    public boolean isSuccess() {
-      return success;
-    }
-
-    public String getErrorMessage() {
-      return errorMessage;
-    }
-  }
-
-  /** Callback interface for processing status updates. */
-  public interface ProcessingCallback {
-    void onStatusUpdate(String status, String message);
-
-    void onTranscriptionReady(String transcribedText);
-  }
-
   /** Processes audio chunks asynchronously through the complete AI pipeline. */
   public CompletableFuture<ProcessingResult> processAudioChunks(
       List<byte[]> chunks,
@@ -210,5 +152,63 @@ public class AudioChunkProcessor {
   /** Shutdown the processing executor. */
   public void shutdown() {
     voiceProcessingExecutor.shutdown();
+  }
+
+  /** Callback interface for processing status updates. */
+  public interface ProcessingCallback {
+    void onStatusUpdate(String status, String message);
+
+    void onTranscriptionReady(String transcribedText);
+  }
+
+  /** Result of audio processing containing both text and audio responses. */
+  public static class ProcessingResult {
+    private final String transcribedText;
+    private final String aiResponse;
+    private final byte[] responseAudio;
+    private final boolean success;
+    private final String errorMessage;
+
+    private ProcessingResult(
+        String transcribedText,
+        String aiResponse,
+        byte[] responseAudio,
+        boolean success,
+        String errorMessage) {
+      this.transcribedText = transcribedText;
+      this.aiResponse = aiResponse;
+      this.responseAudio = responseAudio;
+      this.success = success;
+      this.errorMessage = errorMessage;
+    }
+
+    public static ProcessingResult success(
+        String transcribedText, String aiResponse, byte[] responseAudio) {
+      return new ProcessingResult(transcribedText, aiResponse, responseAudio, true, null);
+    }
+
+    public static ProcessingResult error(String errorMessage) {
+      return new ProcessingResult(null, null, null, false, errorMessage);
+    }
+
+    public String getTranscribedText() {
+      return transcribedText;
+    }
+
+    public String getAiResponse() {
+      return aiResponse;
+    }
+
+    public byte[] getResponseAudio() {
+      return responseAudio;
+    }
+
+    public boolean isSuccess() {
+      return success;
+    }
+
+    public String getErrorMessage() {
+      return errorMessage;
+    }
   }
 }

@@ -13,8 +13,7 @@ class ConversationalAITest {
 
     // When/Then: Build should fail
     var exception = assertThrows(IllegalStateException.class, builder::build);
-    assertEquals(
-        "Model must be configured using withOllamaModel()", exception.getMessage());
+    assertEquals("Model must be configured using withOllamaModel()", exception.getMessage());
   }
 
   @Test
@@ -193,8 +192,11 @@ class ConversationalAITest {
 
     // When/Then: Speech to text should throw exception
     var exception =
-        assertThrows(UnsupportedOperationException.class, () -> 
-            schultedev.conversationalai4j.utils.AudioUtils.speechToText(ai, audioData, AudioFormat.wav16kMono()));
+        assertThrows(
+            UnsupportedOperationException.class,
+            () ->
+                schultedev.conversationalai4j.utils.AudioUtils.speechToText(
+                    ai, audioData, AudioFormat.wav16kMono()));
     assertTrue(exception.getMessage().contains("Speech services are not configured"));
   }
 

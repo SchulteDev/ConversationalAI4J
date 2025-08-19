@@ -11,33 +11,35 @@ import org.slf4j.LoggerFactory;
 /**
  * Main entry point for conversational AI functionality. Provides fluent builder API for easy
  * configuration and usage.
- * 
+ *
  * <h2>Basic Usage:</h2>
+ *
  * <pre>{@code
  * try (ConversationalAI ai = ConversationalAI.builder()
  *     .withOllamaModel("llama3.2:3b")
  *     .build()) {
- *     
+ *
  *     String response = ai.chat("Hello, how are you?");
  *     System.out.println(response);
  * }
  * }</pre>
- * 
+ *
  * <h2>Voice-Enabled Usage:</h2>
+ *
  * <pre>{@code
  * try (ConversationalAI ai = ConversationalAI.builder()
  *     .withOllamaModel("llama3.2:3b")
  *     .withSpeech()
  *     .build()) {
- *     
+ *
  *     byte[] audioResponse = ai.voiceChat(audioBytes);
  *     byte[] speechAudio = ai.textToSpeech("Hello world");
  * }
  * }</pre>
- * 
- * For advanced audio processing and mixed-modality conversations, see:
- * {@link schultedev.conversationalai4j.utils.AudioUtils} and
- * {@link schultedev.conversationalai4j.utils.ConversationUtils}
+ *
+ * For advanced audio processing and mixed-modality conversations, see: {@link
+ * schultedev.conversationalai4j.utils.AudioUtils} and {@link
+ * schultedev.conversationalai4j.utils.ConversationUtils}
  */
 public class ConversationalAI implements AutoCloseable {
 
@@ -155,10 +157,6 @@ public class ConversationalAI implements AutoCloseable {
     }
   }
 
-
-
-
-
   /**
    * Check if speech services are available.
    *
@@ -170,7 +168,6 @@ public class ConversationalAI implements AutoCloseable {
         && speechToText.isReady()
         && textToSpeech.isReady();
   }
-
 
   /**
    * Convert text directly to speech without LLM processing.
@@ -201,7 +198,6 @@ public class ConversationalAI implements AutoCloseable {
       return new byte[0];
     }
   }
-
 
   /**
    * Clean up resources used by the conversational AI system. This includes speech services and any
@@ -292,34 +288,35 @@ public class ConversationalAI implements AutoCloseable {
     public ConversationalAI build() {
       // Validate model configuration
       if (model == null) {
-        throw new IllegalStateException(
-            "Model must be configured using withOllamaModel()");
+        throw new IllegalStateException("Model must be configured using withOllamaModel()");
       }
-      
+
       // Validate speech configuration
       if (speechConfig != null && speechConfig.isEnabled()) {
         validateSpeechConfiguration(speechConfig);
       }
-      
+
       // Validate temperature range (already checked in setter, but double-check)
       if (temperature < 0.0 || temperature > 1.0) {
         throw new IllegalArgumentException("Temperature must be between 0.0 and 1.0");
       }
-      
+
       return new ConversationalAI(this);
     }
-    
+
     private void validateSpeechConfiguration(SpeechConfig config) {
-      if (config.getSttModelPath() == null || config.getSttModelPath().toString().trim().isEmpty()) {
+      if (config.getSttModelPath() == null
+          || config.getSttModelPath().toString().trim().isEmpty()) {
         throw new IllegalStateException(
-            "Speech-to-text model path required when speech is enabled. " +
-            "Check that models are properly configured in speech configuration.");
+            "Speech-to-text model path required when speech is enabled. "
+                + "Check that models are properly configured in speech configuration.");
       }
-      
-      if (config.getTtsModelPath() == null || config.getTtsModelPath().toString().trim().isEmpty()) {
+
+      if (config.getTtsModelPath() == null
+          || config.getTtsModelPath().toString().trim().isEmpty()) {
         throw new IllegalStateException(
-            "Text-to-speech model path required when speech is enabled. " +
-            "Check that models are properly configured in speech configuration.");
+            "Text-to-speech model path required when speech is enabled. "
+                + "Check that models are properly configured in speech configuration.");
       }
     }
   }

@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
@@ -53,7 +52,7 @@ class AudioChunkProcessorTest {
   @Test
   void processAudioChunks_WithNullAI_ShouldReturnError() throws Exception {
     // Given
-    var chunks = Arrays.asList(new byte[] {1, 2, 3});
+    var chunks = List.of(new byte[] {1, 2, 3});
     var callback = createMockCallback();
 
     // When
@@ -68,7 +67,7 @@ class AudioChunkProcessorTest {
   @Test
   void processAudioChunks_WithSpeechDisabled_ShouldReturnError() throws Exception {
     // Given
-    var chunks = Arrays.asList(new byte[] {1, 2, 3});
+    var chunks = List.of(new byte[] {1, 2, 3});
     var callback = createMockCallback();
     when(mockConversationalAI.isSpeechEnabled()).thenReturn(false);
 
@@ -86,7 +85,7 @@ class AudioChunkProcessorTest {
   @Test
   void processAudioChunks_WithValidInput_ShouldInvokeCallback() throws Exception {
     // Given
-    var chunks = Arrays.asList(createMockWavData(256));
+    var chunks = List.of(createMockWavData(256));
     var statusUpdates = new AtomicReference<String>();
     var transcriptionReady = new AtomicReference<String>();
 
@@ -150,7 +149,7 @@ class AudioChunkProcessorTest {
   @Test
   void processAudioChunks_ExceptionDuringProcessing_ShouldReturnError() throws Exception {
     // Given
-    var chunks = Arrays.asList(createMockWavData(256));
+    var chunks = List.of(createMockWavData(256));
     var callback = createMockCallback();
     when(mockConversationalAI.isSpeechEnabled()).thenReturn(true);
     when(mockConversationalAI.chat(anyString())).thenThrow(new RuntimeException("Mock chat error"));
@@ -169,8 +168,8 @@ class AudioChunkProcessorTest {
   @Test
   void multipleProcessingRequests_ShouldBeHandledConcurrently() {
     // Given
-    var chunks1 = Arrays.asList(createMockWavData(128));
-    var chunks2 = Arrays.asList(createMockWavData(256));
+    var chunks1 = List.of(createMockWavData(128));
+    var chunks2 = List.of(createMockWavData(256));
     var callback = createMockCallback();
     when(mockConversationalAI.isSpeechEnabled()).thenReturn(true);
 

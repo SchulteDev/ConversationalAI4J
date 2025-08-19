@@ -8,8 +8,8 @@ import org.junit.jupiter.api.Test;
 /** Tests for AudioSessionManager session state management. */
 class AudioSessionManagerTest {
 
-  private AudioSessionManager sessionManager;
   private static final String TEST_SESSION_ID = "test-session-123";
+  private AudioSessionManager sessionManager;
 
   @BeforeEach
   void setUp() {

@@ -6,9 +6,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.*;
-import schultedev.conversationalai4j.ConversationalAI;
-import schultedev.conversationalai4j.AudioSessionManager;
 import schultedev.conversationalai4j.AudioChunkProcessor;
+import schultedev.conversationalai4j.AudioSessionManager;
+import schultedev.conversationalai4j.ConversationalAI;
 
 /**
  * WebSocket handler for real-time voice streaming. Delegates audio processing to specialized
