@@ -1,7 +1,5 @@
 package schultedev.conversationalai4j;
 
-import java.nio.file.Path;
-import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,21 +11,13 @@ public class SpeechToText {
 
   private static final Logger log = LoggerFactory.getLogger(SpeechToText.class);
   private final SpeechService speechService;
-  private final String modelPath;
-  private final String language;
 
   /**
    * Creates a new SpeechToText instance.
-   *
-   * @param modelPath Path to the STT model (for logging/info purposes)
-   * @param language Language code for the model (e.g., "en-US")
    */
-  public SpeechToText(Path modelPath, String language) {
+  public SpeechToText() {
     this.speechService = new SpeechService();
-    this.modelPath = Objects.requireNonNull(modelPath, "Model path cannot be null").toString();
-    this.language = Objects.requireNonNull(language, "Language cannot be null");
-
-    log.info("SpeechToText initialized for model: {} ({})", modelPath, language);
+    log.info("SpeechToText initialized");
   }
 
   /**

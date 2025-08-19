@@ -1,7 +1,5 @@
 package schultedev.conversationalai4j;
 
-import java.nio.file.Path;
-import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,24 +11,13 @@ public class TextToSpeech {
 
   private static final Logger log = LoggerFactory.getLogger(TextToSpeech.class);
   private final SpeechService speechService;
-  private final String modelPath;
-  private final String language;
-  private final String voice;
 
   /**
    * Creates a new TextToSpeech instance.
-   *
-   * @param modelPath Path to the TTS model (for logging/info purposes)
-   * @param language Language code for the model (e.g., "en-US")
-   * @param voice Voice identifier (e.g., "female", "male")
    */
-  public TextToSpeech(Path modelPath, String language, String voice) {
+  public TextToSpeech() {
     this.speechService = new SpeechService();
-    this.modelPath = Objects.requireNonNull(modelPath, "Model path cannot be null").toString();
-    this.language = Objects.requireNonNull(language, "Language cannot be null");
-    this.voice = Objects.requireNonNull(voice, "Voice cannot be null");
-
-    log.info("TextToSpeech initialized for model: {} ({}, {})", modelPath, language, voice);
+    log.info("TextToSpeech initialized");
   }
 
   /**
