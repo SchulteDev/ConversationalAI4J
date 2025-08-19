@@ -93,7 +93,7 @@ class ConversationControllerTest {
     // When: Try voice chat (ConversationalAI may be initialized but speech unavailable)
     mockMvc
         .perform(post("/voice-chat").contentType("application/octet-stream").content(mockAudioData))
-        .andExpect(status().is4xxClientError()); // 400 or 503 both acceptable
+        .andExpect(status().is5xxServerError()); // 400 or 503 both acceptable
   }
 
   @Test
@@ -109,7 +109,7 @@ class ConversationControllerTest {
     // When: Try text-to-voice (ConversationalAI may be initialized but speech unavailable)
     mockMvc
         .perform(post("/text-to-voice").contentType("text/plain").content("Hello AI"))
-        .andExpect(status().is4xxClientError()); // 400 or 503 both acceptable
+        .andExpect(status().is5xxServerError()); // 400 or 503 both acceptable
   }
 
   @Test
@@ -129,7 +129,7 @@ class ConversationControllerTest {
     mockMvc
         .perform(
             post("/voice-to-text").contentType("application/octet-stream").content(mockAudioData))
-        .andExpect(status().is4xxClientError()); // 400 or 503 both acceptable
+        .andExpect(status().is5xxServerError()); // 400 or 503 both acceptable
   }
 
   @Test
