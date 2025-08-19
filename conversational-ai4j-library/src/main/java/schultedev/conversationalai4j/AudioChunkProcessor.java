@@ -86,7 +86,7 @@ public class AudioChunkProcessor {
 
       var t0 = System.nanoTime();
       var transcribedText =
-          schultedev.conversationalai4j.utils.AudioUtils.speechToText(
+          SpeechServiceUtils.speechToText(
               conversationalAI, combinedAudio, format);
       var t1 = System.nanoTime();
       log.info("STT completed in {} ms", ((t1 - t0) / 1_000_000));

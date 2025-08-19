@@ -46,7 +46,7 @@ public class ConversationUtils {
       // Convert speech to text first - we need to access internal methods
       // For now, use voiceChat and extract text part
       var result =
-          AudioUtils.speechToText(
+          schultedev.conversationalai4j.SpeechServiceUtils.speechToText(
               ai, audioInput, schultedev.conversationalai4j.AudioFormat.wav16kMono());
 
       if (result.trim().isEmpty() || result.startsWith("Speech recognition error:")) {

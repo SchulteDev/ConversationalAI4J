@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
  * }</pre>
  *
  * For advanced audio processing and mixed-modality conversations, see: {@link
- * schultedev.conversationalai4j.utils.AudioUtils} and {@link
+ * SpeechServiceUtils} and {@link
  * schultedev.conversationalai4j.utils.ConversationUtils}
  */
 public class ConversationalAI implements AutoCloseable {
@@ -47,8 +47,8 @@ public class ConversationalAI implements AutoCloseable {
 
   private final ChatModel model;
   private final ConversationService service;
-  private final SpeechToText speechToText;
-  private final TextToSpeech textToSpeech;
+  private final SpeechToTextService speechToText;
+  private final TextToSpeechService textToSpeech;
 
   private ConversationalAI(Builder builder) {
     log.debug(
@@ -69,8 +69,8 @@ public class ConversationalAI implements AutoCloseable {
     // Initialize speech services if configured
     if (builder.speechConfig != null && builder.speechConfig.isEnabled()) {
       log.debug("Initializing speech services with config: {}", builder.speechConfig);
-      this.speechToText = new SpeechToText();
-      this.textToSpeech = new TextToSpeech();
+      this.speechToText = new SpeechToTextService();
+      this.textToSpeech = new TextToSpeechService();
       log.info("Speech services initialized successfully");
     } else {
       log.debug("Speech services disabled - text-only mode");

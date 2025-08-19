@@ -195,7 +195,7 @@ class ConversationalAITest {
         assertThrows(
             UnsupportedOperationException.class,
             () ->
-                schultedev.conversationalai4j.utils.AudioUtils.speechToText(
+                schultedev.conversationalai4j.SpeechServiceUtils.speechToText(
                     ai, audioData, AudioFormat.wav16kMono()));
     assertTrue(exception.getMessage().contains("Speech services are not configured"));
   }

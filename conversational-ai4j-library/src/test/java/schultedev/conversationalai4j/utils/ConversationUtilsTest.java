@@ -30,18 +30,17 @@ class ConversationUtilsTest {
     // Given: Mock ConversationalAI with speech enabled
     when(mockAI.isSpeechEnabled()).thenReturn(true);
 
-    // When/Then: Since we can't mock static AudioUtils calls easily,
-    // we expect this to call the actual AudioUtils.speechToText method
+    // When/Then: Since we can't mock static SpeechServiceUtils calls easily,
+    // we expect this to call the actual SpeechServiceUtils.speechToText method
     // which will likely fail in test environment, but we can verify the validation works
 
     try {
       ConversationUtils.chatWithTextResponse(mockAI, testAudioData);
       // If we reach here without exception, that's fine too
     } catch (RuntimeException e) {
-      // Expected in test environment where SpeechService is not available
+      // Expected in test environment where speech services are not available
       assertTrue(
           e.getMessage().contains("Speech recognition error")
-              || e.getMessage().contains("SpeechService")
               || e.getMessage().contains("No text transcribed"));
     }
 
