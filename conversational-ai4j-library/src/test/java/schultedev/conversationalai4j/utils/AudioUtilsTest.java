@@ -75,7 +75,7 @@ class AudioUtilsTest {
     // Note: This will call the actual SpeechService, which may fail in test environment
     // The test verifies validation logic and method structure
     try {
-      String result = AudioUtils.speechToText(mockAI, testAudioData, testFormat);
+      var result = AudioUtils.speechToText(mockAI, testAudioData, testFormat);
       // If we reach here, the method executed without validation errors
       assertNotNull(result);
     } catch (Exception e) {

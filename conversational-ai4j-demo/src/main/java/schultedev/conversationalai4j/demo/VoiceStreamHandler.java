@@ -120,7 +120,7 @@ public class VoiceStreamHandler implements WebSocketHandler {
     }
 
     // Create callback for processing status updates
-    AudioChunkProcessor.ProcessingCallback callback =
+    var callback =
         new AudioChunkProcessor.ProcessingCallback() {
           @Override
           public void onStatusUpdate(String status, String message) {
@@ -159,10 +159,9 @@ public class VoiceStreamHandler implements WebSocketHandler {
                 return;
               }
 
-              if (result.isSuccess()) {
+              if (result.success()) {
                 try {
-                  sendAIResponse(
-                      session, result.getAiResponse(), result.getResponseAudio(), sessionId);
+                  sendAIResponse(session, result.aiResponse(), result.responseAudio(), sessionId);
                 } catch (IOException e) {
                   log.error("Failed to send AI response: {}", e.getMessage());
                   try {
@@ -173,7 +172,7 @@ public class VoiceStreamHandler implements WebSocketHandler {
                 }
               } else {
                 try {
-                  sendStatus(session, "error", result.getErrorMessage());
+                  sendStatus(session, "error", result.errorMessage());
                 } catch (IOException e) {
                   log.error("Failed to send error status: {}", e.getMessage());
                 }

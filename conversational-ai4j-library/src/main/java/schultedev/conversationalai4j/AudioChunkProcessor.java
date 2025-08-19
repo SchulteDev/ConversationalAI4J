@@ -162,25 +162,12 @@ public class AudioChunkProcessor {
   }
 
   /** Result of audio processing containing both text and audio responses. */
-  public static class ProcessingResult {
-    private final String transcribedText;
-    private final String aiResponse;
-    private final byte[] responseAudio;
-    private final boolean success;
-    private final String errorMessage;
-
-    private ProcessingResult(
-        String transcribedText,
-        String aiResponse,
-        byte[] responseAudio,
-        boolean success,
-        String errorMessage) {
-      this.transcribedText = transcribedText;
-      this.aiResponse = aiResponse;
-      this.responseAudio = responseAudio;
-      this.success = success;
-      this.errorMessage = errorMessage;
-    }
+  public record ProcessingResult(
+      String transcribedText,
+      String aiResponse,
+      byte[] responseAudio,
+      boolean success,
+      String errorMessage) {
 
     public static ProcessingResult success(
         String transcribedText, String aiResponse, byte[] responseAudio) {
@@ -189,26 +176,6 @@ public class AudioChunkProcessor {
 
     public static ProcessingResult error(String errorMessage) {
       return new ProcessingResult(null, null, null, false, errorMessage);
-    }
-
-    public String getTranscribedText() {
-      return transcribedText;
-    }
-
-    public String getAiResponse() {
-      return aiResponse;
-    }
-
-    public byte[] getResponseAudio() {
-      return responseAudio;
-    }
-
-    public boolean isSuccess() {
-      return success;
-    }
-
-    public String getErrorMessage() {
-      return errorMessage;
     }
   }
 }

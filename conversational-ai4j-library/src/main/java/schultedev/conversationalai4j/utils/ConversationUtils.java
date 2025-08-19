@@ -45,7 +45,7 @@ public class ConversationUtils {
     try {
       // Convert speech to text first - we need to access internal methods
       // For now, use voiceChat and extract text part
-      String result =
+      var result =
           AudioUtils.speechToText(
               ai, audioInput, schultedev.conversationalai4j.AudioFormat.wav16kMono());
 
@@ -55,7 +55,7 @@ public class ConversationUtils {
       }
 
       // Get AI response
-      String aiResponse = ai.chat(result);
+      var aiResponse = ai.chat(result);
       log.debug("Generated text response for audio input: '{}'", aiResponse);
 
       return aiResponse;
@@ -92,10 +92,10 @@ public class ConversationUtils {
 
     try {
       // Get AI response as text
-      String aiResponse = ai.chat(textInput);
+      var aiResponse = ai.chat(textInput);
 
       // Convert to speech
-      byte[] audioResponse = ai.textToSpeech(aiResponse);
+      var audioResponse = ai.textToSpeech(aiResponse);
       log.debug("Generated {} bytes of audio response for text input", audioResponse.length);
 
       return audioResponse;

@@ -68,7 +68,7 @@ class AudioSessionManagerTest {
     // Then
     assertTrue(result);
     assertEquals(1, sessionManager.getAudioChunks(TEST_SESSION_ID).size());
-    assertArrayEquals(audioData, sessionManager.getAudioChunks(TEST_SESSION_ID).get(0));
+    assertArrayEquals(audioData, sessionManager.getAudioChunks(TEST_SESSION_ID).getFirst());
   }
 
   @Test

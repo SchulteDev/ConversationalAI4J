@@ -84,7 +84,7 @@ public class AudioUtils {
     // This would need access to internal speechToText field
     // For now, we'll use the public API as a workaround
     try {
-      String result = speechToText(ai, audioInput, AudioFormat.wav16kMono());
+      var result = speechToText(ai, audioInput, AudioFormat.wav16kMono());
       log.info("Speech-to-text debug result: '{}'", result);
     } catch (Exception e) {
       log.error("Speech-to-text debug failed: {}", e.getMessage(), e);

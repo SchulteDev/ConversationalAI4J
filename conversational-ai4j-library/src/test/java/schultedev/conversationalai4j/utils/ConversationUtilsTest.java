@@ -97,7 +97,7 @@ class ConversationUtilsTest {
     when(mockAI.textToSpeech("AI response")).thenReturn(new byte[] {10, 20, 30});
 
     // When: Call chatWithVoiceResponse
-    byte[] result = ConversationUtils.chatWithVoiceResponse(mockAI, testText);
+    var result = ConversationUtils.chatWithVoiceResponse(mockAI, testText);
 
     // Then: Should return audio response
     assertNotNull(result);
@@ -156,7 +156,7 @@ class ConversationUtilsTest {
     when(mockAI.chat(testText)).thenThrow(new RuntimeException("Chat error"));
 
     // When: Call chatWithVoiceResponse
-    byte[] result = ConversationUtils.chatWithVoiceResponse(mockAI, testText);
+    var result = ConversationUtils.chatWithVoiceResponse(mockAI, testText);
 
     // Then: Should return empty array
     assertNotNull(result);
@@ -175,7 +175,7 @@ class ConversationUtilsTest {
     when(mockAI.textToSpeech("AI response")).thenThrow(new RuntimeException("TTS error"));
 
     // When: Call chatWithVoiceResponse
-    byte[] result = ConversationUtils.chatWithVoiceResponse(mockAI, testText);
+    var result = ConversationUtils.chatWithVoiceResponse(mockAI, testText);
 
     // Then: Should return empty array
     assertNotNull(result);

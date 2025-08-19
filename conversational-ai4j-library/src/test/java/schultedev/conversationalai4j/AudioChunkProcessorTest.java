@@ -45,8 +45,8 @@ class AudioChunkProcessorTest {
             .get();
 
     // Then
-    assertFalse(result.isSuccess());
-    assertEquals("No audio data received", result.getErrorMessage());
+    assertFalse(result.success());
+    assertEquals("No audio data received", result.errorMessage());
   }
 
   @Test
@@ -60,8 +60,8 @@ class AudioChunkProcessorTest {
         processor.processAudioChunks(chunks, AudioFormat.wav16kMono(), null, callback).get();
 
     // Then
-    assertFalse(result.isSuccess());
-    assertEquals("AI service not available", result.getErrorMessage());
+    assertFalse(result.success());
+    assertEquals("AI service not available", result.errorMessage());
   }
 
   @Test
@@ -78,8 +78,8 @@ class AudioChunkProcessorTest {
             .get();
 
     // Then
-    assertFalse(result.isSuccess());
-    assertEquals("Speech services not available in this environment", result.getErrorMessage());
+    assertFalse(result.success());
+    assertEquals("Speech services not available in this environment", result.errorMessage());
   }
 
   @Test
@@ -126,11 +126,11 @@ class AudioChunkProcessorTest {
         AudioChunkProcessor.ProcessingResult.success("Hello", "Hi there", new byte[] {1, 2, 3});
 
     // Then
-    assertTrue(result.isSuccess());
-    assertEquals("Hello", result.getTranscribedText());
-    assertEquals("Hi there", result.getAiResponse());
-    assertArrayEquals(new byte[] {1, 2, 3}, result.getResponseAudio());
-    assertNull(result.getErrorMessage());
+    assertTrue(result.success());
+    assertEquals("Hello", result.transcribedText());
+    assertEquals("Hi there", result.aiResponse());
+    assertArrayEquals(new byte[] {1, 2, 3}, result.responseAudio());
+    assertNull(result.errorMessage());
   }
 
   @Test
@@ -139,11 +139,11 @@ class AudioChunkProcessorTest {
     var result = AudioChunkProcessor.ProcessingResult.error("Test error");
 
     // Then
-    assertFalse(result.isSuccess());
-    assertNull(result.getTranscribedText());
-    assertNull(result.getAiResponse());
-    assertNull(result.getResponseAudio());
-    assertEquals("Test error", result.getErrorMessage());
+    assertFalse(result.success());
+    assertNull(result.transcribedText());
+    assertNull(result.aiResponse());
+    assertNull(result.responseAudio());
+    assertEquals("Test error", result.errorMessage());
   }
 
   @Test
@@ -161,8 +161,8 @@ class AudioChunkProcessorTest {
             .get();
 
     // Then
-    assertFalse(result.isSuccess());
-    assertTrue(result.getErrorMessage().contains("Processing error"));
+    assertFalse(result.success());
+    assertTrue(result.errorMessage().contains("Processing error"));
   }
 
   @Test
