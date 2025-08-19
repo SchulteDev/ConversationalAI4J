@@ -27,6 +27,9 @@ dependencies {
   // Testcontainers for Docker integration tests
   testImplementation 'org.testcontainers:testcontainers:1.21.3'
   testImplementation 'org.testcontainers:junit-jupiter:1.21.3'
+
+  // Playwright for E2E testing
+  testImplementation 'com.microsoft.playwright:playwright:1.54.0'
 }
 
 tasks.named('test') {

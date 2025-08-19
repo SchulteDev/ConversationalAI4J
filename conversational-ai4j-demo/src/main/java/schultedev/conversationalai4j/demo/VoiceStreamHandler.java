@@ -334,7 +334,8 @@ public class VoiceStreamHandler implements WebSocketHandler {
   }
 
   @Override
-  public void handleTransportError(@NonNull WebSocketSession session, @NonNull Throwable exception) {
+  public void handleTransportError(
+      @NonNull WebSocketSession session, @NonNull Throwable exception) {
     log.error(
         "WebSocket transport error for session {}: {}",
         session.getId(),
@@ -343,7 +344,8 @@ public class VoiceStreamHandler implements WebSocketHandler {
   }
 
   @Override
-  public void afterConnectionClosed(@NonNull WebSocketSession session, @NonNull CloseStatus closeStatus) {
+  public void afterConnectionClosed(
+      @NonNull WebSocketSession session, @NonNull CloseStatus closeStatus) {
     var sessionId = session.getId();
     log.info("WebSocket voice stream connection closed: {} ({})", sessionId, closeStatus);
 
