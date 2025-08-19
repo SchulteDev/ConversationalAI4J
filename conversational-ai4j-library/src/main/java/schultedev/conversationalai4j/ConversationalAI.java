@@ -11,8 +11,35 @@ import org.slf4j.LoggerFactory;
 /**
  * Main entry point for conversational AI functionality. Provides fluent builder API for easy
  * configuration and usage.
+ * 
+ * <h2>Basic Usage:</h2>
+ * <pre>{@code
+ * try (ConversationalAI ai = ConversationalAI.builder()
+ *     .withOllamaModel("llama3.2:3b")
+ *     .build()) {
+ *     
+ *     String response = ai.chat("Hello, how are you?");
+ *     System.out.println(response);
+ * }
+ * }</pre>
+ * 
+ * <h2>Voice-Enabled Usage:</h2>
+ * <pre>{@code
+ * try (ConversationalAI ai = ConversationalAI.builder()
+ *     .withOllamaModel("llama3.2:3b")
+ *     .withSpeech()
+ *     .build()) {
+ *     
+ *     byte[] audioResponse = ai.voiceChat(audioBytes);
+ *     byte[] speechAudio = ai.textToSpeech("Hello world");
+ * }
+ * }</pre>
+ * 
+ * For advanced audio processing and mixed-modality conversations, see:
+ * {@link schultedev.conversationalai4j.utils.AudioUtils} and
+ * {@link schultedev.conversationalai4j.utils.ConversationUtils}
  */
-public class ConversationalAI {
+public class ConversationalAI implements AutoCloseable {
 
   private static final Logger log = LoggerFactory.getLogger(ConversationalAI.class);
 
@@ -128,143 +155,9 @@ public class ConversationalAI {
     }
   }
 
-  /**
-   * Mixed modality: Process text input and return audio response.
-   *
-   * @param textInput Text message to process
-   * @return Audio response in WAV format, or empty array if processing failed
-   * @throws UnsupportedOperationException if text-to-speech is not configured
-   * @throws IllegalArgumentException if text input is null or empty
-   */
-  public byte[] chatWithVoiceResponse(String textInput) {
-    if (textToSpeech == null) {
-      throw new UnsupportedOperationException(
-          "Text-to-speech service is not configured. Use withSpeech() in builder.");
-    }
 
-    if (textInput == null || textInput.trim().isEmpty()) {
-      throw new IllegalArgumentException("Text input cannot be null or empty");
-    }
 
-    log.debug("Processing text input with voice response: '{}'", textInput);
 
-    try {
-      // Get AI response as text
-      var aiResponse = chat(textInput);
-
-      // Convert to speech
-      var audioResponse = textToSpeech.synthesize(aiResponse);
-      log.debug("Generated {} bytes of audio response for text input", audioResponse.length);
-
-      return audioResponse;
-
-    } catch (Exception e) {
-      log.error("Error generating voice response for text: {}", e.getMessage(), e);
-      return new byte[0];
-    }
-  }
-
-  /**
-   * Mixed modality: Process audio input and return text response.
-   *
-   * @param audioInput Raw audio data in WAV format (16kHz, 16-bit, mono)
-   * @return Text response from AI, or empty string if processing failed
-   * @throws UnsupportedOperationException if speech-to-text is not configured
-   * @throws IllegalArgumentException if audio input is null or empty
-   */
-  /**
-   * Convert speech to text only (no chat processing).
-   *
-   * @param audioInput Raw audio data in WAV format (16kHz, 16-bit, mono)
-   * @throws UnsupportedOperationException if speech-to-text is not configured
-   * @throws IllegalArgumentException if audio input is null or empty
-   */
-  public void speechToText(byte[] audioInput) {
-    if (speechToText == null) {
-      throw new UnsupportedOperationException(
-          "Speech-to-text service is not configured. Use withSpeech() in builder.");
-    }
-
-    if (audioInput == null || audioInput.length == 0) {
-      throw new IllegalArgumentException("Audio input cannot be null or empty");
-    }
-
-    log.info("Processing speech-to-text: {} bytes", audioInput.length);
-
-    try {
-      var text = speechToText.transcribe(audioInput);
-      log.info("Speech-to-text result: '{}'", text);
-    } catch (Exception e) {
-      log.error("Speech-to-text failed: {}", e.getMessage(), e);
-    }
-  }
-
-  /**
-   * Convert speech to text with explicit format specification.
-   *
-   * @param audioInput Raw audio data
-   * @param format Audio format specification
-   * @return Transcribed text, or error message if transcription failed
-   * @throws UnsupportedOperationException if speech-to-text is not configured
-   * @throws IllegalArgumentException if audio input is null or empty
-   */
-  public String speechToText(byte[] audioInput, AudioFormat format) {
-    if (speechToText == null) {
-      throw new UnsupportedOperationException(
-          "Speech-to-text service is not configured. Use withSpeech() in builder.");
-    }
-
-    if (audioInput == null || audioInput.length == 0) {
-      throw new IllegalArgumentException("Audio input cannot be null or empty");
-    }
-
-    log.info("Processing speech-to-text: {} bytes with format {}", audioInput.length, format);
-
-    try {
-      // Use SpeechService's enhanced method
-      var speechService = new SpeechService();
-      var text = speechService.speechToText(audioInput, format);
-      log.info("Speech-to-text result: '{}'", text);
-      return text;
-    } catch (Exception e) {
-      log.error("Speech-to-text failed: {}", e.getMessage(), e);
-      return "Speech recognition error: " + e.getMessage();
-    }
-  }
-
-  public String chatWithTextResponse(byte[] audioInput) {
-    if (speechToText == null) {
-      throw new UnsupportedOperationException(
-          "Speech-to-text service is not configured. Use withSpeech() in builder.");
-    }
-
-    if (audioInput == null || audioInput.length == 0) {
-      throw new IllegalArgumentException("Audio input cannot be null or empty");
-    }
-
-    log.debug("Processing audio input with text response: {} bytes", audioInput.length);
-
-    try {
-      // Convert speech to text
-      var text = speechToText.transcribe(audioInput);
-      log.debug("Transcribed text: '{}'", text);
-
-      if (text.trim().isEmpty()) {
-        log.warn("No text transcribed from audio input");
-        return "";
-      }
-
-      // Get AI response
-      var aiResponse = chat(text);
-      log.debug("Generated text response for audio input: '{}'", aiResponse);
-
-      return aiResponse;
-
-    } catch (Exception e) {
-      log.error("Error generating text response for audio: {}", e.getMessage(), e);
-      return "";
-    }
-  }
 
   /**
    * Check if speech services are available.
@@ -278,14 +171,6 @@ public class ConversationalAI {
         && textToSpeech.isReady();
   }
 
-  /**
-   * Check if text-to-speech service is available.
-   *
-   * @return true if text-to-speech is configured and ready
-   */
-  public boolean isTextToSpeechEnabled() {
-    return textToSpeech != null && textToSpeech.isReady();
-  }
 
   /**
    * Convert text directly to speech without LLM processing.
@@ -317,20 +202,12 @@ public class ConversationalAI {
     }
   }
 
-  /**
-   * Check if speech-to-text service is available.
-   *
-   * @return true if speech-to-text is configured and ready
-   */
-  public boolean isSpeechToTextEnabled() {
-    return speechToText != null && speechToText.isReady();
-  }
 
   /**
    * Clean up resources used by the conversational AI system. This includes speech services and any
-   * allocated native resources. Should be called when the ConversationalAI instance is no longer
-   * needed.
+   * allocated native resources. Called automatically when used with try-with-resources.
    */
+  @Override
   public void close() {
     log.debug("Cleaning up ConversationalAI resources");
 
@@ -413,11 +290,37 @@ public class ConversationalAI {
 
     /** Build the ConversationalAI instance */
     public ConversationalAI build() {
+      // Validate model configuration
       if (model == null) {
         throw new IllegalStateException(
-            "Model must be configured. Use withOllamaModel() or withModel()");
+            "Model must be configured using withOllamaModel()");
       }
+      
+      // Validate speech configuration
+      if (speechConfig != null && speechConfig.isEnabled()) {
+        validateSpeechConfiguration(speechConfig);
+      }
+      
+      // Validate temperature range (already checked in setter, but double-check)
+      if (temperature < 0.0 || temperature > 1.0) {
+        throw new IllegalArgumentException("Temperature must be between 0.0 and 1.0");
+      }
+      
       return new ConversationalAI(this);
+    }
+    
+    private void validateSpeechConfiguration(SpeechConfig config) {
+      if (config.getSttModelPath() == null || config.getSttModelPath().toString().trim().isEmpty()) {
+        throw new IllegalStateException(
+            "Speech-to-text model path required when speech is enabled. " +
+            "Check that models are properly configured in speech configuration.");
+      }
+      
+      if (config.getTtsModelPath() == null || config.getTtsModelPath().toString().trim().isEmpty()) {
+        throw new IllegalStateException(
+            "Text-to-speech model path required when speech is enabled. " +
+            "Check that models are properly configured in speech configuration.");
+      }
     }
   }
 }

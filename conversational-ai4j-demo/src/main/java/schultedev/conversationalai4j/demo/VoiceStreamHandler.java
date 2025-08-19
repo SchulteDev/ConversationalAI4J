@@ -235,7 +235,8 @@ public class VoiceStreamHandler implements WebSocketHandler {
           sessionId,
           combinedAudio.length);
       var t0 = System.nanoTime();
-      var transcribedText = conversationalAI.speechToText(combinedAudio, format);
+      var transcribedText = schultedev.conversationalai4j.utils.AudioUtils.speechToText(
+          conversationalAI, combinedAudio, format);
       var t1 = System.nanoTime();
       log.info("STT completed for session {} in {} ms", sessionId, ((t1 - t0) / 1_000_000));
 
@@ -321,8 +322,8 @@ public class VoiceStreamHandler implements WebSocketHandler {
     }
 
     var speechEnabled = conversationalAI.isSpeechEnabled();
-    var sttEnabled = conversationalAI.isSpeechToTextEnabled();
-    var ttsEnabled = conversationalAI.isTextToSpeechEnabled();
+    var sttEnabled = conversationalAI.isSpeechEnabled();
+    var ttsEnabled = conversationalAI.isSpeechEnabled();
 
     var status =
         String.format(
@@ -362,7 +363,7 @@ public class VoiceStreamHandler implements WebSocketHandler {
 
   private void sendAIResponse(WebSocketSession session, String aiResponse, String sessionId)
       throws IOException {
-    if (conversationalAI.isTextToSpeechEnabled()) {
+    if (conversationalAI.isSpeechEnabled()) {
       try {
         var t0 = System.nanoTime();
         // Directly convert AI response to speech without reprocessing through LLM

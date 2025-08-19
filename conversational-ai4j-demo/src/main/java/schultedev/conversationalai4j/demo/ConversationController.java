@@ -156,7 +156,7 @@ public class ConversationController {
           .body("ConversationalAI service is not available".getBytes());
     }
 
-    if (!conversationalAI.isTextToSpeechEnabled()) {
+    if (!conversationalAI.isSpeechEnabled()) {
       log.warn("Text-to-speech not available");
       return ResponseEntity.badRequest()
           .body("Text-to-speech service is not configured".getBytes());
@@ -170,7 +170,8 @@ public class ConversationController {
     log.info("Processing text-to-voice for message: '{}'", message);
 
     try {
-      var audioResponse = conversationalAI.chatWithVoiceResponse(message);
+      var audioResponse = schultedev.conversationalai4j.utils.ConversationUtils.chatWithVoiceResponse(
+          conversationalAI, message);
 
       if (audioResponse.length == 0) {
         log.warn("No audio response generated for text input");
@@ -206,7 +207,7 @@ public class ConversationController {
       return ResponseEntity.status(503).body("ConversationalAI service is not available");
     }
 
-    if (!conversationalAI.isSpeechToTextEnabled()) {
+    if (!conversationalAI.isSpeechEnabled()) {
       log.warn("Speech-to-text not available");
       return ResponseEntity.badRequest().body("Speech-to-text service is not configured");
     }
@@ -219,7 +220,8 @@ public class ConversationController {
     log.info("Processing voice-to-text with {} bytes of audio input", audioData.length);
 
     try {
-      var textResponse = conversationalAI.chatWithTextResponse(audioData);
+      var textResponse = schultedev.conversationalai4j.utils.ConversationUtils.chatWithTextResponse(
+          conversationalAI, audioData);
 
       if (textResponse.trim().isEmpty()) {
         log.warn("No text response generated for audio input");
@@ -252,7 +254,7 @@ public class ConversationController {
           .body("ConversationalAI service is not available".getBytes());
     }
 
-    if (!conversationalAI.isTextToSpeechEnabled()) {
+    if (!conversationalAI.isSpeechEnabled()) {
       log.warn("Text-to-speech not available for direct TTS");
       return ResponseEntity.badRequest()
           .body("Text-to-speech service is not configured".getBytes());
@@ -360,13 +362,11 @@ public class ConversationController {
     }
 
     var speechEnabled = conversationalAI.isSpeechEnabled();
-    var sttEnabled = conversationalAI.isSpeechToTextEnabled();
-    var ttsEnabled = conversationalAI.isTextToSpeechEnabled();
 
     var status =
         String.format(
             "{\"available\": %s, \"speechToText\": %s, \"textToSpeech\": %s, \"fullSpeech\": %s}",
-            speechEnabled, sttEnabled, ttsEnabled, speechEnabled);
+            speechEnabled, speechEnabled, speechEnabled, speechEnabled);
 
     log.debug("Speech status: {}", status);
     return ResponseEntity.ok(status);

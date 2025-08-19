@@ -14,7 +14,7 @@ class ConversationalAITest {
     // When/Then: Build should fail
     var exception = assertThrows(IllegalStateException.class, builder::build);
     assertEquals(
-        "Model must be configured. Use withOllamaModel() or withModel()", exception.getMessage());
+        "Model must be configured using withOllamaModel()", exception.getMessage());
   }
 
   @Test
@@ -193,8 +193,9 @@ class ConversationalAITest {
 
     // When/Then: Speech to text should throw exception
     var exception =
-        assertThrows(UnsupportedOperationException.class, () -> ai.speechToText(audioData));
-    assertTrue(exception.getMessage().contains("Speech-to-text service is not configured"));
+        assertThrows(UnsupportedOperationException.class, () -> 
+            schultedev.conversationalai4j.utils.AudioUtils.speechToText(ai, audioData, AudioFormat.wav16kMono()));
+    assertTrue(exception.getMessage().contains("Speech services are not configured"));
   }
 
   @Test
@@ -215,8 +216,6 @@ class ConversationalAITest {
 
     // When/Then: Speech status should be false
     assertFalse(aiWithoutSpeech.isSpeechEnabled());
-    assertFalse(aiWithoutSpeech.isSpeechToTextEnabled());
-    assertFalse(aiWithoutSpeech.isTextToSpeechEnabled());
 
     // Given: ConversationalAI with speech
     var aiWithSpeech = ConversationalAI.builder().withOllamaModel("llama2").withSpeech().build();
@@ -224,8 +223,6 @@ class ConversationalAITest {
     // When/Then: Speech may be available depending on environment
     // (We don't assert true/false since it depends on speech library availability)
     assertNotNull(aiWithSpeech.isSpeechEnabled());
-    assertNotNull(aiWithSpeech.isSpeechToTextEnabled());
-    assertNotNull(aiWithSpeech.isTextToSpeechEnabled());
   }
 
   @Test
