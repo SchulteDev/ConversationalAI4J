@@ -7,20 +7,53 @@ services:
       - ollama_data:/root/.ollama
     environment:
       - OLLAMA_HOST=0.0.0.0
+      - OLLAMA_KEEP_ALIVE=24h
+      - OLLAMA_DEBUG=1
     restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "ollama", "list" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  ollama-setup:
+    image: ollama/ollama:latest
+    depends_on:
+      ollama:
+        condition: service_healthy
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+      - OLLAMA_DEBUG=1
+    entrypoint: >
+      sh -c "
+        until ollama list > /dev/null 2>&1; do sleep 5; done &&
+        ollama pull llama3.2:3b &&
+        echo 'Hello' | ollama run llama3.2:3b
+      "
+    restart: "no"
 
   demo:
     build: .
     ports:
       - "8080:8080"
     depends_on:
-      - ollama
+      ollama-setup:
+        condition: service_completed_successfully
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - OLLAMA_BASE_URL=http://ollama:11434
       - OLLAMA_MODEL_NAME=llama3.2:3b
       - SPEECH_ENABLED=true
     restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
 volumes:
   ollama_data:
