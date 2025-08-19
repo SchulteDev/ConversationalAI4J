@@ -1,18 +1,18 @@
-package schultedev.conversationalai4j.demo;
+package schultedev.conversationalai4j;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-import schultedev.conversationalai4j.AudioFormat;
 
 /**
- * Manages audio recording sessions and their state.
- * Tracks recording state, audio chunks, and format information per WebSocket session.
+ * Manages audio recording sessions and their state. Tracks recording state, audio chunks, and
+ * format information per session.
+ *
+ * <p>This is a pure Java class with no framework dependencies, making it reusable across different
+ * application types (Spring Boot, plain Java, etc.).
  */
-@Service
 public class AudioSessionManager {
 
   private static final Logger log = LoggerFactory.getLogger(AudioSessionManager.class);
@@ -25,9 +25,7 @@ public class AudioSessionManager {
   private final ConcurrentHashMap<String, Boolean> recordingStates = new ConcurrentHashMap<>();
   private final ConcurrentHashMap<String, AudioFormat> sessionFormats = new ConcurrentHashMap<>();
 
-  /**
-   * Initializes a new session with default values.
-   */
+  /** Initializes a new session with default values. */
   public void initializeSession(String sessionId) {
     log.info("Initializing audio session: {}", sessionId);
     audioChunks.put(sessionId, new ArrayList<>());
@@ -35,9 +33,7 @@ public class AudioSessionManager {
     sessionFormats.put(sessionId, AudioFormat.wav16kMono()); // Default format
   }
 
-  /**
-   * Starts recording for the specified session.
-   */
+  /** Starts recording for the specified session. */
   public void startRecording(String sessionId) {
     recordingStates.put(sessionId, true);
     var chunks = audioChunks.get(sessionId);
@@ -47,39 +43,31 @@ public class AudioSessionManager {
     log.info("Started recording for session {}", sessionId);
   }
 
-  /**
-   * Stops recording for the specified session.
-   */
+  /** Stops recording for the specified session. */
   public void stopRecording(String sessionId) {
     recordingStates.put(sessionId, false);
     log.info("Stopped recording for session {}", sessionId);
   }
 
-  /**
-   * Checks if a session is currently recording.
-   */
+  /** Checks if a session is currently recording. */
   public boolean isRecording(String sessionId) {
     return recordingStates.getOrDefault(sessionId, false);
   }
 
-  /**
-   * Gets the audio format for a session.
-   */
+  /** Gets the audio format for a session. */
   public AudioFormat getSessionFormat(String sessionId) {
     return sessionFormats.get(sessionId);
   }
 
-  /**
-   * Sets the audio format for a session.
-   */
+  /** Sets the audio format for a session. */
   public void setSessionFormat(String sessionId, AudioFormat format) {
     sessionFormats.put(sessionId, format);
     log.info("Set audio format for session {}: {}", sessionId, format);
   }
 
   /**
-   * Adds an audio chunk to the session if recording and within limits.
-   * Returns true if the chunk was added, false if it was rejected.
+   * Adds an audio chunk to the session if recording and within limits. Returns true if the chunk
+   * was added, false if it was rejected.
    */
   public boolean addAudioChunk(String sessionId, byte[] audioData) {
     var chunks = audioChunks.get(sessionId);
@@ -124,16 +112,12 @@ public class AudioSessionManager {
     return true;
   }
 
-  /**
-   * Gets all audio chunks for a session.
-   */
+  /** Gets all audio chunks for a session. */
   public List<byte[]> getAudioChunks(String sessionId) {
     return audioChunks.get(sessionId);
   }
 
-  /**
-   * Clears audio chunks for a session.
-   */
+  /** Clears audio chunks for a session. */
   public void clearAudioChunks(String sessionId) {
     var chunks = audioChunks.get(sessionId);
     if (chunks != null) {
@@ -141,9 +125,7 @@ public class AudioSessionManager {
     }
   }
 
-  /**
-   * Removes all session data for cleanup.
-   */
+  /** Removes all session data for cleanup. */
   public void removeSession(String sessionId) {
     log.info("Removing audio session: {}", sessionId);
     audioChunks.remove(sessionId);

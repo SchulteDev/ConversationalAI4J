@@ -1,10 +1,9 @@
-package schultedev.conversationalai4j.demo;
+package schultedev.conversationalai4j;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import schultedev.conversationalai4j.AudioFormat;
 
 /** Tests for AudioSessionManager session state management. */
 class AudioSessionManagerTest {
@@ -33,7 +32,7 @@ class AudioSessionManagerTest {
   void startRecording_ShouldEnableRecordingAndClearChunks() {
     // Given
     sessionManager.initializeSession(TEST_SESSION_ID);
-    sessionManager.addAudioChunk(TEST_SESSION_ID, new byte[]{1, 2, 3});
+    sessionManager.addAudioChunk(TEST_SESSION_ID, new byte[] {1, 2, 3});
 
     // When
     sessionManager.startRecording(TEST_SESSION_ID);
@@ -75,7 +74,7 @@ class AudioSessionManagerTest {
   @Test
   void addAudioChunk_WithInvalidSession_ShouldReturnFalse() {
     // When
-    var result = sessionManager.addAudioChunk("invalid-session", new byte[]{1, 2, 3});
+    var result = sessionManager.addAudioChunk("invalid-session", new byte[] {1, 2, 3});
 
     // Then
     assertFalse(result);
@@ -113,8 +112,8 @@ class AudioSessionManagerTest {
   void clearAudioChunks_ShouldRemoveAllChunks() {
     // Given
     sessionManager.initializeSession(TEST_SESSION_ID);
-    sessionManager.addAudioChunk(TEST_SESSION_ID, new byte[]{1, 2, 3});
-    sessionManager.addAudioChunk(TEST_SESSION_ID, new byte[]{4, 5, 6});
+    sessionManager.addAudioChunk(TEST_SESSION_ID, new byte[] {1, 2, 3});
+    sessionManager.addAudioChunk(TEST_SESSION_ID, new byte[] {4, 5, 6});
 
     // When
     sessionManager.clearAudioChunks(TEST_SESSION_ID);
@@ -128,7 +127,7 @@ class AudioSessionManagerTest {
     // Given
     sessionManager.initializeSession(TEST_SESSION_ID);
     sessionManager.startRecording(TEST_SESSION_ID);
-    sessionManager.addAudioChunk(TEST_SESSION_ID, new byte[]{1, 2, 3});
+    sessionManager.addAudioChunk(TEST_SESSION_ID, new byte[] {1, 2, 3});
 
     // When
     sessionManager.removeSession(TEST_SESSION_ID);
@@ -146,11 +145,11 @@ class AudioSessionManagerTest {
 
     // When - Add chunks until limit is reached
     for (var i = 0; i < 1000; i++) {
-      sessionManager.addAudioChunk(TEST_SESSION_ID, new byte[]{(byte) i});
+      sessionManager.addAudioChunk(TEST_SESSION_ID, new byte[] {(byte) i});
     }
 
     // Then - Next chunk should be rejected
-    var result = sessionManager.addAudioChunk(TEST_SESSION_ID, new byte[]{101});
+    var result = sessionManager.addAudioChunk(TEST_SESSION_ID, new byte[] {101});
     assertFalse(result);
     assertEquals(1000, sessionManager.getAudioChunks(TEST_SESSION_ID).size());
   }
@@ -181,7 +180,7 @@ class AudioSessionManagerTest {
 
     // When
     sessionManager.startRecording(session1);
-    sessionManager.addAudioChunk(session1, new byte[]{1, 2, 3});
+    sessionManager.addAudioChunk(session1, new byte[] {1, 2, 3});
 
     // Then
     assertTrue(sessionManager.isRecording(session1));

@@ -1,4 +1,4 @@
-package schultedev.conversationalai4j.demo;
+package schultedev.conversationalai4j;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -6,15 +6,12 @@ import static org.mockito.Mockito.*;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import schultedev.conversationalai4j.AudioFormat;
-import schultedev.conversationalai4j.ConversationalAI;
 
 /** Tests for AudioChunkProcessor audio processing pipeline. */
 class AudioChunkProcessorTest {
@@ -43,8 +40,10 @@ class AudioChunkProcessorTest {
     var callback = createMockCallback();
 
     // When
-    var result = processor.processAudioChunks(List.of(), AudioFormat.wav16kMono(), mockConversationalAI, callback)
-        .get();
+    var result =
+        processor
+            .processAudioChunks(List.of(), AudioFormat.wav16kMono(), mockConversationalAI, callback)
+            .get();
 
     // Then
     assertFalse(result.isSuccess());
@@ -54,12 +53,12 @@ class AudioChunkProcessorTest {
   @Test
   void processAudioChunks_WithNullAI_ShouldReturnError() throws Exception {
     // Given
-    var chunks = Arrays.asList(new byte[]{1, 2, 3});
+    var chunks = Arrays.asList(new byte[] {1, 2, 3});
     var callback = createMockCallback();
 
     // When
-    var result = processor.processAudioChunks(chunks, AudioFormat.wav16kMono(), null, callback)
-        .get();
+    var result =
+        processor.processAudioChunks(chunks, AudioFormat.wav16kMono(), null, callback).get();
 
     // Then
     assertFalse(result.isSuccess());
@@ -69,13 +68,15 @@ class AudioChunkProcessorTest {
   @Test
   void processAudioChunks_WithSpeechDisabled_ShouldReturnError() throws Exception {
     // Given
-    var chunks = Arrays.asList(new byte[]{1, 2, 3});
+    var chunks = Arrays.asList(new byte[] {1, 2, 3});
     var callback = createMockCallback();
     when(mockConversationalAI.isSpeechEnabled()).thenReturn(false);
 
     // When
-    var result = processor.processAudioChunks(chunks, AudioFormat.wav16kMono(), mockConversationalAI, callback)
-        .get();
+    var result =
+        processor
+            .processAudioChunks(chunks, AudioFormat.wav16kMono(), mockConversationalAI, callback)
+            .get();
 
     // Then
     assertFalse(result.isSuccess());
@@ -88,30 +89,33 @@ class AudioChunkProcessorTest {
     var chunks = Arrays.asList(createMockWavData(256));
     var statusUpdates = new AtomicReference<String>();
     var transcriptionReady = new AtomicReference<String>();
-    
-    var callback = new AudioChunkProcessor.ProcessingCallback() {
-      @Override
-      public void onStatusUpdate(String status, String message) {
-        statusUpdates.set(status);
-      }
 
-      @Override
-      public void onTranscriptionReady(String transcribedText) {
-        transcriptionReady.set(transcribedText);
-      }
-    };
+    var callback =
+        new AudioChunkProcessor.ProcessingCallback() {
+          @Override
+          public void onStatusUpdate(String status, String message) {
+            statusUpdates.set(status);
+          }
+
+          @Override
+          public void onTranscriptionReady(String transcribedText) {
+            transcriptionReady.set(transcribedText);
+          }
+        };
 
     when(mockConversationalAI.isSpeechEnabled()).thenReturn(true);
 
     // When
-    var futureResult = processor.processAudioChunks(chunks, AudioFormat.wav16kMono(), mockConversationalAI, callback);
+    var futureResult =
+        processor.processAudioChunks(
+            chunks, AudioFormat.wav16kMono(), mockConversationalAI, callback);
 
     // Then - Should be processing asynchronously
     assertFalse(futureResult.isDone());
-    
+
     // Wait a moment for processing to start
     Thread.sleep(50);
-    
+
     // Should have received status updates (even though processing may fail due to mock)
     assertNotNull(statusUpdates.get());
   }
@@ -119,14 +123,14 @@ class AudioChunkProcessorTest {
   @Test
   void processingResult_Success_ShouldContainAllData() {
     // When
-    var result = AudioChunkProcessor.ProcessingResult.success(
-        "Hello", "Hi there", new byte[]{1, 2, 3});
+    var result =
+        AudioChunkProcessor.ProcessingResult.success("Hello", "Hi there", new byte[] {1, 2, 3});
 
     // Then
     assertTrue(result.isSuccess());
     assertEquals("Hello", result.getTranscribedText());
     assertEquals("Hi there", result.getAiResponse());
-    assertArrayEquals(new byte[]{1, 2, 3}, result.getResponseAudio());
+    assertArrayEquals(new byte[] {1, 2, 3}, result.getResponseAudio());
     assertNull(result.getErrorMessage());
   }
 
@@ -152,8 +156,10 @@ class AudioChunkProcessorTest {
     when(mockConversationalAI.chat(anyString())).thenThrow(new RuntimeException("Mock chat error"));
 
     // When
-    var result = processor.processAudioChunks(chunks, AudioFormat.wav16kMono(), mockConversationalAI, callback)
-        .get();
+    var result =
+        processor
+            .processAudioChunks(chunks, AudioFormat.wav16kMono(), mockConversationalAI, callback)
+            .get();
 
     // Then
     assertFalse(result.isSuccess());
@@ -169,13 +175,17 @@ class AudioChunkProcessorTest {
     when(mockConversationalAI.isSpeechEnabled()).thenReturn(true);
 
     // When - Submit multiple processing requests
-    var future1 = processor.processAudioChunks(chunks1, AudioFormat.wav16kMono(), mockConversationalAI, callback);
-    var future2 = processor.processAudioChunks(chunks2, AudioFormat.wav16kMono(), mockConversationalAI, callback);
+    var future1 =
+        processor.processAudioChunks(
+            chunks1, AudioFormat.wav16kMono(), mockConversationalAI, callback);
+    var future2 =
+        processor.processAudioChunks(
+            chunks2, AudioFormat.wav16kMono(), mockConversationalAI, callback);
 
     // Then - Both should be processing
     assertFalse(future1.isDone());
     assertFalse(future2.isDone());
-    
+
     // Both futures should exist and be independent
     assertNotSame(future1, future2);
   }

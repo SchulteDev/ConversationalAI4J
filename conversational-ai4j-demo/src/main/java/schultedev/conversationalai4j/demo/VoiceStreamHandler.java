@@ -7,10 +7,12 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.*;
 import schultedev.conversationalai4j.ConversationalAI;
+import schultedev.conversationalai4j.AudioSessionManager;
+import schultedev.conversationalai4j.AudioChunkProcessor;
 
 /**
- * WebSocket handler for real-time voice streaming. Delegates audio processing to specialized services
- * and focuses on WebSocket connection management and message routing.
+ * WebSocket handler for real-time voice streaming. Delegates audio processing to specialized
+ * services and focuses on WebSocket connection management and message routing.
  */
 @Component
 public class VoiceStreamHandler implements WebSocketHandler {
@@ -21,10 +23,10 @@ public class VoiceStreamHandler implements WebSocketHandler {
   private final AudioSessionManager sessionManager;
   private final AudioChunkProcessor chunkProcessor;
 
-  public VoiceStreamHandler(AudioSessionManager sessionManager, AudioChunkProcessor chunkProcessor) {
-    this.sessionManager = sessionManager;
-    this.chunkProcessor = chunkProcessor;
-    
+  public VoiceStreamHandler() {
+    this.sessionManager = new AudioSessionManager();
+    this.chunkProcessor = new AudioChunkProcessor();
+
     ConversationalAI tempAI;
     try {
       var modelName = System.getenv().getOrDefault("OLLAMA_MODEL_NAME", "llama3.2:3b");
@@ -118,76 +120,86 @@ public class VoiceStreamHandler implements WebSocketHandler {
     }
 
     // Create callback for processing status updates
-    AudioChunkProcessor.ProcessingCallback callback = new AudioChunkProcessor.ProcessingCallback() {
-      @Override
-      public void onStatusUpdate(String status, String message) {
-        if (session.isOpen()) {
-          try {
-            sendStatus(session, status, message);
-          } catch (IOException e) {
-            log.error("Failed to send status update: {}", e.getMessage());
-          }
-        }
-      }
-
-      @Override
-      public void onTranscriptionReady(String transcribedText) {
-        if (session.isOpen()) {
-          try {
-            var transcriptJson =
-                String.format(
-                    "{\"type\":\"transcription\",\"text\":\"%s\"}",
-                    transcribedText.replace("\"", "\\\""));
-            session.sendMessage(new TextMessage(transcriptJson));
-          } catch (IOException e) {
-            log.error("Failed to send transcription: {}", e.getMessage());
-          }
-        }
-      }
-    };
-
-    // Process audio asynchronously
-    chunkProcessor.processAudioChunks(chunks, format, conversationalAI, callback)
-        .thenAccept(result -> {
-          if (!session.isOpen()) {
-            log.warn("Session {} closed before processing completed", sessionId);
-            return;
-          }
-
-          if (result.isSuccess()) {
-            try {
-              sendAIResponse(session, result.getAiResponse(), result.getResponseAudio(), sessionId);
-            } catch (IOException e) {
-              log.error("Failed to send AI response: {}", e.getMessage());
+    AudioChunkProcessor.ProcessingCallback callback =
+        new AudioChunkProcessor.ProcessingCallback() {
+          @Override
+          public void onStatusUpdate(String status, String message) {
+            if (session.isOpen()) {
               try {
-                sendStatus(session, "error", "Failed to send response: " + e.getMessage());
-              } catch (IOException ex) {
-                log.error("Failed to send error status", ex);
+                sendStatus(session, status, message);
+              } catch (IOException e) {
+                log.error("Failed to send status update: {}", e.getMessage());
               }
             }
-          } else {
-            try {
-              sendStatus(session, "error", result.getErrorMessage());
-            } catch (IOException e) {
-              log.error("Failed to send error status: {}", e.getMessage());
+          }
+
+          @Override
+          public void onTranscriptionReady(String transcribedText) {
+            if (session.isOpen()) {
+              try {
+                var transcriptJson =
+                    String.format(
+                        "{\"type\":\"transcription\",\"text\":\"%s\"}",
+                        transcribedText.replace("\"", "\\\""));
+                session.sendMessage(new TextMessage(transcriptJson));
+              } catch (IOException e) {
+                log.error("Failed to send transcription: {}", e.getMessage());
+              }
             }
           }
-        })
-        .exceptionally(throwable -> {
-          log.error("Audio processing failed for session {}: {}", sessionId, throwable.getMessage(), throwable);
-          if (session.isOpen()) {
-            try {
-              sendStatus(session, "error", "Processing failed: " + throwable.getMessage());
-            } catch (IOException e) {
-              log.error("Failed to send error status", e);
-            }
-          }
-          return null;
-        })
-        .whenComplete((result, throwable) -> {
-          // Clear buffers after processing
-          sessionManager.clearAudioChunks(sessionId);
-        });
+        };
+
+    // Process audio asynchronously
+    chunkProcessor
+        .processAudioChunks(chunks, format, conversationalAI, callback)
+        .thenAccept(
+            result -> {
+              if (!session.isOpen()) {
+                log.warn("Session {} closed before processing completed", sessionId);
+                return;
+              }
+
+              if (result.isSuccess()) {
+                try {
+                  sendAIResponse(
+                      session, result.getAiResponse(), result.getResponseAudio(), sessionId);
+                } catch (IOException e) {
+                  log.error("Failed to send AI response: {}", e.getMessage());
+                  try {
+                    sendStatus(session, "error", "Failed to send response: " + e.getMessage());
+                  } catch (IOException ex) {
+                    log.error("Failed to send error status", ex);
+                  }
+                }
+              } else {
+                try {
+                  sendStatus(session, "error", result.getErrorMessage());
+                } catch (IOException e) {
+                  log.error("Failed to send error status: {}", e.getMessage());
+                }
+              }
+            })
+        .exceptionally(
+            throwable -> {
+              log.error(
+                  "Audio processing failed for session {}: {}",
+                  sessionId,
+                  throwable.getMessage(),
+                  throwable);
+              if (session.isOpen()) {
+                try {
+                  sendStatus(session, "error", "Processing failed: " + throwable.getMessage());
+                } catch (IOException e) {
+                  log.error("Failed to send error status", e);
+                }
+              }
+              return null;
+            })
+        .whenComplete(
+            (result, throwable) -> {
+              // Clear buffers after processing
+              sessionManager.clearAudioChunks(sessionId);
+            });
   }
 
   private void sendStatus(WebSocketSession session, String status, String message)
@@ -244,7 +256,8 @@ public class VoiceStreamHandler implements WebSocketHandler {
     return true;
   }
 
-  private void sendAIResponse(WebSocketSession session, String aiResponse, byte[] responseAudio, String sessionId)
+  private void sendAIResponse(
+      WebSocketSession session, String aiResponse, byte[] responseAudio, String sessionId)
       throws IOException {
     // Send text first so it's always visible
     sendTextResponse(session, aiResponse);
