@@ -70,7 +70,7 @@ task dockerStart(type: Exec) {
   group = 'development'
   description = 'Start Docker environment with auto-rebuild'
 
-  commandLine 'docker-compose', 'up', '--build'
+  commandLine 'docker', 'compose', 'up', '--build'
 
   doFirst {
     println '🚀 Starting development environment...'
@@ -82,7 +82,7 @@ task dockerLogs(type: Exec) {
   group = 'development'
   description = 'Show Docker container logs'
 
-  commandLine 'docker-compose', 'logs', '-f'
+  commandLine 'docker', 'compose', 'logs', '-f'
 
   doFirst {
     println '📋 Showing Docker logs...'
@@ -104,7 +104,7 @@ task dockerStop(type: Exec) {
   group = 'development'
   description = 'Stop Docker environment'
 
-  commandLine 'docker-compose', 'down'
+  commandLine 'docker', 'compose', 'down'
 
   doFirst {
     println '🛑 Stopping Docker environment...'
