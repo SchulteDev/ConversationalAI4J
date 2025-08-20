@@ -135,51 +135,13 @@ public class SpeechConfig {
     }
 
     private void resolveDefaultModelPaths() {
-      resolveDefaultModelPaths(System::getenv, System::getProperty);
-    }
-
-    /**
-     * Resolves default model paths using provided environment and property suppliers. This method
-     * allows for testing with mocked environment variables and system properties.
-     *
-     * @param envSupplier supplier for environment variables
-     * @param propertySupplier supplier for system properties
-     */
-    void resolveDefaultModelPaths(
-        java.util.function.Function<String, String> envSupplier,
-        java.util.function.Function<String, String> propertySupplier) {
-      // Check for Docker environment with pre-configured models (fallback only)
-      var dockerSttPath = envSupplier.apply("STT_MODEL_PATH");
-      var dockerTtsPath = envSupplier.apply("TTS_MODEL_PATH");
-
-      if (dockerSttPath != null && dockerTtsPath != null) {
-        // Use Docker environment paths as fallback
-        if (sttModelPath == null) {
-          sttModelPath = Paths.get(dockerSttPath);
-        }
-        if (ttsModelPath == null) {
-          ttsModelPath = Paths.get(dockerTtsPath);
-        }
-        return;
-      }
-
-      // Use standard model paths (using system property as fallback)
-      var userHome = propertySupplier.apply("user.home");
-      var modelsDir =
-          Paths.get(
-              userHome != null ? userHome : System.getProperty("user.home"),
-              ".conversational-ai4j",
-              "models");
-
+      // In programmatic mode, use Docker-style default paths from SpeechServiceUtils
       if (sttModelPath == null) {
-        // Default STT model path
-        sttModelPath = modelsDir.resolve("stt").resolve(language).resolve("model.onnx");
+        sttModelPath = Paths.get(SpeechServiceUtils.getWhisperModelPath());
       }
 
       if (ttsModelPath == null) {
-        // Default TTS model path based on language and voice
-        var voiceName = String.format("%s-%s", language.toLowerCase().replace("-", "_"), voice);
-        ttsModelPath = modelsDir.resolve("tts").resolve(voiceName).resolve("model.onnx");
+        ttsModelPath = Paths.get(SpeechServiceUtils.getPiperModelPath());
       }
     }
   }

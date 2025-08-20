@@ -1,6 +1,7 @@
 package schultedev.conversationalai4j.demo;
 
 import java.io.IOException;
+import java.nio.file.Paths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
@@ -9,6 +10,7 @@ import org.springframework.web.socket.*;
 import schultedev.conversationalai4j.AudioChunkProcessor;
 import schultedev.conversationalai4j.AudioSessionManager;
 import schultedev.conversationalai4j.ConversationalAI;
+import schultedev.conversationalai4j.SpeechConfig;
 
 /**
  * WebSocket handler for real-time voice streaming. Delegates audio processing to specialized
@@ -22,25 +24,44 @@ public class VoiceStreamHandler implements WebSocketHandler {
   private final ConversationalAI conversationalAI;
   private final AudioSessionManager sessionManager;
   private final AudioChunkProcessor chunkProcessor;
+  private final AppConfig appConfig;
 
-  public VoiceStreamHandler() {
+  public VoiceStreamHandler(AppConfig appConfig) {
+    this.appConfig = appConfig;
     this.sessionManager = new AudioSessionManager();
     this.chunkProcessor = new AudioChunkProcessor();
 
     ConversationalAI tempAI;
     try {
-      var modelName = System.getenv().getOrDefault("OLLAMA_MODEL_NAME", "llama3.2:3b");
-      var baseUrl = System.getenv().getOrDefault("OLLAMA_BASE_URL", "http://localhost:11434");
+      var modelName = appConfig.getOllamaModelName();
+      var baseUrl = appConfig.getOllamaBaseUrl();
 
       log.info("Initializing VoiceStreamHandler with model '{}' at '{}'", modelName, baseUrl);
 
-      tempAI =
-          ConversationalAI.builder()
+      var aiBuilder = ConversationalAI.builder()
               .withOllamaModel(modelName, baseUrl)
               .withMemory()
-              .withSystemPrompt("Keep responses brief since this is voice chat.")
-              .withSpeech()
-              .build();
+              .withSystemPrompt("Keep responses brief since this is voice chat.");
+
+      // Build speech configuration programmatically if enabled
+      if (appConfig.isSpeechEnabled()) {
+        var speechBuilder =
+            new SpeechConfig.Builder().withLanguage("en-US").withVoice("female").withEnabled(true);
+
+        // Configure STT model if specified
+        if (appConfig.getSpeechWhisperModelPath() != null) {
+          speechBuilder.withSttModel(Paths.get(appConfig.getSpeechWhisperModelPath()));
+        }
+
+        // Configure TTS model if specified
+        if (appConfig.getSpeechPiperModelPath() != null) {
+          speechBuilder.withTtsModel(Paths.get(appConfig.getSpeechPiperModelPath()));
+        }
+
+        aiBuilder.withSpeech(speechBuilder.build());
+      }
+
+      tempAI = aiBuilder.build();
 
       log.info("VoiceStreamHandler initialized");
     } catch (Exception e) {

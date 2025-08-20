@@ -6,7 +6,7 @@ services:
     volumes:
       - ollama_data:/root/.ollama
     environment:
-      - OLLAMA_DEBUG=1
+      - OLLAMA_DEBUG=0
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "ollama", "list" ]
@@ -24,7 +24,7 @@ services:
       - ollama_data:/root/.ollama
     environment:
       - OLLAMA_HOST=http://ollama:11434
-      - OLLAMA_DEBUG=1
+      - OLLAMA_DEBUG=0
     entrypoint: >
       sh -c "
         until ollama list > /dev/null 2>&1; do sleep 5; done &&

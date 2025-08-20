@@ -15,16 +15,25 @@ class SpeechToTextService {
   private final WhisperContext whisperContext;
 
   SpeechToTextService() {
-    this.enabled = SpeechServiceUtils.isSpeechEnabled();
-    log.info("SpeechToTextService initialized - enabled: {}", enabled);
+    this.enabled = false; // Default disabled for programmatic configuration
+    this.whisperContext = null;
+    log.info("SpeechToTextService initialized - enabled: {} (default constructor)", enabled);
+  }
+
+  SpeechToTextService(SpeechConfig speechConfig) {
+    this.enabled = speechConfig != null && speechConfig.isEnabled();
+    log.info("SpeechToTextService initialized - enabled: {} (with config)", enabled);
 
     WhisperContext tempContext = null;
 
-    if (enabled) {
+    if (enabled && speechConfig != null) {
       try {
-        var whisperModelPath = SpeechServiceUtils.getWhisperModelPath();
+        var whisperModelPath =
+            speechConfig.getSttModelPath() != null
+                ? speechConfig.getSttModelPath().toString()
+                : SpeechServiceUtils.getWhisperModelPath();
         tempContext = WhisperNative.createContext(whisperModelPath);
-        log.info("Whisper STT service initialized successfully");
+        log.info("Whisper STT service initialized successfully with model: {}", whisperModelPath);
       } catch (Exception e) {
         log.warn("Whisper model not available ({}), STT will use mock responses", e.getMessage());
         tempContext = null;

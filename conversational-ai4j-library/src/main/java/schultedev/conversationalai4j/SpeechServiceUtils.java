@@ -15,70 +15,34 @@ class SpeechServiceUtils {
 
   private static final Logger log = LoggerFactory.getLogger(SpeechServiceUtils.class);
 
+  // Default model paths for programmatic configuration
+  private static final String DEFAULT_WHISPER_MODEL_PATH = "/app/models/whisper/ggml-base.en.bin";
+  private static final String DEFAULT_PIPER_MODEL_PATH = "/app/models/piper/en_US-amy-medium.onnx";
+  private static final String DEFAULT_PIPER_CONFIG_PATH = "/app/models/piper/en_US-amy-medium.onnx.json";
+
   private SpeechServiceUtils() {
     // Utility class - prevent instantiation
   }
 
   /**
-   * Check if speech is enabled via environment variable (fallback configuration only). For
-   * programmatic configuration, use SpeechConfig.Builder directly.
-   */
-  static boolean isSpeechEnabled() {
-    return isSpeechEnabled(System::getenv);
-  }
-
-  /**
-   * Check if speech is enabled using provided environment supplier.
-   *
-   * @param envSupplier supplier for environment variables
-   */
-  static boolean isSpeechEnabled(Function<String, String> envSupplier) {
-    return "true".equals(envSupplier.apply("SPEECH_ENABLED"));
-  }
-
-  /**
-   * Get Whisper model path from environment (fallback configuration only). For programmatic
-   * configuration, use SpeechConfig.Builder.withSttModel().
+   * Get default Whisper model path for programmatic configuration.
    */
   static String getWhisperModelPath() {
-    return getWhisperModelPath(System::getenv);
-  }
-
-  /** Get Whisper model path using provided environment supplier. */
-  static String getWhisperModelPath(Function<String, String> envSupplier) {
-    return envSupplier.apply("WHISPER_MODEL_PATH") != null
-        ? envSupplier.apply("WHISPER_MODEL_PATH")
-        : "/app/models/whisper/ggml-base.en.bin";
+    return DEFAULT_WHISPER_MODEL_PATH;
   }
 
   /**
-   * Get Piper model path from environment (fallback configuration only). For programmatic
-   * configuration, use SpeechConfig.Builder.withTtsModel().
+   * Get default Piper model path for programmatic configuration.
    */
   static String getPiperModelPath() {
-    return getPiperModelPath(System::getenv);
-  }
-
-  /** Get Piper model path using provided environment supplier. */
-  static String getPiperModelPath(Function<String, String> envSupplier) {
-    return envSupplier.apply("PIPER_MODEL_PATH") != null
-        ? envSupplier.apply("PIPER_MODEL_PATH")
-        : "/app/models/piper/en_US-amy-low.onnx";
+    return DEFAULT_PIPER_MODEL_PATH;
   }
 
   /**
-   * Get Piper config path from environment (fallback configuration only). For programmatic
-   * configuration, use custom SpeechConfig setup.
+   * Get default Piper config path for programmatic configuration.
    */
   static String getPiperConfigPath() {
-    return getPiperConfigPath(System::getenv);
-  }
-
-  /** Get Piper config path using provided environment supplier. */
-  static String getPiperConfigPath(Function<String, String> envSupplier) {
-    return envSupplier.apply("PIPER_CONFIG_PATH") != null
-        ? envSupplier.apply("PIPER_CONFIG_PATH")
-        : "/app/models/piper/en_US-amy-low.onnx.json";
+    return DEFAULT_PIPER_CONFIG_PATH;
   }
 
   static String generateMockTranscription() {
@@ -146,11 +110,13 @@ class SpeechServiceUtils {
     log.info("Processing speech-to-text: {} bytes with format {}", audioInput.length, format);
 
     try {
-      // Use dedicated SpeechToTextService for better resource efficiency
-      var speechService = new SpeechToTextService();
+      // Use the existing speech service from the ConversationalAI instance
+      var speechService = ai.getSpeechToTextService();
+      if (speechService == null) {
+        throw new UnsupportedOperationException("Speech-to-text service not configured");
+      }
       var text = speechService.transcribe(audioInput, format);
       log.info("Speech-to-text result: '{}'", text);
-      speechService.close();
       return text;
     } catch (Exception e) {
       log.error("Speech-to-text failed: {}", e.getMessage(), e);

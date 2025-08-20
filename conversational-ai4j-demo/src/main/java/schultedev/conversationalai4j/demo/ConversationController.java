@@ -55,13 +55,13 @@ public class ConversationController {
             new SpeechConfig.Builder().withLanguage("en-US").withVoice("female").withEnabled(true);
 
         // Configure STT model if specified
-        if (appConfig.getSpeechSttModelPath() != null) {
-          builder.withSttModel(Paths.get(appConfig.getSpeechSttModelPath()));
+        if (appConfig.getSpeechWhisperModelPath() != null) {
+          builder.withSttModel(Paths.get(appConfig.getSpeechWhisperModelPath()));
         }
 
         // Configure TTS model if specified
-        if (appConfig.getSpeechTtsModelPath() != null) {
-          builder.withTtsModel(Paths.get(appConfig.getSpeechTtsModelPath()));
+        if (appConfig.getSpeechPiperModelPath() != null) {
+          builder.withTtsModel(Paths.get(appConfig.getSpeechPiperModelPath()));
         }
 
         speechConfig = builder.build();

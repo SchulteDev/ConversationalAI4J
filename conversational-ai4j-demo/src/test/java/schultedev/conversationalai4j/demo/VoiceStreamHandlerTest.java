@@ -16,6 +16,7 @@ import org.springframework.web.socket.*;
 class VoiceStreamHandlerTest {
 
   @Mock private WebSocketSession mockSession;
+  @Mock private AppConfig mockAppConfig;
   private VoiceStreamHandler handler;
   private AutoCloseable mocks;
 
@@ -26,7 +27,11 @@ class VoiceStreamHandlerTest {
     when(mockSession.getId()).thenReturn(testSessionId);
     when(mockSession.isOpen()).thenReturn(true);
 
-    handler = new VoiceStreamHandler();
+    // Setup mock AppConfig with default values
+    when(mockAppConfig.getOllamaModelName()).thenReturn("llama3.2:3b");
+    when(mockAppConfig.getOllamaBaseUrl()).thenReturn("http://localhost:11434");
+
+    handler = new VoiceStreamHandler(mockAppConfig);
   }
 
   @AfterEach

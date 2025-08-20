@@ -68,8 +68,8 @@ public class ConversationalAI implements AutoCloseable {
     // Initialize speech services if configured
     if (builder.speechConfig != null && builder.speechConfig.isEnabled()) {
       log.debug("Initializing speech services with config: {}", builder.speechConfig);
-      this.speechToText = new SpeechToTextService();
-      this.textToSpeech = new TextToSpeechService();
+      this.speechToText = new SpeechToTextService(builder.speechConfig);
+      this.textToSpeech = new TextToSpeechService(builder.speechConfig);
       log.info("Speech services initialized successfully");
     } else {
       log.debug("Speech services disabled - text-only mode");
@@ -190,6 +190,14 @@ public class ConversationalAI implements AutoCloseable {
       log.error("Error converting text to speech: {}", e.getMessage(), e);
       return new byte[0];
     }
+  }
+
+  /**
+   * Get the speech-to-text service for advanced usage.
+   * Package-private method for use by utility classes.
+   */
+  SpeechToTextService getSpeechToTextService() {
+    return speechToText;
   }
 
   /**

@@ -20,8 +20,8 @@ public class AppConfig {
   private String speechSttModelPath;
   private String speechTtsModelPath;
   private String speechWhisperModelPath = "/app/models/whisper/ggml-base.en.bin";
-  private String speechPiperModelPath = "/app/models/piper/en_US-amy-low.onnx";
-  private String speechPiperConfigPath = "/app/models/piper/en_US-amy-low.onnx.json";
+  private String speechPiperModelPath = "/app/models/piper/en_US-amy-medium.onnx";
+  private String speechPiperConfigPath = "/app/models/piper/en_US-amy-medium.onnx.json";
 
   // Application Configuration
   private String systemPrompt =
