@@ -19,10 +19,12 @@ ConversationalAI ai = ConversationalAI.builder()
 
 ### Speech Components
 
-- **SpeechService**: Interface for STT/TTS operations
+- **SpeechToTextService**: Speech-to-text processing with Whisper.cpp
+- **TextToSpeechService**: Text-to-speech processing with Piper
 - **SpeechConfig**: Configuration for speech processing
 - **WhisperNative**: Native Whisper.cpp integration for STT
 - **PiperNative**: Native Piper integration for TTS
+- **SpeechServiceUtils**: Utility class for speech operations
 
 #### Speech Architecture Design
 
@@ -57,15 +59,18 @@ and performance overhead of inter-process communication:
 This approach transforms what was previously a fragile Python subprocess system into a robust,
 high-performance native Java solution suitable for production voice applications.
 
-### Memory Management
+### Audio Processing Components
 
-- **ConversationMemory**: Interface for conversation persistence
-- Pluggable strategies (in-memory, database, etc.)
+- **AudioChunkProcessor**: Processes audio data chunks for streaming
+- **AudioSessionManager**: Manages audio session lifecycle
+- **AudioProcessor**: Core audio processing logic
+- **AudioFormat**: Audio format detection and handling
+- **ConversationUtils**: Utilities for conversation management
 
 ## Dependencies
 
 - **LangChain4j**: Ollama LLM integration (v1.3.0)
-- **SLF4J**: Logging interface only
+- **SLF4J**: Logging interface
 - **whisper-jni**: Native Whisper.cpp bindings (v1.7.1)
 - **piper-jni**: Native Piper TTS bindings (v1.2.0-c0670df)
 

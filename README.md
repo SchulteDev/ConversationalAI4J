@@ -65,13 +65,13 @@ API. Supports WebM/Opus and WAV formats with server-side FFmpeg decoding.
 
 ## Configuration
 
-| Variable             | Default                                     | Purpose                |
-|----------------------|---------------------------------------------|------------------------|
-| `OLLAMA_BASE_URL`    | `http://localhost:11434`                    | Ollama server          |
-| `SPEECH_ENABLED`     | `false`                                     | Enable voice features  |
-| `WHISPER_MODEL_PATH` | `/app/models/whisper/ggml-base.en.bin`      | Whisper STT model path |
-| `PIPER_MODEL_PATH`   | `/app/models/piper/en_US-amy-low.onnx`      | Piper TTS model path   |
-| `PIPER_CONFIG_PATH`  | `/app/models/piper/en_US-amy-low.onnx.json` | Piper TTS config path  |
+| Variable             | Default                                        | Purpose                |
+|----------------------|------------------------------------------------|------------------------|
+| `OLLAMA_BASE_URL`    | `http://localhost:11434`                       | Ollama server          |
+| `SPEECH_ENABLED`     | `false`                                        | Enable voice features  |
+| `WHISPER_MODEL_PATH` | `/app/models/whisper/ggml-base.en.bin`         | Whisper STT model path |
+| `PIPER_MODEL_PATH`   | `/app/models/piper/en_US-amy-medium.onnx`      | Piper TTS model path   |
+| `PIPER_CONFIG_PATH`  | `/app/models/piper/en_US-amy-medium.onnx.json` | Piper TTS config path  |
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and [ARCHITECTURE.md](ARCHITECTURE.md)
 for technical details.

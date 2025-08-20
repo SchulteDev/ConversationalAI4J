@@ -81,8 +81,10 @@ Voice features work cross-platform with proper setup:
 **Ollama connection fails**: Wait for model download on first Docker run  
 **Tests fail**: Verify Java 21 and clean build with `./gradlew clean build`
 **WebM/Opus audio issues**: Use latest Docker build — FFmpeg decoding is now integrated
-**Spring Boot restarts twice**: Fixed - DevTools removed from production build
+**Spring Boot restarts twice**: Fixed - DevTools removed from production build  
 **"you you you" transcriptions**: Fixed - eliminated double audio preprocessing
+**Build performance**: Gradle configuration cache and parallel builds enabled
+**Docker model download**: Models now cached in separate layers for faster rebuilds
 
 ## Docker Build Tips
 

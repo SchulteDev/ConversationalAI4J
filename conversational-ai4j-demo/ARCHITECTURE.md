@@ -15,6 +15,7 @@ Spring Boot web application demonstrating voice-enabled conversational AI.
 
 - **WebSocketConfig**: WebSocket setup for voice streaming
 - **DemoApplication**: Spring Boot main class
+- **AppConfig**: Application configuration and beans
 
 ### Web Interface
 
@@ -24,9 +25,10 @@ Spring Boot web application demonstrating voice-enabled conversational AI.
 ## Voice Pipeline
 
 1. Browser captures microphone → WebSocket binary frames
-2. **VoiceStreamHandler** accumulates audio data
-3. **SpeechService** (from library) processes STT → LLM → TTS
-4. Audio response sent back via WebSocket
+2. **VoiceStreamHandler** accumulates audio data using **AudioSessionManager**
+3. **AudioChunkProcessor** handles real-time audio processing
+4. **SpeechToTextService** and **TextToSpeechService** (from library) process STT → LLM → TTS
+5. Audio response sent back via WebSocket
 
 ## Spring Boot Features
 
@@ -37,6 +39,9 @@ Spring Boot web application demonstrating voice-enabled conversational AI.
 
 ## Docker Integration
 
-- **Whisper and Piper models**: Downloaded during Docker build
+- **Multi-stage build**: Optimized for dependency caching and fast rebuilds
+- **Whisper model**: ggml-base.en.bin downloaded during build
+- **Piper model**: en_US-amy-medium.onnx (upgraded from low to medium quality)
 - **Native JNI libraries**: Included in JAR dependencies
-- **Multi-stage build**: Optimized container size
+- **FFmpeg**: Integrated for WebM/Opus audio decoding
+- **Health checks**: Built-in monitoring for both Ollama and demo services
