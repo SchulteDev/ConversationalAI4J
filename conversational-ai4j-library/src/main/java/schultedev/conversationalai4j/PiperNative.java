@@ -12,6 +12,9 @@ import org.slf4j.LoggerFactory;
 /** Clean wrapper for Piper JNI for text-to-speech functionality. */
 class PiperNative {
 
+  static final String DEFAULT_PIPER_MODEL_PATH = "/app/models/piper/en_US-amy-medium.onnx";
+  static final String DEFAULT_PIPER_CONFIG_PATH = "/app/models/piper/en_US-amy-medium.onnx.json";
+
   private static final Logger log = LoggerFactory.getLogger(PiperNative.class);
   private static boolean libraryLoaded = false;
   private static PiperJNI piper;

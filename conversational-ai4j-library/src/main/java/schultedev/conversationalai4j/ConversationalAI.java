@@ -5,6 +5,7 @@ import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.UserMessage;
+import java.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,6 +44,12 @@ import org.slf4j.LoggerFactory;
 public class ConversationalAI implements AutoCloseable {
 
   private static final Logger log = LoggerFactory.getLogger(ConversationalAI.class);
+
+  // Default configuration constants
+  private static final String DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434";
+  private static final int DEFAULT_MEMORY_WINDOW_SIZE = 10;
+  private static final double DEFAULT_TEMPERATURE = 0.7;
+  private static final int DEFAULT_OLLAMA_TIMEOUT_SECONDS = 5;
 
   private final ChatModel model;
   private final ConversationService service;
@@ -193,8 +200,8 @@ public class ConversationalAI implements AutoCloseable {
   }
 
   /**
-   * Get the speech-to-text service for advanced usage.
-   * Package-private method for use by utility classes.
+   * Get the speech-to-text service for advanced usage. Package-private method for use by utility
+   * classes.
    */
   SpeechToTextService getSpeechToTextService() {
     return speechToText;
@@ -227,16 +234,17 @@ public class ConversationalAI implements AutoCloseable {
   /** Builder for ConversationalAI configuration */
   public static class Builder {
     private ChatModel model;
-    private MessageWindowChatMemory memory = MessageWindowChatMemory.withMaxMessages(10);
+    private MessageWindowChatMemory memory =
+        MessageWindowChatMemory.withMaxMessages(DEFAULT_MEMORY_WINDOW_SIZE);
     private String systemPrompt;
-    private double temperature = 0.7;
+    private double temperature = DEFAULT_TEMPERATURE;
     private SpeechConfig speechConfig;
 
     private Builder() {}
 
     /** Configure Ollama model */
     public Builder withOllamaModel(String modelName) {
-      return withOllamaModel(modelName, "http://localhost:11434");
+      return withOllamaModel(modelName, DEFAULT_OLLAMA_BASE_URL);
     }
 
     /** Configure Ollama model with custom base URL */
@@ -247,20 +255,25 @@ public class ConversationalAI implements AutoCloseable {
               .baseUrl(baseUrl)
               .modelName(modelName)
               .temperature(temperature)
-              .timeout(java.time.Duration.ofSeconds(5)) // Short timeout for fast failure
+              .timeout(
+                  Duration.ofSeconds(
+                      DEFAULT_OLLAMA_TIMEOUT_SECONDS)) // Short timeout for fast failure
               .build();
       return this;
     }
 
     /** Configure conversation memory with default window size (10 messages) */
     public Builder withMemory() {
-      this.memory = ConversationMemory.defaultMemory();
+      this.memory = MessageWindowChatMemory.withMaxMessages(DEFAULT_MEMORY_WINDOW_SIZE);
       return this;
     }
 
     /** Configure conversation memory with custom window size */
     public Builder withMemory(int maxMessages) {
-      this.memory = ConversationMemory.sliding(maxMessages);
+      if (maxMessages <= 0) {
+        throw new IllegalArgumentException("maxMessages must be positive");
+      }
+      this.memory = MessageWindowChatMemory.withMaxMessages(maxMessages);
       return this;
     }
 

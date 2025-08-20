@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 /** Clean wrapper for Whisper.cpp JNI for speech-to-text functionality. */
 class WhisperNative {
 
+  static final String DEFAULT_WHISPER_MODEL_PATH = "/app/models/whisper/ggml-base.en.bin";
+
   private static final Logger log = LoggerFactory.getLogger(WhisperNative.class);
   private static boolean libraryLoaded = false;
   private static WhisperJNI whisper;

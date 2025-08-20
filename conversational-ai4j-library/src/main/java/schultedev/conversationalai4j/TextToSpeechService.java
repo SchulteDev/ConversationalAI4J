@@ -25,8 +25,8 @@ class TextToSpeechService {
         var piperModelPath =
             speechConfig.getTtsModelPath() != null
                 ? speechConfig.getTtsModelPath().toString()
-                : SpeechServiceUtils.getPiperModelPath();
-        var piperConfigPath = SpeechServiceUtils.getPiperConfigPath();
+                : PiperNative.DEFAULT_PIPER_MODEL_PATH;
+        var piperConfigPath = PiperNative.DEFAULT_PIPER_CONFIG_PATH;
         tempVoice = PiperNative.createVoice(piperModelPath, piperConfigPath);
         log.info("Piper TTS service initialized successfully with model: {}", piperModelPath);
       } catch (Exception e) {

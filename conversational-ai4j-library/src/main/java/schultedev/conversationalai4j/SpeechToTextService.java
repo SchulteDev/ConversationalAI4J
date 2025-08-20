@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 class SpeechToTextService {
 
   private static final Logger log = LoggerFactory.getLogger(SpeechToTextService.class);
+  private static final String DEFAULT_WHISPER_MODEL_PATH = "/app/models/whisper/ggml-base.en.bin";
+  
   private final boolean enabled;
   private final WhisperContext whisperContext;
 
@@ -31,10 +33,10 @@ class SpeechToTextService {
         var whisperModelPath =
             speechConfig.getSttModelPath() != null
                 ? speechConfig.getSttModelPath().toString()
-                : SpeechServiceUtils.getWhisperModelPath();
+                : DEFAULT_WHISPER_MODEL_PATH;
         tempContext = WhisperNative.createContext(whisperModelPath);
         log.info("Whisper STT service initialized successfully with model: {}", whisperModelPath);
-      } catch (Exception e) {
+      } catch (Exception | Error e) {
         log.warn("Whisper model not available ({}), STT will use mock responses", e.getMessage());
         tempContext = null;
       }
@@ -58,7 +60,7 @@ class SpeechToTextService {
     }
 
     if (!enabled || whisperContext == null) {
-      return SpeechServiceUtils.generateMockTranscription();
+      return generateMockTranscription();
     }
 
     log.debug("Processing speech-to-text: {} bytes", audioData.length);
@@ -76,7 +78,7 @@ class SpeechToTextService {
 
     } catch (Exception e) {
       log.error("Error in speech-to-text processing: {}", e.getMessage(), e);
-      return SpeechServiceUtils.generateMockTranscription();
+      return generateMockTranscription();
     }
   }
 
@@ -94,7 +96,7 @@ class SpeechToTextService {
     }
 
     if (!enabled || whisperContext == null) {
-      return SpeechServiceUtils.generateMockTranscription();
+      return generateMockTranscription();
     }
 
     log.debug("Processing speech-to-text: {} bytes with format {}", audioData.length, format);
@@ -109,7 +111,7 @@ class SpeechToTextService {
 
     } catch (Exception e) {
       log.error("Error in speech-to-text processing: {}", e.getMessage(), e);
-      return SpeechServiceUtils.generateMockTranscription();
+      return generateMockTranscription();
     }
   }
 
@@ -138,5 +140,9 @@ class SpeechToTextService {
       WhisperNative.closeContext(whisperContext);
     }
     log.debug("SpeechToTextService resources released");
+  }
+
+  private static String generateMockTranscription() {
+    return "Mock transcription: Hello, this is a test.";
   }
 }

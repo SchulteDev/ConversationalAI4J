@@ -135,13 +135,13 @@ public class SpeechConfig {
     }
 
     private void resolveDefaultModelPaths() {
-      // In programmatic mode, use Docker-style default paths from SpeechServiceUtils
+      // In programmatic mode, use Docker-style default paths
       if (sttModelPath == null) {
-        sttModelPath = Paths.get(SpeechServiceUtils.getWhisperModelPath());
+        sttModelPath = Paths.get(WhisperNative.DEFAULT_WHISPER_MODEL_PATH);
       }
 
       if (ttsModelPath == null) {
-        ttsModelPath = Paths.get(SpeechServiceUtils.getPiperModelPath());
+        ttsModelPath = Paths.get(PiperNative.DEFAULT_PIPER_MODEL_PATH);
       }
     }
   }

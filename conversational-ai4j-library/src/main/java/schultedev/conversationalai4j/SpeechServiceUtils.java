@@ -1,6 +1,5 @@
 package schultedev.conversationalai4j;
 
-import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,45 +14,24 @@ class SpeechServiceUtils {
 
   private static final Logger log = LoggerFactory.getLogger(SpeechServiceUtils.class);
 
-  // Default model paths for programmatic configuration
-  private static final String DEFAULT_WHISPER_MODEL_PATH = "/app/models/whisper/ggml-base.en.bin";
-  private static final String DEFAULT_PIPER_MODEL_PATH = "/app/models/piper/en_US-amy-medium.onnx";
-  private static final String DEFAULT_PIPER_CONFIG_PATH = "/app/models/piper/en_US-amy-medium.onnx.json";
+  // Audio generation constants
+  private static final int DEFAULT_SAMPLE_RATE = 16000;
+  private static final int MILLISECONDS_PER_SECOND = 1000;
+  private static final int WORDS_PER_MINUTE = 200; // Average speaking rate
+  private static final int MIN_AUDIO_DURATION_MS = 500;
+  private static final int WAV_HEADER_SIZE = 44;
+  private static final int BYTES_PER_SAMPLE = 2;
+  private static final int DEFAULT_BYTES_PER_SECOND = 32000;
 
   private SpeechServiceUtils() {
     // Utility class - prevent instantiation
   }
 
-  /**
-   * Get default Whisper model path for programmatic configuration.
-   */
-  static String getWhisperModelPath() {
-    return DEFAULT_WHISPER_MODEL_PATH;
-  }
-
-  /**
-   * Get default Piper model path for programmatic configuration.
-   */
-  static String getPiperModelPath() {
-    return DEFAULT_PIPER_MODEL_PATH;
-  }
-
-  /**
-   * Get default Piper config path for programmatic configuration.
-   */
-  static String getPiperConfigPath() {
-    return DEFAULT_PIPER_CONFIG_PATH;
-  }
-
-  static String generateMockTranscription() {
-    return "Mock transcription: Hello, this is a test.";
-  }
-
   static byte[] generateMockAudio(String text) {
     var wordCount = text == null || text.trim().isEmpty() ? 1 : text.split("\\s+").length;
-    var durationMs = Math.max(500, wordCount * 200);
-    var sampleCount = (int) (16000 * durationMs / 1000.0);
-    var wavData = new byte[44 + sampleCount * 2];
+    var durationMs = Math.max(MIN_AUDIO_DURATION_MS, wordCount * WORDS_PER_MINUTE);
+    var sampleCount = (int) (DEFAULT_SAMPLE_RATE * durationMs / (double) MILLISECONDS_PER_SECOND);
+    var wavData = new byte[WAV_HEADER_SIZE + sampleCount * BYTES_PER_SAMPLE];
 
     System.arraycopy("RIFF".getBytes(), 0, wavData, 0, 4);
     writeInt32LE(wavData, 4, wavData.length - 8);
@@ -62,12 +40,12 @@ class SpeechServiceUtils {
     writeInt32LE(wavData, 16, 16);
     writeInt16LE(wavData, 20, (short) 1);
     writeInt16LE(wavData, 22, (short) 1);
-    writeInt32LE(wavData, 24, 16000);
-    writeInt32LE(wavData, 28, 32000);
+    writeInt32LE(wavData, 24, DEFAULT_SAMPLE_RATE);
+    writeInt32LE(wavData, 28, DEFAULT_BYTES_PER_SECOND);
     writeInt16LE(wavData, 32, (short) 2);
     writeInt16LE(wavData, 34, (short) 16);
     System.arraycopy("data".getBytes(), 0, wavData, 36, 4);
-    writeInt32LE(wavData, 40, 32000);
+    writeInt32LE(wavData, 40, DEFAULT_BYTES_PER_SECOND);
 
     return wavData;
   }

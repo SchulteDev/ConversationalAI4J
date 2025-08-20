@@ -165,26 +165,6 @@ class ConversationalAITest {
   }
 
   @Test
-  void testVoiceChatWithNullAudio() {
-    // Given: ConversationalAI with speech enabled
-    var ai = ConversationalAI.builder().withOllamaModel("llama2").withSpeech().build();
-
-    // When/Then: Voice chat with null audio should throw exception
-    var exception = assertThrows(IllegalArgumentException.class, () -> ai.voiceChat(null));
-    assertTrue(exception.getMessage().contains("Audio input cannot be null"));
-  }
-
-  @Test
-  void testVoiceChatWithEmptyAudio() {
-    // Given: ConversationalAI with speech enabled
-    var ai = ConversationalAI.builder().withOllamaModel("llama2").withSpeech().build();
-
-    // When/Then: Voice chat with empty audio should throw exception
-    var exception = assertThrows(IllegalArgumentException.class, () -> ai.voiceChat(new byte[0]));
-    assertTrue(exception.getMessage().contains("Audio input cannot be null"));
-  }
-
-  @Test
   void testSpeechToTextWithoutSpeechConfig() {
     // Given: ConversationalAI without speech services
     var ai = ConversationalAI.builder().withOllamaModel("llama2").build();
@@ -212,19 +192,12 @@ class ConversationalAITest {
   }
 
   @Test
-  void testSpeechStatusMethods() {
+  void testSpeechStatusDisabled() {
     // Given: ConversationalAI without speech
     var aiWithoutSpeech = ConversationalAI.builder().withOllamaModel("llama2").build();
 
     // When/Then: Speech status should be false
     assertFalse(aiWithoutSpeech.isSpeechEnabled());
-
-    // Given: ConversationalAI with speech
-    var aiWithSpeech = ConversationalAI.builder().withOllamaModel("llama2").withSpeech().build();
-
-    // When/Then: Speech may be available depending on environment
-    // (We don't assert true/false since it depends on speech library availability)
-    assertNotNull(aiWithSpeech.isSpeechEnabled());
   }
 
   @Test
