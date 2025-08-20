@@ -20,7 +20,7 @@ WORKDIR /app
 # Copy cached dependencies
 COPY --from=deps-cache /root/.gradle /root/.gradle
 
-# Copy Gradle configuration  
+# Copy Gradle configuration
 COPY build.gradle settings.gradle gradle.properties ./
 COPY gradle/ gradle/
 COPY conversational-ai4j-library/build.gradle conversational-ai4j-library/
@@ -36,7 +36,7 @@ COPY conversational-ai4j-demo/src/ conversational-ai4j-demo/src/
 # Build the application (dependencies already cached)
 RUN echo "Building at ${BUILD_TIME}" && gradle :demo:bootJar --no-daemon
 
-# Runtime stage with speech support  
+# Runtime stage with speech support
 FROM openjdk:21-jdk-slim AS runtime-base
 
 # Install system dependencies (cached layer)
@@ -59,7 +59,7 @@ FROM runtime-base AS models
 RUN cd /app/models/whisper && \
     wget -q https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en.bin
 
-# Download Piper model (cached unless model changes)  
+# Download Piper model (cached unless model changes)
 RUN cd /app/models/piper && \
     wget -q https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/amy/medium/en_US-amy-medium.onnx && \
     wget -q https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/amy/medium/en_US-amy-medium.onnx.json
@@ -78,10 +78,6 @@ ENV PIPER_CONFIG_PATH=/app/models/piper/en_US-amy-medium.onnx.json
 
 # Expose port
 EXPOSE 8080
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD curl -f http://localhost:8080/actuator/health || exit 1
 
 # Run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
