@@ -12,7 +12,7 @@ class SpeechToTextService {
 
   private static final Logger log = LoggerFactory.getLogger(SpeechToTextService.class);
   private static final String DEFAULT_WHISPER_MODEL_PATH = "/app/models/whisper/ggml-base.en.bin";
-  
+
   private final boolean enabled;
   private final WhisperContext whisperContext;
 
@@ -45,6 +45,10 @@ class SpeechToTextService {
     }
 
     this.whisperContext = tempContext;
+  }
+
+  private static String generateMockTranscription() {
+    return "Mock transcription: Hello, this is a test.";
   }
 
   /**
@@ -140,9 +144,5 @@ class SpeechToTextService {
       WhisperNative.closeContext(whisperContext);
     }
     log.debug("SpeechToTextService resources released");
-  }
-
-  private static String generateMockTranscription() {
-    return "Mock transcription: Hello, this is a test.";
   }
 }

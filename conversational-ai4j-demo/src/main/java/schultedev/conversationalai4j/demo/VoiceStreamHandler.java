@@ -38,7 +38,8 @@ public class VoiceStreamHandler implements WebSocketHandler {
 
       log.info("Initializing VoiceStreamHandler with model '{}' at '{}'", modelName, baseUrl);
 
-      var aiBuilder = ConversationalAI.builder()
+      var aiBuilder =
+          ConversationalAI.builder()
               .withOllamaModel(modelName, baseUrl)
               .withMemory()
               .withSystemPrompt("Keep responses brief since this is voice chat.");

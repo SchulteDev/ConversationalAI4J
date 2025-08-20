@@ -9,9 +9,7 @@ class ConversationMemoryTest {
   @Test
   void testSlidingMemory() {
     // When: Create AI with custom memory size
-    var builder = ConversationalAI.builder()
-        .withOllamaModel("test-model")
-        .withMemory(5);
+    var builder = ConversationalAI.builder().withOllamaModel("test-model").withMemory(5);
 
     // Then: Should create successfully without throwing
     assertDoesNotThrow(builder::build);
@@ -32,9 +30,7 @@ class ConversationMemoryTest {
   @Test
   void testDefaultMemory() {
     // When: Create AI with default memory
-    var builder = ConversationalAI.builder()
-        .withOllamaModel("test-model")
-        .withMemory();
+    var builder = ConversationalAI.builder().withOllamaModel("test-model").withMemory();
 
     // Then: Should create successfully without throwing
     assertDoesNotThrow(builder::build);
