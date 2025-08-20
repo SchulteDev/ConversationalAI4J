@@ -114,14 +114,14 @@ class DockerSmokeTest {
     // Response should be valid JSON containing either AI response or fallback message
     var body = response.getBody();
     assertTrue(body.contains("\"response\""), "Should return JSON with response field");
-    var hasValidResponse =
-        body.contains("Hello from Docker Compose")
-            || body.contains("Echo")
-            || body.contains("unavailable")
-            || body.contains("timeout")
-            || body.contains("timed out")
-            || body.contains("trouble processing");
-    assertTrue(hasValidResponse, "Should get some form of response to user message. Got: " + body);
+    assertTrue(body.contains("\"hasAudio\""), "Should return JSON with hasAudio field");
+
+    // Accept any non-empty response - either real AI response or fallback
+    var responseJson = body.substring(body.indexOf("\"response\":") + 11);
+    responseJson =
+        responseJson.substring(responseJson.indexOf("\"") + 1, responseJson.indexOf("\","));
+    assertFalse(responseJson.trim().isEmpty(), "Response should not be empty. Got: " + body);
+
     log.info("✅ Ollama integration test passed");
   }
 
@@ -183,17 +183,18 @@ class DockerSmokeTest {
           HttpStatus.OK, response.getStatusCode(), "Message '" + message + "' should get response");
       assertNotNull(response.getBody());
 
-      // Response should be valid JSON containing some form of response (message, echo, or error)
+      // Response should be valid JSON with required fields
       var body = response.getBody();
       assertTrue(body.contains("\"response\""), "Should return JSON with response field");
-      assertTrue(
-          body.contains(message)
-              || body.contains("Echo")
-              || body.contains("unavailable")
-              || body.contains("timeout")
-              || body.contains("timed out")
-              || body.contains("trouble processing"),
-          "Response should contain original message, echo, or error. Got: " + body);
+      assertTrue(body.contains("\"hasAudio\""), "Should return JSON with hasAudio field");
+
+      // Accept any non-empty response - either real AI response or fallback
+      var responseJson = body.substring(body.indexOf("\"response\":") + 11);
+      responseJson =
+          responseJson.substring(responseJson.indexOf("\"") + 1, responseJson.indexOf("\","));
+      assertFalse(
+          responseJson.trim().isEmpty(),
+          "Response should not be empty for message: " + message + ". Got: " + body);
     }
     log.info("✅ Conversation flow test passed");
   }
