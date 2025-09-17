@@ -254,7 +254,11 @@ public class ConversationalAI implements AutoCloseable {
 
     /** Configure Ollama model with custom base URL and timeout */
     public Builder withOllamaModel(String modelName, String baseUrl, int timeoutSeconds) {
-      log.debug("Configuring Ollama model '{}' with base URL: {} and timeout: {}s", modelName, baseUrl, timeoutSeconds);
+      log.debug(
+          "Configuring Ollama model '{}' with base URL: {} and timeout: {}s",
+          modelName,
+          baseUrl,
+          timeoutSeconds);
       this.model =
           OllamaChatModel.builder()
               .baseUrl(baseUrl)

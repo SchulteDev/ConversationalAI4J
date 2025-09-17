@@ -1,5 +1,6 @@
 package schultedev.conversationalai4j.demo;
 
+import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.nio.file.Paths;
 import org.slf4j.Logger;
@@ -21,55 +22,55 @@ public class VoiceStreamHandler implements WebSocketHandler {
 
   private static final Logger log = LoggerFactory.getLogger(VoiceStreamHandler.class);
 
-  private final ConversationalAI conversationalAI;
+  private final AppConfig appConfig;
   private final AudioSessionManager sessionManager;
   private final AudioChunkProcessor chunkProcessor;
-  private final AppConfig appConfig;
+
+  private ConversationalAI conversationalAI;
 
   public VoiceStreamHandler(AppConfig appConfig) {
     this.appConfig = appConfig;
     this.sessionManager = new AudioSessionManager();
     this.chunkProcessor = new AudioChunkProcessor();
+  }
 
-    ConversationalAI tempAI;
-    try {
-      var modelName = appConfig.getOllamaModelName();
-      var baseUrl = appConfig.getOllamaBaseUrl();
+  @PostConstruct
+  void initializeConversationalAI() {
+    var modelName = appConfig.getOllamaModelName();
+    var baseUrl = appConfig.getOllamaBaseUrl();
 
-      log.info("Initializing VoiceStreamHandler with model '{}' at '{}'", modelName, baseUrl);
+    log.info("Initializing VoiceStreamHandler with model '{}' at '{}'", modelName, baseUrl);
 
-      var aiBuilder =
-          ConversationalAI.builder()
-              .withOllamaModel(modelName, baseUrl, appConfig.getOllamaTimeoutSeconds())
-              .withMemory()
-              .withSystemPrompt("Keep responses brief since this is voice chat.");
+    var aiBuilder =
+        ConversationalAI.builder()
+            .withOllamaModel(modelName, baseUrl, appConfig.getOllamaTimeoutSeconds())
+            .withMemory()
+            .withSystemPrompt("Keep responses brief since this is voice chat.");
 
-      // Build speech configuration programmatically if enabled
-      if (appConfig.isSpeechEnabled()) {
-        var speechBuilder =
-            new SpeechConfig.Builder().withLanguage("en-US").withVoice("female").withEnabled(true);
+    // Build speech configuration programmatically if enabled
+    if (appConfig.isSpeechEnabled()) {
+      var speechBuilder =
+          new SpeechConfig.Builder().withLanguage("en-US").withVoice("female").withEnabled(true);
 
-        // Configure STT model if specified
-        if (appConfig.getSpeechWhisperModelPath() != null) {
-          speechBuilder.withSttModel(Paths.get(appConfig.getSpeechWhisperModelPath()));
-        }
-
-        // Configure TTS model if specified
-        if (appConfig.getSpeechPiperModelPath() != null) {
-          speechBuilder.withTtsModel(Paths.get(appConfig.getSpeechPiperModelPath()));
-        }
-
-        aiBuilder.withSpeech(speechBuilder.build());
+      // Configure STT model if specified
+      if (appConfig.getSpeechWhisperModelPath() != null) {
+        speechBuilder.withSttModel(Paths.get(appConfig.getSpeechWhisperModelPath()));
       }
 
-      tempAI = aiBuilder.build();
+      // Configure TTS model if specified
+      if (appConfig.getSpeechPiperModelPath() != null) {
+        speechBuilder.withTtsModel(Paths.get(appConfig.getSpeechPiperModelPath()));
+      }
 
-      log.info("VoiceStreamHandler initialized");
+      aiBuilder.withSpeech(speechBuilder.build());
+    }
+
+    try {
+      this.conversationalAI = aiBuilder.build();
+      log.debug("VoiceStreamHandler initialized");
     } catch (Exception e) {
       log.warn("Failed to initialize ConversationalAI: {}", e.getMessage());
-      tempAI = null;
     }
-    this.conversationalAI = tempAI;
   }
 
   @Override

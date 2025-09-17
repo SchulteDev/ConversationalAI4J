@@ -1,5 +1,6 @@
 package schultedev.conversationalai4j.demo;
 
+import jakarta.annotation.PostConstruct;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,70 +26,67 @@ import schultedev.conversationalai4j.SpeechConfig;
 public class ConversationController {
 
   private static final Logger log = LoggerFactory.getLogger(ConversationController.class);
-  private final ConversationalAI conversationalAI;
-  private final List<Message> conversationHistory = new ArrayList<>();
 
+  private final List<Message> conversationHistory = new ArrayList<>();
   private final AppConfig appConfig;
 
-  /**
-   * Constructor that initializes the ConversationalAI instance with Spring-managed configuration.
-   * Uses dependency injection for clean separation of concerns.
-   */
+  private ConversationalAI conversationalAI;
+
   public ConversationController(AppConfig appConfig) {
     this.appConfig = appConfig;
-    ConversationalAI tempAI;
+  }
+
+  @PostConstruct
+  void initializeConversationalAI() {
+    var modelName = appConfig.getOllamaModelName();
+    var baseUrl = appConfig.getOllamaBaseUrl();
+
+    log.debug(
+        "AppConfig loaded - Ollama: {}, Speech enabled: {}, App prompt: '{}'",
+        baseUrl,
+        appConfig.isSpeechEnabled(),
+        appConfig.getSystemPrompt());
+    log.debug("Initializing ConversationalAI with Ollama model '{}' at '{}'", modelName, baseUrl);
+
+    // Build speech configuration programmatically if enabled
+    SpeechConfig speechConfig = null;
+    if (appConfig.isSpeechEnabled()) {
+      var builder =
+          new SpeechConfig.Builder().withLanguage("en-US").withVoice("female").withEnabled(true);
+
+      // Configure STT model if specified
+      if (appConfig.getSpeechWhisperModelPath() != null) {
+        builder.withSttModel(Paths.get(appConfig.getSpeechWhisperModelPath()));
+      }
+
+      // Configure TTS model if specified
+      if (appConfig.getSpeechPiperModelPath() != null) {
+        builder.withTtsModel(Paths.get(appConfig.getSpeechPiperModelPath()));
+      }
+
+      speechConfig = builder.build();
+    }
+
+    var aiBuilder =
+        ConversationalAI.builder()
+            .withOllamaModel(modelName, baseUrl, appConfig.getOllamaTimeoutSeconds())
+            .withMemory()
+            .withSystemPrompt(appConfig.getSystemPrompt())
+            .withTemperature(appConfig.getTemperature());
+
+    if (speechConfig != null) {
+      aiBuilder.withSpeech(speechConfig);
+    }
+
     try {
-      var modelName = appConfig.getOllamaModelName();
-      var baseUrl = appConfig.getOllamaBaseUrl();
-
-      log.info(
-          "AppConfig loaded - Ollama: {}, Speech enabled: {}, App prompt: '{}'",
-          baseUrl,
-          appConfig.isSpeechEnabled(),
-          appConfig.getSystemPrompt());
-      log.info("Initializing ConversationalAI with Ollama model '{}' at '{}'", modelName, baseUrl);
-
-      // Build speech configuration programmatically if enabled
-      SpeechConfig speechConfig = null;
-      if (appConfig.isSpeechEnabled()) {
-        var builder =
-            new SpeechConfig.Builder().withLanguage("en-US").withVoice("female").withEnabled(true);
-
-        // Configure STT model if specified
-        if (appConfig.getSpeechWhisperModelPath() != null) {
-          builder.withSttModel(Paths.get(appConfig.getSpeechWhisperModelPath()));
-        }
-
-        // Configure TTS model if specified
-        if (appConfig.getSpeechPiperModelPath() != null) {
-          builder.withTtsModel(Paths.get(appConfig.getSpeechPiperModelPath()));
-        }
-
-        speechConfig = builder.build();
-      }
-
-      var aiBuilder =
-          ConversationalAI.builder()
-              .withOllamaModel(modelName, baseUrl, appConfig.getOllamaTimeoutSeconds())
-              .withMemory() // Use default memory
-              .withSystemPrompt(appConfig.getSystemPrompt())
-              .withTemperature(appConfig.getTemperature());
-
-      if (speechConfig != null) {
-        aiBuilder.withSpeech(speechConfig);
-      }
-
-      tempAI = aiBuilder.build();
-
-      log.info("ConversationalAI successfully initialized with Ollama model");
+      this.conversationalAI = aiBuilder.build();
+      log.debug("ConversationalAI successfully initialized with Ollama model");
     } catch (Exception e) {
-      log.error("Failed to initialize ConversationalAI with Ollama - Full error details:", e);
       log.warn(
           "Failed to initialize ConversationalAI with Ollama: {}. Falling back to echo mode",
           e.getMessage());
-      tempAI = null;
+      this.conversationalAI = null;
     }
-    this.conversationalAI = tempAI;
   }
 
   /**
