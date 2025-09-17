@@ -49,7 +49,7 @@ public class ConversationalAI implements AutoCloseable {
   private static final String DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434";
   private static final int DEFAULT_MEMORY_WINDOW_SIZE = 10;
   private static final double DEFAULT_TEMPERATURE = 0.7;
-  private static final int DEFAULT_OLLAMA_TIMEOUT_SECONDS = 5;
+  private static final int DEFAULT_OLLAMA_TIMEOUT_SECONDS = 10;
 
   private final ChatModel model;
   private final ConversationService service;
@@ -249,15 +249,18 @@ public class ConversationalAI implements AutoCloseable {
 
     /** Configure Ollama model with custom base URL */
     public Builder withOllamaModel(String modelName, String baseUrl) {
-      log.debug("Configuring Ollama model '{}' with base URL: {}", modelName, baseUrl);
+      return withOllamaModel(modelName, baseUrl, DEFAULT_OLLAMA_TIMEOUT_SECONDS);
+    }
+
+    /** Configure Ollama model with custom base URL and timeout */
+    public Builder withOllamaModel(String modelName, String baseUrl, int timeoutSeconds) {
+      log.debug("Configuring Ollama model '{}' with base URL: {} and timeout: {}s", modelName, baseUrl, timeoutSeconds);
       this.model =
           OllamaChatModel.builder()
               .baseUrl(baseUrl)
               .modelName(modelName)
               .temperature(temperature)
-              .timeout(
-                  Duration.ofSeconds(
-                      DEFAULT_OLLAMA_TIMEOUT_SECONDS)) // Short timeout for fast failure
+              .timeout(Duration.ofSeconds(timeoutSeconds))
               .build();
       return this;
     }

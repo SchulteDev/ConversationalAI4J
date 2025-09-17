@@ -69,7 +69,7 @@ public class ConversationController {
 
       var aiBuilder =
           ConversationalAI.builder()
-              .withOllamaModel(modelName, baseUrl)
+              .withOllamaModel(modelName, baseUrl, appConfig.getOllamaTimeoutSeconds())
               .withMemory() // Use default memory
               .withSystemPrompt(appConfig.getSystemPrompt())
               .withTemperature(appConfig.getTemperature());

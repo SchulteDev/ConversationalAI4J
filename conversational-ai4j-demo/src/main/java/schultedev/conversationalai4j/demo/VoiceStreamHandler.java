@@ -40,7 +40,7 @@ public class VoiceStreamHandler implements WebSocketHandler {
 
       var aiBuilder =
           ConversationalAI.builder()
-              .withOllamaModel(modelName, baseUrl)
+              .withOllamaModel(modelName, baseUrl, appConfig.getOllamaTimeoutSeconds())
               .withMemory()
               .withSystemPrompt("Keep responses brief since this is voice chat.");
 

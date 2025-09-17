@@ -14,6 +14,7 @@ public class AppConfig {
   // Ollama Configuration
   private String ollamaBaseUrl = "http://localhost:11434";
   private String ollamaModelName = "llama3.2:3b";
+  private int ollamaTimeoutSeconds = 10;
 
   // Speech Configuration
   private boolean speechEnabled = false;
@@ -107,5 +108,13 @@ public class AppConfig {
 
   public void setTemperature(double temperature) {
     this.temperature = temperature;
+  }
+
+  public int getOllamaTimeoutSeconds() {
+    return ollamaTimeoutSeconds;
+  }
+
+  public void setOllamaTimeoutSeconds(int ollamaTimeoutSeconds) {
+    this.ollamaTimeoutSeconds = ollamaTimeoutSeconds;
   }
 }
