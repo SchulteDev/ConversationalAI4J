@@ -38,47 +38,47 @@ public class ConversationController {
 
   @PostConstruct
   void initializeConversationalAI() {
-    var modelName = appConfig.getOllamaModelName();
-    var baseUrl = appConfig.getOllamaBaseUrl();
-
-    log.debug(
-        "AppConfig loaded - Ollama: {}, Speech enabled: {}, App prompt: '{}'",
-        baseUrl,
-        appConfig.isSpeechEnabled(),
-        appConfig.getSystemPrompt());
-    log.debug("Initializing ConversationalAI with Ollama model '{}' at '{}'", modelName, baseUrl);
-
-    // Build speech configuration programmatically if enabled
-    SpeechConfig speechConfig = null;
-    if (appConfig.isSpeechEnabled()) {
-      var builder =
-          new SpeechConfig.Builder().withLanguage("en-US").withVoice("female").withEnabled(true);
-
-      // Configure STT model if specified
-      if (appConfig.getSpeechWhisperModelPath() != null) {
-        builder.withSttModel(Paths.get(appConfig.getSpeechWhisperModelPath()));
-      }
-
-      // Configure TTS model if specified
-      if (appConfig.getSpeechPiperModelPath() != null) {
-        builder.withTtsModel(Paths.get(appConfig.getSpeechPiperModelPath()));
-      }
-
-      speechConfig = builder.build();
-    }
-
-    var aiBuilder =
-        ConversationalAI.builder()
-            .withOllamaModel(modelName, baseUrl, appConfig.getOllamaTimeoutSeconds())
-            .withMemory()
-            .withSystemPrompt(appConfig.getSystemPrompt())
-            .withTemperature(appConfig.getTemperature());
-
-    if (speechConfig != null) {
-      aiBuilder.withSpeech(speechConfig);
-    }
-
     try {
+      var modelName = appConfig.getOllamaModelName();
+      var baseUrl = appConfig.getOllamaBaseUrl();
+
+      log.debug(
+          "AppConfig loaded - Ollama: {}, Speech enabled: {}, App prompt: '{}'",
+          baseUrl,
+          appConfig.isSpeechEnabled(),
+          appConfig.getSystemPrompt());
+      log.debug("Initializing ConversationalAI with Ollama model '{}' at '{}'", modelName, baseUrl);
+
+      // Build speech configuration programmatically if enabled
+      SpeechConfig speechConfig = null;
+      if (appConfig.isSpeechEnabled()) {
+        var builder =
+            new SpeechConfig.Builder().withLanguage("en-US").withVoice("female").withEnabled(true);
+
+        // Configure STT model if specified
+        if (appConfig.getSpeechWhisperModelPath() != null) {
+          builder.withSttModel(Paths.get(appConfig.getSpeechWhisperModelPath()));
+        }
+
+        // Configure TTS model if specified
+        if (appConfig.getSpeechPiperModelPath() != null) {
+          builder.withTtsModel(Paths.get(appConfig.getSpeechPiperModelPath()));
+        }
+
+        speechConfig = builder.build();
+      }
+
+      var aiBuilder =
+          ConversationalAI.builder()
+              .withOllamaModel(modelName, baseUrl, appConfig.getOllamaTimeoutSeconds())
+              .withMemory()
+              .withSystemPrompt(appConfig.getSystemPrompt())
+              .withTemperature(appConfig.getTemperature());
+
+      if (speechConfig != null) {
+        aiBuilder.withSpeech(speechConfig);
+      }
+
       this.conversationalAI = aiBuilder.build();
       log.debug("ConversationalAI successfully initialized with Ollama model");
     } catch (Exception e) {
