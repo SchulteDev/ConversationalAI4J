@@ -12,7 +12,7 @@ configurations {
   mockitoAgent
 }
 
-ext.libs = [mockito: 'org.mockito:mockito-core:5.19.0']
+ext.libs = [mockito: 'org.mockito:mockito-core:5.20.0']
 
 dependencies {
   // LangChain4j with Ollama
@@ -30,7 +30,7 @@ dependencies {
   // Test dependencies
   testImplementation 'org.junit.jupiter:junit-jupiter-api:5.13.4'
   testImplementation libs.mockito
-  testImplementation 'org.mockito:mockito-junit-jupiter:5.19.0'
+  testImplementation 'org.mockito:mockito-junit-jupiter:5.20.0'
   mockitoAgent(libs.mockito) { transitive = false }
   testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.13.4'
   testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.13.4'
