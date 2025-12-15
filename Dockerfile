@@ -37,7 +37,7 @@ COPY conversational-ai4j-demo/src/ conversational-ai4j-demo/src/
 RUN echo "Building at ${BUILD_TIME}" && gradle :demo:bootJar --no-daemon
 
 # Runtime stage with speech support
-FROM openjdk:25-jdk-slim AS runtime-base
+FROM mcr.microsoft.com/openjdk/jdk:21-ubuntu AS runtime-base
 
 # Install system dependencies (cached layer)
 RUN apt-get update && apt-get install -y \
