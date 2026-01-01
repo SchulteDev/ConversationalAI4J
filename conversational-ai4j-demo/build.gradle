@@ -22,7 +22,7 @@ dependencies {
   // Testing - Spring Boot 3.3.0 manages these versions
   testImplementation 'org.springframework.boot:spring-boot-starter-test'
   testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-  testImplementation 'org.jsoup:jsoup:1.21.2'
+  testImplementation 'org.jsoup:jsoup:1.22.1'
 
   // Testcontainers for Docker integration tests
   testImplementation 'org.testcontainers:testcontainers:1.21.4'
