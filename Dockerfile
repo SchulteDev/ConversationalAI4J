@@ -1,5 +1,5 @@
 # ConversationalAI4J with Whisper.cpp + Piper TTS
-FROM gradle:9.2-jdk21 AS deps-cache
+FROM gradle:9.3-jdk21 AS deps-cache
 
 WORKDIR /app
 
@@ -13,7 +13,7 @@ COPY conversational-ai4j-demo/build.gradle conversational-ai4j-demo/
 RUN gradle :demo:dependencies --no-daemon || true
 
 # Build stage - separate from deps to optimize rebuilds
-FROM gradle:9.2-jdk21 AS builder
+FROM gradle:9.3-jdk21 AS builder
 
 WORKDIR /app
 
